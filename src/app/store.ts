@@ -15,7 +15,7 @@ const HISTORY_LIMIT = 200;
 const STORAGE_KEY = 'elektroplaner.projekt';
 
 export interface UiState {
-  view: 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'ausgaben' | 'versionen';
+  view: 'willkommen' | 'assistent' | 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'ausgaben' | 'versionen';
   roomId?: string;
   outletId?: string;
   wallIndex: number;
@@ -38,7 +38,7 @@ let state: State = {
   project: exampleProject(),
   past: [],
   future: [],
-  ui: { view: 'projekt', wallIndex: 0 },
+  ui: { view: 'willkommen', wallIndex: 0 },
 };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
@@ -77,6 +77,13 @@ export const store = {
     scheduleSave();
   },
 
+  /** Änderung ohne Undo-Eintrag und ohne Protokoll, aber gespeichert (z. B. Assistent-Schritt). */
+  silent(fn: (d: Draft<Project>) => void) {
+    state = { ...state, project: produce(state.project, fn) };
+    emit();
+    scheduleSave();
+  },
+
   /** Vorschau ohne Undo-Eintrag (z. B. während Ziehen). */
   preview(fn: (d: Draft<Project>) => void) {
     state = { ...state, project: produce(state.project, fn) };
@@ -111,7 +118,8 @@ export const store = {
   },
 
   replace(project: Project, text = 'Projekt geladen') {
-    state = { ...state, project, past: [...state.past, state.project].slice(-HISTORY_LIMIT), future: [], ui: { view: 'projekt', wallIndex: 0 } };
+    const view = project.wizard.finished ? 'projekt' : 'assistent';
+    state = { ...state, project, past: [...state.past, state.project].slice(-HISTORY_LIMIT), future: [], ui: { view, wallIndex: 0 } };
     store.update(text, () => {});
   },
 
@@ -124,7 +132,8 @@ export const store = {
     try {
       const raw = await idbGet<string>(STORAGE_KEY);
       if (raw) {
-        state = { ...state, project: loadProject(raw) };
+        const project = loadProject(raw);
+        state = { ...state, project, ui: { ...state.ui, view: project.wizard.finished ? 'projekt' : 'assistent' } };
         emit();
       }
     } catch (e) {

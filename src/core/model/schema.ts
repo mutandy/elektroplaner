@@ -20,7 +20,7 @@
  */
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -115,6 +115,9 @@ export const Settings = z.object({
   /** Bohrdurchmesser für UP-/Hohlwanddosen. */
   boxDrill: cm.default(6.8),
   switchProgram: SwitchProgram.default({}),
+  /** Vorgaben für neu angelegte Räume (aus dem Assistenten). */
+  defaultInstallationType: InstallationType.default('unterputz'),
+  defaultFutureBuildup: cm.nonnegative().default(0),
   /** Überschreibt Normwerte aus der Regelbasis (Schlüssel siehe rules/normValues.ts). */
   normOverrides: z.record(z.string(), z.number()).default({}),
   /** Regeln, die bewusst deaktiviert wurden (mit Begründung). */
@@ -454,8 +457,13 @@ export const FloorLevel = z.object({
   id,
   name: z.string(),
   level: z.number().int(),
-  /** Hintergrund-Grundriss (Bild als Data-URL oder Referenz), Etappe 5. */
+  /** Hintergrund-Grundriss zum Nachzeichnen (Bild als Data-URL). */
   backgroundPlan: z.string().optional(),
+  /** Bildgröße in Pixeln. */
+  backgroundSize: z.object({ w: z.number().positive(), h: z.number().positive() }).optional(),
+  /** Maßstab des Hintergrunds: Zentimeter je Bildpixel (aus Kalibrierung). */
+  backgroundScale: z.number().positive().optional(),
+  backgroundOpacity: z.number().min(0).max(1).default(0.6),
 });
 
 // ---------------------------------------------------------------------------
@@ -482,6 +490,17 @@ export const Circuit = z.object({
 // ---------------------------------------------------------------------------
 // Projekt
 // ---------------------------------------------------------------------------
+
+/** Fortschritt des geführten Assistenten. */
+export const WizardState = z.object({
+  /** false = Projekt wird noch im Assistenten erfasst. */
+  finished: z.boolean().default(false),
+  /** Aktueller Schritt (z. B. „projekt.art“ oder „raum:<id>:tueren“). */
+  step: z.string().default('start'),
+  /** Erledigte bzw. bewusst übersprungene Schritte. */
+  done: z.array(z.string()).default([]),
+  skipped: z.array(z.string()).default([]),
+});
 
 export const ChangeLogEntry = z.object({
   at: z.string(),
@@ -513,6 +532,7 @@ export const ProjectCore = z.object({
   distributions: z.array(Distribution).default([]),
   circuits: z.array(Circuit).default([]),
   changeLog: z.array(ChangeLogEntry).default([]),
+  wizard: WizardState.default({}),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -549,3 +569,5 @@ export type Settings = z.infer<typeof Settings>;
 export type SmartHomeConfig = z.infer<typeof SmartHomeConfig>;
 export type SmartHomeSystem = z.infer<typeof SmartHomeSystem>;
 export type InstallationType = z.infer<typeof InstallationType>;
+export type WizardState = z.infer<typeof WizardState>;
+export type FloorLevel = z.infer<typeof FloorLevel>;

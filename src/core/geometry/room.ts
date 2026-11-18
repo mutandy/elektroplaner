@@ -67,6 +67,12 @@ export function bbox(poly: Pt[]) {
   return { minX: Math.min(...xs), minY: Math.min(...ys), maxX: Math.max(...xs), maxY: Math.max(...ys) };
 }
 
+/** Achsparalleles Rechteck mit Nullpunkt oben links? */
+export function isRectRoom(r: { polygon: Pt[] }): boolean {
+  const p = r.polygon;
+  return p.length === 4 && p[0].x === 0 && p[0].y === 0 && p[1].y === 0 && p[3].x === 0 && p[2].x === p[1].x && p[2].y === p[3].y && p[1].x > 0 && p[3].y > 0;
+}
+
 /** Rechteck-Polygon (Nullpunkt oben links, Uhrzeigersinn). */
 export function rectPolygon(width: number, depth: number): Pt[] {
   return [

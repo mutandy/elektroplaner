@@ -45,6 +45,7 @@ export function buildKellerProject(): Project {
     id: 'beispiel_kellerwohnung',
     name: 'Beispiel: Kellerwohnung mit Garage',
     projectType: 'teilsanierung',
+    wizard: { finished: true },
     buildingType: 'efh',
     bundesland: 'NW',
     description: 'Sanierung der Kellerwohnung (UP), Garage und Kellerraum in Aufputz, Unterverteilungen für Garage und Garten.',

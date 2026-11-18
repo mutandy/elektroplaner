@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -49,6 +49,8 @@
       "color": "polarweiß glänzend",
       "wetRoomSeries": "Merten Aquastar (AP, IP44)"
     },
+    "defaultInstallationType": "unterputz",
+    "defaultFutureBuildup": 0,
     "normOverrides": {},
     "disabledRules": {}
   },
@@ -56,7 +58,8 @@
     {
       "id": "geschoss_kg",
       "name": "Kellergeschoss",
-      "level": -1
+      "level": -1,
+      "backgroundOpacity": 0.6
     }
   ],
   "rooms": [
@@ -3445,6 +3448,12 @@
     }
   ],
   "changeLog": [],
+  "wizard": {
+    "finished": true,
+    "step": "start",
+    "done": [],
+    "skipped": []
+  },
   "createdAt": "2026-11-18T12:00:00.000Z",
   "updatedAt": "2026-11-18T12:00:00.000Z",
   "versions": []

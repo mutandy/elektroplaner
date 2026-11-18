@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Draft } from 'immer';
 import type { Outlet, Project, Room } from '../../core/model/schema';
 import { newId } from '../../core/model/factory';
-import { bbox, ffbToZ, fmt, futureBuildup, roomArea, suggestedSwitchS, wallGeoms, wallName, zToFfb } from '../../core/geometry/room';
+import { isRectRoom, bbox, ffbToZ, fmt, futureBuildup, roomArea, suggestedSwitchS, wallGeoms, wallName, zToFfb } from '../../core/geometry/room';
 import { boxTypeLabel, ceilingLabel, insertLabel, installationTypeLabel, outletKindLabel, smartHomeLabel, wallMaterialLabel } from '../../core/model/labels';
 import { FURNITURE_TYPES } from '../../core/model/catalog';
 import { ALL_LAYERS, layerLabel, type Layer } from '../../core/render/plan';
@@ -20,8 +20,7 @@ const upRoom = (roomId: string, text: string, fn: (r: Draft<Room>, p: Draft<Proj
     if (r) fn(r, p);
   });
 
-const isRect = (r: Room) =>
-  r.polygon.length === 4 && r.polygon[0].x === 0 && r.polygon[0].y === 0 && r.polygon[1].y === 0 && r.polygon[3].x === 0 && r.polygon[2].x === r.polygon[1].x && r.polygon[2].y === r.polygon[3].y;
+const isRect = isRectRoom;
 
 /** Wand-Referenzen nach Einfügen/Entfernen einer Ecke anpassen. */
 function shiftWallRefs(r: Draft<Room>, map: (wi: number, s: number) => { wi: number; s: number }) {
@@ -349,7 +348,9 @@ function removeWallItem(room: Room, kind: 'preWall' | 'zones', row: { id: string
 
 // ---------------------------------------------------------------------------
 
-function EinrichtungTab({ room, wallOpts }: { room: Room; wallOpts: { value: string; label: string }[] }) {
+export { upRoom, newOutlet };
+
+export function EinrichtungTab({ room, wallOpts }: { room: Room; wallOpts: { value: string; label: string }[] }) {
   const [kind, setKind] = useState(FURNITURE_TYPES[0].kind);
   return (
     <Section title={`Möbel und Geräte (${room.furniture.length})`}>
@@ -471,7 +472,7 @@ function OutletDetail({ project, room, o, wallOpts, circuitOpts }: { project: Pr
 
 // ---------------------------------------------------------------------------
 
-function SummaryTab({ project, room, findings }: { project: Project; room: Room; findings: ReturnType<typeof runRules>['findings'] }) {
+export function SummaryTab({ project, room, findings }: { project: Project; room: Room; findings: ReturnType<typeof runRules>['findings'] }) {
   const byKind = new Map<string, number>();
   for (const o of room.outlets) byKind.set(outletKindLabel[o.kind], (byKind.get(outletKindLabel[o.kind]) ?? 0) + 1);
   const questions: string[] = [];

@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Danach <http://localhost:5173> öffnen. Beim ersten Start ist das Beispielprojekt „Kellerwohnung mit Garage“ geladen. Änderungen werden automatisch im Browser gespeichert (IndexedDB). Über „Speichern als Datei“ entsteht eine Projektdatei (`*.elektroplan.json`), die sich mit „Öffnen“ wieder laden lässt.
+Danach <http://localhost:5173> öffnen. Beim ersten Start erscheint eine Willkommensseite: **Neues Projekt beginnen** startet den Assistenten, außerdem lässt sich eine Projektdatei öffnen oder das Beispiel „Kellerwohnung mit Garage“ ansehen. Änderungen werden automatisch im Browser gespeichert (IndexedDB). Über „Speichern als Datei“ entsteht eine Projektdatei (`*.elektroplan.json`), die sich mit „Öffnen“ wieder laden lässt.
 
 Weitere Befehle:
 
@@ -34,6 +34,22 @@ Weitere Befehle:
 Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beispiel-ausgaben/).
 
 ## Bedienung in Kürze
+
+### Assistent (Start bei Null)
+
+Ein neues Projekt beginnt immer im Assistenten. Er fragt Schritt für Schritt und macht erst danach Empfehlungen:
+
+1. **Projekt:** Art des Vorhabens, Gebäude und Geschosse, Höhenbezug und üblicher Bodenaufbau, Installationsart und Schalterprogramm, Zähler und Verteilung (freie Sicherungen, FI/RCD, Unterverteilungen), was unverändert bleibt, Smart Home, Netzwerk.
+2. **Grundriss (optional):** Bild hochladen, Maßstab über ein bekanntes Maß festlegen (zwei Punkte anklicken, Länge eingeben).
+3. **Räume anlegen:** Bezeichnung im Bestandsplan und künftiger Name, Nutzung, Geschoss. Mit Grundriss lässt sich jeder Raum darauf aufziehen; Lage und ungefähre Größe werden übernommen.
+4. **Je Raum:** Maße und Höhe (auch Kamin/Vorsprung in einer Ecke), Wände, Türen (Bänder, Aufschlag, Brandschutz), Fenster, Vorwand/Tabuzonen/Hindernisse, Boden (Aufbau, Bodenschlitze, Folientiefe), Decke, Nutzung und Möbel, Bestandsleitungen (nur im Bestand), Zusammenfassung zum Bestätigen.
+5. **Abschluss:** Liste aller offenen Punkte mit Sprung zum jeweiligen Schritt.
+
+Jeder Schritt erklärt unter „Warum wird das gefragt?“, wozu die Angabe dient. „Weiß ich noch nicht – später“ überspringt einen Schritt; der Punkt bleibt als offen markiert. Der Fortschritt wird im Projekt gespeichert. Der Assistent schreibt in dieselben Daten wie die Expertenansicht.
+
+Pläne sind oft nicht maßhaltig (Foto schräg, Zeichnung ungenau). Deshalb nutzt das Programm den Grundriss nur als Vorlage für die Lage. Verbindlich sind die vor Ort gemessenen Maße, die im Schritt „Maße und Höhe“ abgefragt werden.
+
+### Expertenansicht
 
 1. **Projekt**: Projektart, Bundesland, Höhenbezug, Standardhöhen, Schalterprogramm (Standard: Merten System M, frei änderbar), **Smart Home** (aus/ein, System: KNX, Home Assistant, Shelly, Zigbee, Matter/Thread, Homematic IP, gemischt; mit Erklärung, was das für die Leitungsplanung bedeutet), Geschosse und Räume.
 2. **Verteilung & Stromkreise**: Hauptverteilung und Unterverteilungen mit freien LS und RCDs, Stromkreise mit Zuordnung.
@@ -54,11 +70,13 @@ Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beis
 
 ```
 src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuft auch in Node)
-  model/schema.ts      Datenmodell (Zod) = die einzige Datenquelle, versioniert (SCHEMA_VERSION)
+  model/schema.ts      Datenmodell (Zod) = die einzige Datenquelle, versioniert (SCHEMA_VERSION, aktuell 2)
   model/factory.ts     Anlegen, Laden, Migrieren, Referenzprüfung
   model/labels.ts      deutsche Bezeichnungen
   model/catalog.ts     Möbel-/Gerätekatalog, Schalterprogramme
   geometry/room.ts     Wände aus Polygon, Bezugssystem, Dosenmitten, Höhenumrechnung
+  geometry/edit.ts     Geometrie-Änderungen mit Bezugsnachführung (z. B. Kamin in Ecke ausschneiden)
+  wizard/steps.ts      Assistent: Schrittfolge, fehlende Angaben, Fortschritt
   rules/normValues.ts  Norm- und Praxiswerte mit Quelle und Kennzeichen „vom Elektriker zu bestätigen“
   rules/rules.ts       Regelbasis (reine Funktionen) + runRules()
   render/plan.ts       Draufsicht und Geschossübersicht als SVG-String
@@ -67,6 +85,8 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   docs/documents.ts    Druckdokumente A4 quer als HTML (Browser-Druck und Playwright-PDF)
 src/app/               React-Oberfläche (Vite)
   store.ts             Projektzustand, Undo/Redo, Änderungsprotokoll, Autospeichern
+  wizard/Wizard.tsx    Assistent (ein Formular je Schritt)
+  components/PlanTracer.tsx  Grundriss hochladen, kalibrieren, Räume aufziehen
 examples/keller.ts     Beispielprojekt als Code → examples/kellerwohnung.json
 scripts/               Beispiel bauen, JSON Schema, PDF-Export
 tests/                 Vitest
@@ -119,9 +139,11 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 * Etappe 2: automatische Auslass-Vorschläge aus Nutzung und Möbeln, automatischer Stromkreisvorschlag, **Leitungstrassen** (Wandschlitze in Zonen, Bodenschlitz-Trassen kreuzungsfrei mit Abstand vor der Wand, Vorwand/Aufputz/Hohlräume, Durchbrüche, Brandschutz-Abschottungen), **Schlitzplan**, Leitungslängen und Spannungsfall, Leerrohr-Prüfung gegen Steckergröße.
 * Etappe 3: Material- und Bestellliste mit Gebinden und Preisen (XLSX/CSV/PDF), Kostenschätzung, Aufgaben- und Prüfliste für die Bauphase.
 * Etappe 4: vollständige Regelmodule (VDE 0100-701 Bad-Schutzbereiche, -520 Strombelastbarkeit, -420 AFDD, -443/-534 SPD, -722 E-Mobilität, Erdverlegung, Abstände/Bewegungsflächen, Beleuchtungsstärke) und ein Prüfprotokoll zum Abzeichnen.
-* Etappe 5: Fotos je Wand/Raum, Grundriss-Upload als Hintergrund zum Nachzeichnen, **KI-Auswertung (Claude-API)** von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
+* Etappe 5: Fotos je Wand/Raum, **KI-Auswertung (Claude-API)** – z. B. Raumnamen und Maße aus dem hochgeladenen Grundriss vorschlagen – von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
 
-**Vereinfachungen in Etappe 1:**
+**Vereinfachungen:**
+
+* Der Grundriss wird nur als Bild genutzt (JPG/PNG; PDF bitte als Foto oder Screenshot). Er wird nicht entzerrt; Räume werden als achsparallele Rechtecke aufgezogen.
 
 * Türen werden je Raum erfasst. Eine Tür zwischen zwei Räumen steht in beiden Räumen getrennt; die beiden Einträge werden noch nicht verknüpft.
 * Die Wanddicke ist im Plan nur symbolisch gezeichnet. Die Lage der Räume im Geschoss dient nur der Orientierung.

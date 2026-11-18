@@ -6,7 +6,7 @@
       "properties": {
         "schemaVersion": {
           "type": "number",
-          "const": 1
+          "const": 2
         },
         "id": {
           "type": "string",
@@ -237,6 +237,23 @@
               "additionalProperties": false,
               "default": {}
             },
+            "defaultInstallationType": {
+              "type": "string",
+              "enum": [
+                "unterputz",
+                "aufputz_nym_schellen",
+                "aufputz_rohr",
+                "aufputz_kanal",
+                "hohlwand",
+                "vorwand"
+              ],
+              "default": "unterputz"
+            },
+            "defaultFutureBuildup": {
+              "type": "number",
+              "minimum": 0,
+              "default": 0
+            },
             "normOverrides": {
               "type": "object",
               "additionalProperties": {
@@ -272,6 +289,34 @@
               },
               "backgroundPlan": {
                 "type": "string"
+              },
+              "backgroundSize": {
+                "type": "object",
+                "properties": {
+                  "w": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "h": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": [
+                  "w",
+                  "h"
+                ],
+                "additionalProperties": false
+              },
+              "backgroundScale": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "backgroundOpacity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.6
               }
             },
             "required": [
@@ -1516,6 +1561,35 @@
           },
           "default": []
         },
+        "wizard": {
+          "type": "object",
+          "properties": {
+            "finished": {
+              "type": "boolean",
+              "default": false
+            },
+            "step": {
+              "type": "string",
+              "default": "start"
+            },
+            "done": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "skipped": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
         "createdAt": {
           "type": "string"
         },
@@ -1538,7 +1612,7 @@
                 "properties": {
                   "schemaVersion": {
                     "type": "number",
-                    "const": 1
+                    "const": 2
                   },
                   "id": {
                     "type": "string",
@@ -1769,6 +1843,23 @@
                         "additionalProperties": false,
                         "default": {}
                       },
+                      "defaultInstallationType": {
+                        "type": "string",
+                        "enum": [
+                          "unterputz",
+                          "aufputz_nym_schellen",
+                          "aufputz_rohr",
+                          "aufputz_kanal",
+                          "hohlwand",
+                          "vorwand"
+                        ],
+                        "default": "unterputz"
+                      },
+                      "defaultFutureBuildup": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0
+                      },
                       "normOverrides": {
                         "type": "object",
                         "additionalProperties": {
@@ -1804,6 +1895,34 @@
                         },
                         "backgroundPlan": {
                           "type": "string"
+                        },
+                        "backgroundSize": {
+                          "type": "object",
+                          "properties": {
+                            "w": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            "h": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "w",
+                            "h"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "backgroundScale": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "backgroundOpacity": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 0.6
                         }
                       },
                       "required": [
@@ -3047,6 +3166,35 @@
                       "additionalProperties": false
                     },
                     "default": []
+                  },
+                  "wizard": {
+                    "type": "object",
+                    "properties": {
+                      "finished": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "step": {
+                        "type": "string",
+                        "default": "start"
+                      },
+                      "done": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      },
+                      "skipped": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "default": []
+                      }
+                    },
+                    "additionalProperties": false,
+                    "default": {}
                   },
                   "createdAt": {
                     "type": "string"

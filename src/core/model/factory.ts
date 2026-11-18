@@ -62,7 +62,12 @@ export class ProjectLoadError extends Error {
  * in Version n+1 überführt. Neue Versionen hier anhängen.
  */
 const migrations: Record<number, (p: any) => any> = {
-  // 1: (p) => ({ ...p, schemaVersion: 2, neuesFeld: … }),
+  // v1 → v2: Assistent-Fortschritt, Hintergrund-Grundriss, Raum-Vorgaben.
+  // Bestehende Projekte gelten als fertig erfasst.
+  1: (p) => {
+    const up = (core: any) => ({ ...core, schemaVersion: 2, wizard: core.wizard ?? { finished: true, step: 'start', done: [], skipped: [] } });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

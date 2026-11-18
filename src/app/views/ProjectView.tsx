@@ -129,7 +129,7 @@ export function ProjectView({ project }: { project: Project }) {
           cols={[{ key: 'name', label: 'Geschoss', type: 'text' }, { key: 'level', label: 'Ebene', type: 'number' }]}
           onChange={(i, k, v) => up('Geschoss', (p) => { (p.floors[i] as any)[k] = v; })}
           onRemove={project.floors.length > 1 ? (i) => up('Geschoss entfernt', (p) => { const id = p.floors[i].id; if (p.rooms.some((r) => r.floorId === id)) { alert('Geschoss enthält noch Räume.'); return; } p.floors.splice(i, 1); }) : undefined}
-          onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Neues Geschoss', level: p.floors.length }); })} addLabel="Geschoss" />
+          onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Neues Geschoss', level: p.floors.length, backgroundOpacity: 0.6 }); })} addLabel="Geschoss" />
         <EditTable rows={project.rooms.map((r) => ({ ...r, area: fmt(roomArea(r), 2) }))} rowKey={(r) => r.id}
           onSelect={(r) => store.setUi({ view: 'raum', roomId: r.id })}
           cols={[
