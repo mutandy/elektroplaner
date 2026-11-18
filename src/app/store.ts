@@ -21,6 +21,8 @@ export interface UiState {
   wallIndex: number;
   /** Reiter in der Raumansicht (z. B. von einem Lösungsvorschlag aus) */
   tab?: 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
+  /** Seitenmenü als Schublade (kleine Bildschirme) offen */
+  navOpen?: boolean;
 }
 
 interface State {

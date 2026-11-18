@@ -23,10 +23,10 @@ function save(k: string, d: MeasureDraft | null) {
   try { if (d) localStorage.setItem(storageKey(k), JSON.stringify(d)); else localStorage.removeItem(storageKey(k)); } catch { /* egal */ }
 }
 
-export function MeasureFlow({ project, floorId, room, onClose }: { project: Project; floorId: string; room?: Room; onClose: (createdRoomId?: string) => void }) {
+export function MeasureFlow({ project, floorId, room, onClose, startAt }: { project: Project; floorId: string; room?: Room; onClose: (createdRoomId?: string) => void; startAt?: 'start' | 'liste' }) {
   const key = room ? `raum.${room.id}` : `neu.${floorId}`;
   const [draft, setDraft] = useState<MeasureDraft>(() => loadSaved(key) ?? (room ? draftFromRoom(room) : emptyDraft('')));
-  const [step, setStep] = useState<Step>('start');
+  const [step, setStep] = useState<Step>(startAt ?? 'start');
   const [cur, setCur] = useState<MeasuredOpening | null>(null);
   const resumed = useRef(!!loadSaved(key));
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -125,7 +125,7 @@ export function MeasureFlow({ project, floorId, room, onClose }: { project: Proj
           <span className="muted small">{inOpening && cur ? `${openingKindLabel[cur.kind]} · ` : ''}Schritt {Math.max(1, pos)} von {total}</span>
         </div>
       </header>
-      <div className="measure-progress"><span style={{ width: `${(Math.max(0, pos) / total) * 100}%` }} /></div>
+      <div className="measure-progress"><span style={{ transform: `scaleX(${Math.max(0, pos) / total})` }} /></div>
 
       <div className="measure-body" ref={bodyRef}>
         {step !== 'start' && step !== 'o-art' && <Sketch draft={draft} highlight={highlight} cur={inOpening ? cur : null} measuring={step === 'o-abstand'} />}

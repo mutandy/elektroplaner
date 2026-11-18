@@ -1,0 +1,16 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "formwork",
+  "signature": "the question card: one plain question on a cast plate",
+  "nav": "top bar + drawer under 60rem",
+  "prompt": "Elektroplaner: Assistent und Mobilansicht reduzieren, einfache Fragen, grafisch aufbereitet",
+  "waived": [
+   "39b"
+  ],
+  "date": "2026-11-18"
+ }
+]

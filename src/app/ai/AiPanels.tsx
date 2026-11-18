@@ -55,7 +55,7 @@ export function FloorPlanAi({ project, floorId }: { project: Project; floorId: s
   return (
     <div className="aibox">
       <div className="inline">
-        <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: FloorPlanResult, system: FLOOR_PLAN_PROMPT, text: `Geschoss: ${floor.name}. Lies alle Räume aus diesem Plan.`, images: [{ dataUrl: floor.backgroundPlan! }] }))}>{ai.busy ? 'Claude liest den Plan …' : '✨ Räume aus dem Grundriss lesen (KI)'}</button>
+        <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: FloorPlanResult, system: FLOOR_PLAN_PROMPT, text: `Geschoss: ${floor.name}. Lies alle Räume aus diesem Plan.`, images: [{ dataUrl: floor.backgroundPlan! }] }))}>{ai.busy ? 'Claude liest den Plan …' : 'Räume aus dem Grundriss lesen (KI)'}</button>
         {!floor.backgroundScale && <span className="muted small">Tipp: erst Maßstab festlegen, dann werden auch Lage und Größe übernommen.</span>}
       </div>
       <Err msg={ai.error} />
@@ -107,7 +107,7 @@ export function DistributionPhotoAi({ project, distributionId }: { project: Proj
             store.update(`${dist.name}: Foto ergänzt`, (p) => { p.distributions.find((d) => d.id === distributionId)!.photos.push({ id: newId('foto'), dataUrl: img.dataUrl, caption: f.name, at: new Date().toISOString() }); });
           }} />
         </label>
-        {photo && aiAvailable() && <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: DistributionPhotoResult, system: DISTRIBUTION_PROMPT, text: `Verteilung „${dist.name}“. Lies alle Geräte aus.`, images: [{ dataUrl: photo.dataUrl }] }))}>{ai.busy ? 'Claude liest das Foto …' : '✨ Geräte aus dem Foto lesen (KI)'}</button>}
+        {photo && aiAvailable() && <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: DistributionPhotoResult, system: DISTRIBUTION_PROMPT, text: `Verteilung „${dist.name}“. Lies alle Geräte aus.`, images: [{ dataUrl: photo.dataUrl }] }))}>{ai.busy ? 'Claude liest das Foto …' : 'Geräte aus dem Foto lesen (KI)'}</button>}
         {photo && !aiAvailable() && <span className="muted small">Mit API-Schlüssel kann das Foto ausgewertet werden.</span>}
       </div>
       {dist.photos.length > 0 && <div className="thumbs">{dist.photos.map((ph) => <img key={ph.id} src={ph.dataUrl} alt={ph.caption} title={ph.caption} />)}</div>}
@@ -138,7 +138,7 @@ export function RoomTextAi({ room }: { room: Room }) {
   if (!aiAvailable()) return null;
   return (
     <div className="aibox">
-      <p className="small"><b>✨ In eigenen Worten beschreiben (KI):</b> z. B. „Schlafzimmer mit Doppelbett an der Fensterwand, links und rechts Nachttische, gegenüber Schrank, in der Ecke ein Schreibtisch mit zwei Monitoren, später vielleicht Kinderzimmer.“</p>
+      <p className="small"><b>In eigenen Worten beschreiben (KI):</b> z. B. „Schlafzimmer mit Doppelbett an der Fensterwand, links und rechts Nachttische, gegenüber Schrank, in der Ecke ein Schreibtisch mit zwei Monitoren, später vielleicht Kinderzimmer.“</p>
       <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} />
       <div className="inline"><button disabled={ai.busy || text.trim().length < 10} onClick={() => ai.run(() => askStructured({ schema: RoomTextResult, system: roomTextPrompt(room), text, effort: 'medium' }))}>{ai.busy ? 'Claude denkt …' : 'Auswerten'}</button></div>
       <Err msg={ai.error} />

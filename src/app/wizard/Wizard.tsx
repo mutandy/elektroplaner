@@ -189,7 +189,7 @@ function StartStep({ project }: { project: Project }) {
   );
 }
 
-function BuildingStep({ project }: { project: Project }) {
+export function BuildingStep({ project }: { project: Project }) {
   return (
     <>
       <div className="grid2">
@@ -213,7 +213,7 @@ function BuildingStep({ project }: { project: Project }) {
   );
 }
 
-function ReferenceStep({ project }: { project: Project }) {
+export function ReferenceStep({ project }: { project: Project }) {
   const ref = project.settings.heightReference;
   return (
     <>
@@ -237,7 +237,7 @@ function ReferenceStep({ project }: { project: Project }) {
   );
 }
 
-function InstallationStep({ project }: { project: Project }) {
+export function InstallationStep({ project }: { project: Project }) {
   const sp = project.settings.switchProgram;
   return (
     <>
@@ -262,7 +262,7 @@ function InstallationStep({ project }: { project: Project }) {
   );
 }
 
-function DistributionStep({ project }: { project: Project }) {
+export function DistributionStep({ project }: { project: Project }) {
   const hvIdx = project.distributions.findIndex((d) => d.kind === 'HV' || d.kind === 'Zaehlerschrank');
   const hv = project.distributions[hvIdx];
   if (!hv) {
@@ -349,7 +349,7 @@ function SmartStep({ project }: { project: Project }) {
   );
 }
 
-function NetworkStep({ project }: { project: Project }) {
+export function NetworkStep({ project }: { project: Project }) {
   return (
     <>
       <div className="grid2">
@@ -363,7 +363,7 @@ function NetworkStep({ project }: { project: Project }) {
 
 // ---------------------------------------------------------------------------
 
-function FloorPlanCard({ project, fi }: { project: Project; fi: number }) {
+export function FloorPlanCard({ project, fi }: { project: Project; fi: number }) {
   const floor = project.floors[fi];
   const [mode, setMode] = useState<TracerMode>(floor.backgroundPlan && !floor.backgroundScale ? 'kalibrieren' : 'ansehen');
   const [open, setOpen] = useState(!floor.backgroundPlan || !floor.backgroundScale);
@@ -433,7 +433,7 @@ function RoomsStep({ project }: { project: Project }) {
         const tracingRoom = rooms.find((r) => r.id === tracing);
         return (
           <div key={floor.id} className="floorcard">
-            <div className="inline"><b>{floor.name}</b><span className="muted small">{rooms.length} Räume · Geschosshöhe {fmt(floor.height)} cm</span><span className="spacer" /><button className="small primary" onClick={() => setMeasuring(floor.id)} title="Schritt für Schritt: Innenmaße, Höhe, Türen, Fenster – ideal am Handy vor Ort">📏 Raum aufmessen</button><button className="small" onClick={() => addRoom(floor.id)}>＋ Raum (Maße später)</button></div>
+            <div className="inline"><b>{floor.name}</b><span className="muted small">{rooms.length} Räume · Geschosshöhe {fmt(floor.height)} cm</span><span className="spacer" /><button className="small primary" onClick={() => setMeasuring(floor.id)} title="Schritt für Schritt: Innenmaße, Höhe, Türen, Fenster – ideal am Handy vor Ort">Raum aufmessen</button><button className="small" onClick={() => addRoom(floor.id)}>＋ Raum (Maße später)</button></div>
             {measuring === floor.id && <MeasureFlow project={project} floorId={floor.id} onClose={() => setMeasuring(null)} />}
             <EditTable rows={rooms} rowKey={(r) => r.id} selectedKey={tracing ?? undefined}
               cols={[
@@ -492,7 +492,7 @@ function RoomSizeEditor({ room }: { room: Room }) {
   );
 }
 
-function SuggestStep({ project }: { project: Project }) {
+export function SuggestStep({ project }: { project: Project }) {
   const rooms = project.rooms.filter((r) => r.inScope);
   const [roomId, setRoomId] = useState(rooms[0]?.id);
   const room = rooms.find((r) => r.id === roomId) ?? rooms[0];
@@ -515,7 +515,7 @@ function SuggestStep({ project }: { project: Project }) {
   );
 }
 
-function CircuitsStep({ project }: { project: Project }) {
+export function CircuitsStep({ project }: { project: Project }) {
   const routes = computeAllRoutes(project);
   const rooms = project.rooms.filter((r) => r.inScope);
   return (
@@ -586,7 +586,7 @@ function RoomStep({ project, room, step }: { project: Project; room: Room; step:
   return null;
 }
 
-function MassStep({ project, room }: { project: Project; room: Room }) {
+export function MassStep({ project, room }: { project: Project; room: Room }) {
   const rect = isRectRoom(room);
   const [measuring, setMeasuring] = useState(false);
   const [corner, setCorner] = useState<RectCorner>(3);
@@ -598,7 +598,7 @@ function MassStep({ project, room }: { project: Project; room: Room }) {
     <>
       <p>Miss den Raum innen <b>von Wand zu Wand im Rohbau</b> (ohne Fliesen/Putz, die noch kommen).</p>
       {room.provenance === 'aus_plan' && <p className="muted small">Die Werte stammen aus dem aufgezogenen Grundriss. Trag hier die gemessenen Maße ein – die Lage im Plan bleibt erhalten.</p>}
-      {rect && <p><button className="primary" onClick={() => setMeasuring(true)}>📏 Schritt für Schritt aufmessen (Maße, Höhe, Türen, Fenster)</button> <span className="muted small">– ideal am Handy vor Ort</span></p>}
+      {rect && <p><button className="primary" onClick={() => setMeasuring(true)}>Schritt für Schritt aufmessen (Maße, Höhe, Türen, Fenster)</button> <span className="muted small">– ideal am Handy vor Ort</span></p>}
       {measuring && <MeasureFlow project={project} floorId={room.floorId} room={room} onClose={() => setMeasuring(false)} />}
       {rect ? (
         <div className="grid3">
@@ -636,7 +636,7 @@ function MassStep({ project, room }: { project: Project; room: Room }) {
   );
 }
 
-function WallsStep({ room }: { room: Room }) {
+export function WallsStep({ room }: { room: Room }) {
   const materials = [...new Set(room.walls.map((w) => w.material))];
   return (
     <>
@@ -663,7 +663,7 @@ function WallsStep({ room }: { room: Room }) {
   );
 }
 
-function DoorsStep({ room }: { room: Room }) {
+export function DoorsStep({ room }: { room: Room }) {
   const wallOpts = room.walls.map((w) => ({ value: String(w.index), label: `W${w.index + 1} – ${wallSideLabel(room, w.index)}${w.label ? ` (${w.label})` : ''}` }));
   const set = (i: number, k: keyof Door, v: any, label: string) => upRoom(room.id, `${room.name}: Tür ${i + 1} ${label}`, (r) => { (r.doors[i] as any)[k] = v; });
   return (
@@ -693,7 +693,7 @@ function DoorsStep({ room }: { room: Room }) {
   );
 }
 
-function WindowsStep({ room }: { room: Room }) {
+export function WindowsStep({ room }: { room: Room }) {
   const wallOpts = room.walls.map((w) => ({ value: String(w.index), label: `W${w.index + 1} – ${wallSideLabel(room, w.index)}` }));
   return (
     <>
@@ -714,7 +714,7 @@ function WindowsStep({ room }: { room: Room }) {
   );
 }
 
-function SpecialsStep({ room }: { room: Room }) {
+export function SpecialsStep({ room }: { room: Room }) {
   const wallOpts = room.walls.map((w) => ({ value: String(w.index), label: `W${w.index + 1} – ${wallSideLabel(room, w.index)}` }));
   const pw = room.walls.flatMap((w) => w.preWall.map((p) => ({ ...p, wall: String(w.index), rh: p.height == null })));
   const zones = room.walls.flatMap((w) => w.zones.map((z) => ({ ...z, wall: String(w.index) })));
@@ -771,7 +771,7 @@ function SpecialsStep({ room }: { room: Room }) {
   );
 }
 
-function FloorStep({ project, room }: { project: Project; room: Room }) {
+export function FloorStep({ project, room }: { project: Project; room: Room }) {
   const f = room.floor;
   const fb = futureBuildup(room);
   const setF = (text: string, fn: (x: Draft<Room>['floor']) => void) => upRoom(room.id, `${room.name}: ${text}`, (r) => fn(r.floor));
@@ -810,7 +810,7 @@ function FloorStep({ project, room }: { project: Project; room: Room }) {
   );
 }
 
-function CeilingStep({ room }: { room: Room }) {
+export function CeilingStep({ room }: { room: Room }) {
   const c = room.ceiling;
   const setC = (text: string, fn: (x: Draft<Room>['ceiling']) => void) => upRoom(room.id, `${room.name}: ${text}`, (r) => fn(r.ceiling));
   return (
@@ -877,7 +877,7 @@ function FurnitureStep({ project, room }: { project: Project; room: Room }) {
   );
 }
 
-function ExistingStep({ room }: { room: Room }) {
+export function ExistingStep({ room }: { room: Room }) {
   return (
     <>
       <p>Gibt es vorhandene Leitungen oder Dosen, die bleiben oder weiterverwendet werden könnten (z. B. Deckenauslass in einer nicht schlitzbaren Decke)?</p>

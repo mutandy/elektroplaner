@@ -558,7 +558,7 @@ function FindingRow({ f, project, fixProject, open, onToggle }: { f: RuleFinding
         {project && <td>{project.rooms.find((r) => r.id === f.roomId)?.name ?? 'Projekt'}</td>}
         <td>{f.message}</td>
         <td className="small">{f.source}{f.confirm && <span className="confirm"> ⚠ vom Elektriker zu bestätigen</span>}</td>
-        {fixProject && <td style={{ whiteSpace: 'nowrap' }}>{hasFixes(f) && <button className={`small ${open ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggle(); }} aria-expanded={open}>💡 Lösung{open ? ' ▴' : ' vorschlagen'}</button>}</td>}
+        {fixProject && <td style={{ whiteSpace: 'nowrap' }}>{hasFixes(f) && <button className={`small ${open ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggle(); }} aria-expanded={open}>Lösung{open ? ' ▴' : ' vorschlagen'}</button>}</td>}
       </tr>
       {open && fixProject && <tr className="fixrow"><td colSpan={cols}><FixList project={fixProject} f={f} onDone={onToggle} /></td></tr>}
     </>
