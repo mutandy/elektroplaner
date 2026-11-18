@@ -1,0 +1,283 @@
+/**
+ * Druckdokumente (A4 quer) als vollständiges HTML. Wird im Browser (Druckvorschau)
+ * und in Node (Playwright → PDF) identisch verwendet.
+ */
+import type { Project, Room } from '../model/schema';
+import { bbox, fmt, futureBuildup, roomArea, wallGeoms } from '../geometry/room';
+import { ceilingLabel, installationTypeLabel, projectTypeLabel, smartHomeLabel, wallMaterialLabel } from '../model/labels';
+import { renderRoomPlan, renderFloorOverview, type Layer } from '../render/plan';
+import { renderElevation, elevationLegendText } from '../render/elevation';
+import { pickScale, esc } from '../render/svg';
+import { runRules, severityLabel } from '../rules/rules';
+import { NORM_VALUES } from '../rules/normValues';
+import { boxTable, circuitTable, insertBom } from './tables';
+import { effectiveSmart } from '../rules/rules';
+
+export type DocumentKind = 'raumlayout' | 'ausfuehrung';
+
+export const documentLabel: Record<DocumentKind, string> = {
+  raumlayout: 'Raumlayouts (Kontrolle Bauherr)',
+  ausfuehrung: 'Ausführungsplan (Elektrofachkraft)',
+};
+
+export const DISCLAIMER =
+  'Planungsunterlage – ersetzt keine Elektrofachkraft. Anschluss, Prüfung, Messung und Inbetriebnahme ausschließlich durch eine eingetragene Elektrofachkraft. Normwerte mit ⚠ sind vom Elektriker zu bestätigen.';
+
+const PAGE_W = 297;
+const PAGE_H = 210;
+const BODY_W = PAGE_W - 20; // mm
+const BODY_H = PAGE_H - 16 - 22; // mm (Rand, Kopf, Fuß)
+
+const DOC_CSS = `
+@page{size:A4 landscape;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#e5e7eb;color:#111827;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:8.5pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:${PAGE_W}mm;height:${PAGE_H}mm;padding:8mm 10mm;background:#fff;margin:6mm auto;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;break-after:page;position:relative}
+@media print{html,body{background:#fff}.page{margin:0;box-shadow:none}}
+@media screen{.page{box-shadow:0 1px 4px rgba(0,0,0,.25)}}
+.hd{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.4mm solid #111827;padding-bottom:1.5mm;margin-bottom:3mm}
+.hd h1{font-size:13pt;margin:0}
+.hd .meta{font-size:8pt;color:#4b5563;text-align:right}
+.body{flex:1;min-height:0;display:flex;gap:6mm}
+.col{display:flex;flex-direction:column;gap:3mm;min-width:0}
+.ft{border-top:.2mm solid #9ca3af;padding-top:1.2mm;margin-top:2mm;display:flex;justify-content:space-between;gap:6mm;font-size:6.8pt;color:#4b5563}
+.ft .warn{color:#991b1b;font-weight:600}
+table{border-collapse:collapse;width:100%}
+th,td{border:.15mm solid #d1d5db;padding:.8mm 1.2mm;text-align:left;vertical-align:top}
+th{background:#f3f4f6;font-weight:600;font-size:7.5pt}
+td{font-size:7.6pt}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+h2{font-size:10.5pt;margin:0 0 1.5mm}
+h3{font-size:9pt;margin:2mm 0 1mm}
+.small{font-size:7pt;color:#4b5563}
+.sev-fehler{color:#b91c1c;font-weight:700}
+.sev-warnung{color:#b45309;font-weight:700}
+.sev-hinweis{color:#1d4ed8}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.6mm 3mm}
+.kv dt{color:#4b5563}
+.kv dd{margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:2mm 5mm;font-size:7pt}
+.legend span::before{content:"";display:inline-block;width:2.6mm;height:2.6mm;border-radius:50%;margin-right:1mm;vertical-align:-.4mm;border:.35mm solid currentColor}
+.lg-230v{color:#dc2626}.lg-daten{color:#2563eb}.lg-licht{color:#d97706}.lg-bestand{color:#6b7280}
+.planbox{display:flex;align-items:flex-start;justify-content:center;min-height:0}
+.planbox svg{max-width:100%;max-height:100%}
+.cover h1{font-size:22pt;margin:10mm 0 2mm}
+.badge{display:inline-block;border:.3mm solid #991b1b;color:#991b1b;padding:1mm 2mm;border-radius:1mm;font-weight:600}
+.confirm{color:#b45309}
+`;
+
+interface Page { title: string; subtitle?: string; body: string }
+
+function wrapPages(project: Project, kind: DocumentKind, pages: Page[]): string {
+  const date = new Date(project.updatedAt).toLocaleDateString('de-DE');
+  const total = pages.length;
+  const html = pages.map((p, i) => `
+<section class="page">
+  <div class="hd"><h1>${esc(p.title)}${p.subtitle ? ` <span class="small">${esc(p.subtitle)}</span>` : ''}</h1>
+  <div class="meta">${esc(project.name)}<br>${esc(documentLabel[kind])} · Stand ${esc(date)}</div></div>
+  <div class="body">${p.body}</div>
+  <div class="ft"><span class="warn">⚡ ${esc(DISCLAIMER)}</span><span style="white-space:nowrap">Seite ${i + 1} / ${total}</span></div>
+</section>`).join('\n');
+  return `<!doctype html><html lang="de"><head><meta charset="utf-8"><title>${esc(project.name)} – ${esc(documentLabel[kind])}</title><style>${DOC_CSS}</style></head><body>${html}</body></html>`;
+}
+
+const legendHtml = `<div class="legend"><span class="lg-230v">230 V</span><span class="lg-daten">LAN/Audio/TV</span><span class="lg-licht">Licht/Decke/RWM</span><span class="lg-bestand">Bestand (gestrichelt)</span><span style="color:#b91c1c">● Nullpunkt mit Achsen x/y</span><span style="color:#5b636e">W1…Wn: Wände, Pfeil = Messrichtung</span></div>`;
+
+function planFor(project: Project, room: Room, maxW: number, maxH: number, layers?: Layer[]) {
+  const bb = bbox(room.polygon);
+  const scale = pickScale(bb.maxX - bb.minX + 60, bb.maxY - bb.minY + 60, maxW, maxH, [25, 50, 75, 100]);
+  return { svg: renderRoomPlan(project, room, { scale, layers }), scale };
+}
+
+function roomTitle(room: Room) {
+  return room.formerName && room.formerName !== room.name ? `${room.name}` : room.name;
+}
+function roomSubtitle(room: Room) {
+  return room.formerName && room.formerName !== room.name ? `(Bestandsplan: ${room.formerName})` : '';
+}
+
+function boxTableHtml(project: Project, room: Room, rows = boxTable(project, room), full = true): string {
+  const head = full
+    ? '<tr><th>Nr.</th><th>Art</th><th>Wand / Ort</th><th class="num">ab l. Ecke</th><th class="num">Höhe Bezug</th><th class="num">ü. FFB</th><th class="num">Pl.</th><th>Dosenmitten (s / h)</th><th>Dose</th><th>Bestückung</th><th>SK</th><th>Status / Hinweis</th></tr>'
+    : '<tr><th>Nr.</th><th>Art</th><th>Wand / Ort</th><th class="num">ab l. Ecke</th><th class="num">ü. FFB</th><th>Hinweis</th></tr>';
+  const body = rows.map((r) => full
+    ? `<tr><td><b>${esc(r.label)}</b></td><td>${esc(r.kind)}</td><td>${esc(r.where)}</td><td class="num">${esc(r.s)}</td><td class="num">${esc(r.z)}</td><td class="num">${esc(r.zFfb)}</td><td class="num">${r.gangs}${r.gangs > 1 ? (r.orientation === 'senkrecht' ? ' ↕' : ' ↔') : ''}</td><td>${r.centers.length > 1 ? r.centers.map((c) => `${c.n}: ${c.s}/${c.z}`).join('<br>') : '–'}</td><td>${esc(r.boxType)}</td><td>${esc(r.inserts)}</td><td>${esc(r.circuit)}</td><td>${esc(r.status)}${r.note ? ' – ' + esc(r.note) : ''}</td></tr>`
+    : `<tr><td><b>${esc(r.label)}</b></td><td>${esc(r.kind)}${r.gangs > 1 ? ` ${r.gangs}-fach` : ''}</td><td>${esc(r.where)}</td><td class="num">${esc(r.s)}</td><td class="num">${esc(r.zFfb)}</td><td>${esc(r.note)}</td></tr>`).join('');
+  return `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out.length ? out : [[]];
+}
+
+function findingsHtml(items: ReturnType<typeof runRules>['findings'], limit = 40): string {
+  if (!items.length) return '<p class="small">Keine Auffälligkeiten.</p>';
+  const rows = items.slice(0, limit).map((f) => `<tr><td class="sev-${f.severity}">${severityLabel[f.severity]}</td><td>${esc(f.message)}</td><td class="small">${esc(f.source)}${f.confirm ? ' <span class="confirm">⚠ bestätigen</span>' : ''}</td></tr>`).join('');
+  const more = items.length > limit ? `<p class="small">… und ${items.length - limit} weitere (siehe Prüfprotokoll in der Anwendung).</p>` : '';
+  return `<table><thead><tr><th>Status</th><th>Meldung</th><th>Quelle</th></tr></thead><tbody>${rows}</tbody></table>${more}`;
+}
+
+function roomDataHtml(project: Project, room: Room): string {
+  const walls = wallGeoms(room).map((w) => {
+    const wall = room.walls[w.index];
+    const extra = [
+      wall.exterior ? 'Außenwand' : 'Innenwand',
+      wall.loadBearing ? 'tragend' : '',
+      wall.preWall.length ? `Vorwand: ${wall.preWall.map((p) => `${fmt(p.from)}–${fmt(p.to)} (${p.height == null ? 'rh' : fmt(p.height)})`).join(', ')}` : '',
+      wall.zones.length ? wall.zones.map((z) => `${z.kind} ${fmt(z.from)}–${fmt(z.to)}`).join(', ') : '',
+    ].filter(Boolean).join(' · ');
+    return `<tr><td><b>W${w.index + 1}</b>${wall.label ? ' ' + esc(wall.label) : ''}</td><td class="num">${fmt(w.length)}</td><td>${esc(wallMaterialLabel[wall.material])}</td><td>${esc(extra)}</td></tr>`;
+  }).join('');
+  const fb = futureBuildup(room);
+  return `
+<dl class="kv">
+<dt>Nutzung</dt><dd>${esc(room.usage || '–')}${room.futureUsage ? ` (künftig: ${esc(room.futureUsage)})` : ''}</dd>
+${room.formerName ? `<dt>Bestandsplan</dt><dd>${esc(room.formerName)}</dd>` : ''}
+<dt>Fläche / Höhe</dt><dd>${fmt(roomArea(room), 2)} m² · lichte Höhe ${fmt(room.height)} cm über Bezug</dd>
+<dt>Installation</dt><dd>${esc(installationTypeLabel[room.installationType])}${room.wetRoom ? ' · Feuchtraum' : ''}</dd>
+<dt>Smart Home</dt><dd>${esc(smartHomeLabel[effectiveSmart(project, room)])}</dd>
+<dt>Höhenbezug</dt><dd>${esc(project.settings.heightReference.label)}; künftiger Bodenaufbau +${fmt(fb)} cm</dd>
+<dt>Boden</dt><dd>${room.floor.slotsAllowed ? `Bodenschlitze bis ${fmt(room.floor.maxSlotDepth)} cm; Folie/Dämmung ab ${fmt(room.floor.protectedLayerDepth)} cm` : 'keine Bodenschlitze'}${room.floor.note ? ' – ' + esc(room.floor.note) : ''}</dd>
+<dt>Decke</dt><dd>${esc(ceilingLabel[room.ceiling.construction])}: ${room.ceiling.slotsAllowed ? 'schlitzbar' : 'nicht schlitzen'}, ${room.ceiling.drillingAllowed ? 'bohren erlaubt' : 'nicht bohren'}${room.ceiling.note ? ' – ' + esc(room.ceiling.note) : ''}</dd>
+</dl>
+<h3>Wände (Uhrzeigersinn ab Nullpunkt)</h3>
+<table><thead><tr><th>Wand</th><th class="num">Länge</th><th>Material</th><th>Besonderheiten</th></tr></thead><tbody>${walls}</tbody></table>`;
+}
+
+export function buildDocument(project: Project, kind: DocumentKind): string {
+  const rooms = project.rooms.filter((r) => r.inScope);
+  const pages: Page[] = [];
+  const report = runRules(project);
+
+  // Deckblatt
+  pages.push({
+    title: documentLabel[kind],
+    body: `<div class="col cover" style="flex:1">
+<h1>${esc(project.name)}</h1>
+<p>${esc(projectTypeLabel[project.projectType])}${project.address ? ' · ' + esc(project.address) : ''}${project.bundesland ? ' · ' + esc(project.bundesland) : ''}</p>
+<p>${esc(project.description)}</p>
+<p><span class="badge">⚡ ${esc(DISCLAIMER)}</span></p>
+<dl class="kv" style="max-width:180mm">
+<dt>Höhenbezug</dt><dd>${esc(project.settings.heightReference.label)} – ${esc(project.settings.heightReference.description)}</dd>
+<dt>Bezugssystem</dt><dd>Jeder Raum hat einen Nullpunkt (Ecke 1, rot markiert). Wände sind im Uhrzeigersinn nummeriert. Alle Maße auf einer Wand gelten ab ihrer <b>linken Ecke beim Blick von innen auf die Wand</b>.</dd>
+<dt>Schalterprogramm</dt><dd>${esc(project.settings.switchProgram.manufacturer)} ${esc(project.settings.switchProgram.series)}, ${esc(project.settings.switchProgram.color)}; Feuchtraum/AP: ${esc(project.settings.switchProgram.wetRoomSeries)}</dd>
+<dt>Smart Home</dt><dd>${project.smartHome.enabled ? esc(smartHomeLabel[project.smartHome.system]) + (project.smartHome.central ? ' – ' + esc(project.smartHome.central) : '') : 'nicht vorgesehen'}${project.smartHome.notes ? '<br>' + esc(project.smartHome.notes) : ''}</dd>
+<dt>Mehrfachdosen</dt><dd>Achsabstand ${fmt(project.settings.boxPitch * 10, 0)} mm; Konvention: ${project.settings.boxConvention === 'mittig' ? 'Position = Mitte der Kombination' : 'Position = erste Dose, weitere weg von der Tür'}</dd>
+<dt>Räume</dt><dd>${rooms.map((r) => esc(r.name) + (r.formerName && r.formerName !== r.name ? ` <span class="small">(Bestand: ${esc(r.formerName)})</span>` : '')).join(' · ')}</dd>
+${project.keepAsIs.length ? `<dt>Bleibt unverändert</dt><dd>${project.keepAsIs.map(esc).join(' · ')}</dd>` : ''}
+</dl></div>`,
+  });
+
+  // Gesamtansichten
+  for (const f of project.floors) {
+    const fr = project.rooms.filter((r) => r.floorId === f.id);
+    if (!fr.length) continue;
+    const all = fr.flatMap((r) => r.polygon.map((p) => ({ x: p.x + r.originOnFloor.x, y: p.y + r.originOnFloor.y })));
+    const bb = bbox(all);
+    const scale = pickScale(bb.maxX - bb.minX + 40, bb.maxY - bb.minY + 40, BODY_W, BODY_H - 10, [50, 75, 100, 150, 200]);
+    pages.push({
+      title: `Übersicht ${f.name}`,
+      subtitle: `M 1:${scale}`,
+      body: `<div class="col" style="flex:1"><div class="planbox" style="flex:1">${renderFloorOverview(project, f.id, { scale })}</div><p class="small">Lage der Räume zueinander nur zur Orientierung. Rote Punkte = Raum-Nullpunkte. Neue Raumnamen groß, Bezeichnung im Bestandsplan klein.</p></div>`,
+    });
+  }
+
+  if (kind === 'ausfuehrung') {
+    // Verteilungen + Stromkreisliste
+    const ct = circuitTable(project);
+    const dists = project.distributions.map((d) => `<h3>${esc(d.name)}</h3><p class="small">${d.kind}${d.feedCable ? ` · Zuleitung ${esc(d.feedCable)} ${esc(d.feedFuse)}` : ''}${d.mainFuse ? ` · Hauptsicherung ${esc(d.mainFuse)}` : ''} · Netzform ${esc(d.netForm)} · ${d.freeModules} TE frei${d.hasSpd ? ' · SPD vorgesehen' : ''}<br>
+Freie LS: ${d.breakers.map((b) => `${b.free}× ${b.characteristic}${b.ratedCurrent}`).join(', ') || '–'} · RCD: ${d.rcds.map((r) => esc(r.label) + (r.existing ? '' : ' (neu)')).join(', ') || '–'}${d.note ? '<br>' + esc(d.note) : ''}</p>`).join('');
+    for (const [i, part] of chunk(ct, 18).entries()) {
+      pages.push({
+        title: 'Stromkreisliste',
+        subtitle: i ? '(Fortsetzung)' : '',
+        body: `<div class="col" style="flex:1">${i === 0 ? dists : ''}<table><thead><tr><th>SK</th><th>Bezeichnung</th><th>Verteilung</th><th>LS</th><th>LS vorh.?</th><th>RCD</th><th>Leitung</th><th>Räume</th><th>Auslässe</th><th>Begründung</th></tr></thead><tbody>${part.map((c) => `<tr><td><b>${esc(c.label)}</b></td><td>${esc(c.name)}</td><td>${esc(c.distribution)}</td><td>${esc(c.breaker)}</td><td>${esc(c.existingBreaker)}</td><td>${esc(c.rcd)}</td><td>${esc(c.cable)}</td><td>${esc(c.rooms)}</td><td class="small">${esc(c.outlets)}</td><td class="small">${esc(c.reason)}</td></tr>`).join('')}</tbody></table>
+<p class="small">Absicherung, Querschnitt und Selektivität bestimmt die Elektrofachkraft (Leitungslänge, Verlegeart, Spannungsfall nach DIN VDE 0100-520). Automatischer Stromkreisvorschlag folgt in Etappe 2.</p></div>`,
+      });
+    }
+    // Einsatz-Stückliste
+    const bom = insertBom(project);
+    pages.push({
+      title: 'Einsatz-Stückliste',
+      subtitle: `${project.settings.switchProgram.manufacturer} ${project.settings.switchProgram.series}`,
+      body: `<div class="col" style="flex:1"><table style="width:120mm"><thead><tr><th>Einsatz</th><th class="num">Anzahl</th></tr></thead><tbody>${bom.inserts.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join('')}</tbody></table></div>
+<div class="col" style="flex:1"><h2>Rahmen (UP/Hohlwand)</h2><table style="width:80mm"><thead><tr><th>Rahmen</th><th class="num">Anzahl</th></tr></thead><tbody>${bom.frames.map(([k, v]) => `<tr><td>${k}-fach</td><td class="num">${v}</td></tr>`).join('')}</tbody></table>
+<p class="small">Ohne Bestandsauslässe, die bleiben. Aufputz-Kombinationen (Feuchtraumprogramm) sind ohne Rahmen gezählt. Vollständige Materialliste mit Dosen, Kabeln und Gebinden folgt in Etappe 3.</p></div>`,
+    });
+    // Prüfprotokoll Projekt
+    const projectFindings = report.findings.filter((f) => f.severity !== 'ok');
+    for (const [i, part] of chunk(projectFindings, 22).entries()) {
+      pages.push({
+        title: 'Hinweise und offene Prüfpunkte',
+        subtitle: i ? '(Fortsetzung)' : `${report.counts.fehler} Fehler · ${report.counts.warnung} Warnungen · ${report.counts.hinweis} Hinweise`,
+        body: `<div class="col" style="flex:1">${findingsHtml(part, 22)}</div>`,
+      });
+    }
+    pages.push({
+      title: 'Verwendete Norm- und Praxiswerte',
+      body: `<div class="col" style="flex:1"><table><thead><tr><th>Schlüssel</th><th>Bedeutung</th><th class="num">Wert</th><th>Quelle</th><th>Status</th></tr></thead><tbody>${NORM_VALUES.map((v) => {
+        const o = project.settings.normOverrides[v.key];
+        return `<tr><td class="small">${esc(v.key)}</td><td>${esc(v.label)}</td><td class="num">${fmt(o ?? v.value)} ${esc(v.unit)}${o != null ? ' (angepasst)' : ''}</td><td class="small">${esc(v.source)}</td><td>${v.confirm ? '<span class="confirm">⚠ vom Elektriker zu bestätigen</span>' : 'Praxiswert'}</td></tr>`;
+      }).join('')}</tbody></table></div>`,
+    });
+  }
+
+  // Raumseiten
+  for (const room of rooms) {
+    const rows = boxTable(project, room);
+    if (kind === 'raumlayout') {
+      const { svg, scale } = planFor(project, room, 165, BODY_H - 8);
+      pages.push({
+        title: roomTitle(room),
+        subtitle: `${roomSubtitle(room)} · Draufsicht M 1:${scale}`,
+        body: `<div class="col" style="width:170mm"><div class="planbox" style="flex:1">${svg}</div>${legendHtml}</div>
+<div class="col" style="flex:1"><h2>Auslässe (${rows.length})</h2>${boxTableHtml(project, room, rows.slice(0, 26), false)}${rows.length > 26 ? '<p class="small">Weitere Auslässe siehe Ausführungsplan.</p>' : ''}
+<p class="small">${esc(elevationLegendText())}</p></div>`,
+      });
+      continue;
+    }
+    // Ausführung: Draufsicht + Raumdaten
+    const { svg, scale } = planFor(project, room, 160, BODY_H - 8);
+    const rf = report.findings.filter((f) => f.roomId === room.id && f.severity !== 'ok');
+    pages.push({
+      title: roomTitle(room),
+      subtitle: `${roomSubtitle(room)} · Draufsicht M 1:${scale}`,
+      body: `<div class="col" style="width:165mm"><div class="planbox" style="flex:1">${svg}</div>${legendHtml}</div>
+<div class="col" style="flex:1">${roomDataHtml(project, room)}<h3>Prüfpunkte</h3>${findingsHtml(rf, 4)}</div>`,
+    });
+    for (const [i, part] of chunk(rows, 20).entries()) {
+      pages.push({
+        title: `${roomTitle(room)} – Dosentabelle`,
+        subtitle: i ? '(Fortsetzung)' : roomSubtitle(room),
+        body: `<div class="col" style="flex:1">${boxTableHtml(project, room, part, true)}<p class="small">${esc(elevationLegendText())} „Pl.“ = Dosenplätze (↔ waagerecht, ↕ senkrecht, Achsabstand ${fmt(project.settings.boxPitch * 10, 0)} mm). Bohrung Ø ${fmt(project.settings.boxDrill * 10, 0)} mm.</p></div>`,
+      });
+    }
+    // Wandabwicklungen: bevorzugt M 1:25; zwei kurze/niedrige Wände je Seite, sonst eine
+    const walls = wallGeoms(room);
+    const elevH = (len: number, sc: number) => ({ w: ((len + 42 * (sc / 10)) * 10) / sc, h: ((room.height + 45 * (sc / 10)) * 10) / sc });
+    const pickElevScale = (len: number, maxH: number) => [20, 25, 50, 75, 100].find((sc) => elevH(len, sc).w <= BODY_W && elevH(len, sc).h <= maxH) ?? 100;
+    let i = 0;
+    while (i < walls.length) {
+      const a = walls[i];
+      const b = walls[i + 1];
+      const half = (BODY_H - 8) / 2;
+      const twoFit = b && pickElevScale(a.length, half) <= 25 && pickElevScale(b.length, half) <= 25;
+      const group = twoFit ? [a, b] : [a];
+      const maxH = twoFit ? half : BODY_H - 6;
+      const svgs = group.map((w) => {
+        const sc = pickElevScale(w.length, maxH);
+        return `<div class="planbox" style="height:${maxH}mm"><div style="display:flex;flex-direction:column;align-items:center">${renderElevation(project, room, w.index, { scale: sc })}<span class="small">M 1:${sc} · ${esc(elevationLegendText())}</span></div></div>`;
+      });
+      pages.push({
+        title: `${roomTitle(room)} – Wandabwicklung`,
+        subtitle: `Wand ${group.map((w) => w.index + 1).join(' und ')} · ${roomSubtitle(room)}`,
+        body: `<div class="col" style="flex:1">${svgs.join('')}</div>`,
+      });
+      i += group.length;
+    }
+  }
+
+  return wrapPages(project, kind, pages);
+}
