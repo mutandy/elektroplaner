@@ -206,7 +206,7 @@ export const NORM_RULES: Rule[] = [
     scope: 'projekt',
     check: (ctx) => {
       const out: { severity: Severity; message: string; ref?: string; roomId?: string; outletId?: string }[] = [];
-      for (const room of ctx.project.rooms) for (const o of room.outlets.filter((x) => /wallbox|ladestation/i.test(x.note) || room.loads.some((l) => l.outletId === x.id && /wallbox/i.test(l.label)))) {
+      for (const room of ctx.project.rooms) for (const o of room.outlets.filter((x) => x.status !== 'bestand_bleibt' && x.status !== 'bestand_entfaellt').filter((x) => /wallbox|ladestation/i.test(x.note) || room.loads.some((l) => l.outletId === x.id && /wallbox/i.test(l.label)))) {
         const c = ctx.project.circuits.find((x) => x.id === o.circuitId);
         if (o.kind !== 'festanschluss') out.push({ severity: 'hinweis', outletId: o.id, roomId: room.id, ref: o.label, message: `Wallbox ${o.label}: Wallboxen werden fest angeschlossen – die Zuleitung geht direkt ins Gerät, nicht über eine ${o.kind === 'anschlussdose' ? 'Geräteanschlussdose' : 'Dose'}. Auslass-Typ auf „Festanschluss“ ändern.` });
         if (!c) { out.push({ severity: 'warnung', message: `${o.label} (Wallbox) hat noch keinen Stromkreis.` }); continue; }

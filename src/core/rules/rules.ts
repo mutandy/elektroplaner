@@ -416,7 +416,7 @@ export const RULES: Rule[] = [
     check: (_ctx, room) => {
       if (!room) return [];
       const powered = ['steckdose', 'schalter', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom', 'bewegungsmelder'];
-      const missing = room.outlets.filter((o) => powered.includes(o.kind) && !o.circuitId && o.status !== 'bestand_entfaellt' && !(o.kind === 'schalter' && o.smart));
+      const missing = room.outlets.filter((o) => powered.includes(o.kind) && !o.circuitId && o.status !== 'bestand_entfaellt' && o.status !== 'bestand_bleibt' && !(o.kind === 'schalter' && o.smart));
       if (!missing.length) return [];
       return [{ severity: 'hinweis', message: `${room.name}: ${missing.length} Auslass/Auslässe noch ohne Stromkreis (${missing.map((m) => m.label).join(', ')}).` }];
     },

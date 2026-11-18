@@ -250,7 +250,7 @@ export function proposeCircuits(project: Project, mode: 'offen' | 'alle' = 'offe
   };
 
   const rooms = project.rooms.filter((r) => r.inScope);
-  const open = (o: Outlet) => POWERED.includes(o.kind) && o.status !== 'bestand_entfaellt' && (mode === 'alle' || !o.circuitId) && !(o.kind === 'schalter' && o.smart && !o.inserts.length);
+  const open = (o: Outlet) => POWERED.includes(o.kind) && o.status !== 'bestand_entfaellt' && o.status !== 'bestand_bleibt' && (mode === 'alle' || !o.circuitId) && !(o.kind === 'schalter' && o.smart && !o.inserts.length);
   const distOf = (r: Room) => r.distributionId ?? project.distributions.find((d) => d.kind === 'UV' && d.roomId === r.id)?.id ?? hv.id;
   const isKitchen = (r: Room) => /küche|kueche/i.test(`${r.name} ${r.usage}`);
   const isBath = (r: Room) => r.wetRoom && /bad|dusche|wc/i.test(`${r.name} ${r.usage}`);

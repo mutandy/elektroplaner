@@ -4,7 +4,7 @@
  * Fachdetails bleiben in der Expertenansicht und hinter „Genauer angeben“.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Draft } from 'immer';
+import { produce, type Draft } from 'immer';
 import {
   Armchair, Bath, BedDouble, BedSingle, Baby, Box, Briefcase, Building, Building2, Car, Check, ChevronLeft, CookingPot, Cpu, DoorOpen, Dumbbell,
   Film, Footprints, Gamepad2, Hammer, Home, House, Layers, LayoutGrid, Lightbulb, Package, Plus, Ruler, Square, Toilet, Trash2, Trees, Upload,
@@ -21,6 +21,8 @@ import { proposeCircuits, applyCircuitProposal } from '../../core/planning/circu
 import { runRules } from '../../core/rules/rules';
 import { fmt, isRectRoom, roomArea } from '../../core/geometry/room';
 import { SWITCH_PROGRAMS } from '../../core/model/catalog';
+import { outletKindLabel } from '../../core/model/labels';
+import type { Outlet } from '../../core/model/schema';
 import { store } from '../store';
 import { upRoom } from '../views/RoomView';
 import { RoomPlan } from '../components/PlanCanvas';
@@ -320,14 +322,6 @@ function QuestionView({ project, q, room, next }: { project: Project; q: Questio
           {['Technikraum', 'Keller', 'Flur', 'Abstellraum', 'Büro', 'Wohnzimmer'].map((l) => <Chip key={l} label={l} selected={project.network.rackLocation === l} onClick={() => pick(`Router: ${l}`, (p) => { p.network.rackLocation = l; })} />)}
         </Chips>
       </Q>;
-    case 'p.bestand': {
-      const items = ['Heizung', 'Wallbox', 'Klingel', 'Treppenhauslicht', 'Außenbeleuchtung', 'Photovoltaik'];
-      const toggle = (l: string) => up(`Bleibt: ${l}`, (p) => { p.keepAsIs = p.keepAsIs.includes(l) ? p.keepAsIs.filter((x) => x !== l) : [...p.keepAsIs, l]; });
-      return <Q title="Bleibt etwas, wie es ist?" hint="Tippe alles an, was schon fertig ist und nicht neu geplant wird.">
-        <Chips>{items.map((l) => <Chip key={l} label={l} selected={project.keepAsIs.includes(l)} onClick={() => toggle(l)} />)}</Chips>
-      </Q>;
-    }
-
     // --- Grundriss -----------------------------------------------------------
     case 'g.plan':
       return floor ? <PlanQuestion project={project} floorId={floor.id} next={next} /> : null;
@@ -411,6 +405,8 @@ function QuestionView({ project, q, room, next }: { project: Project; q: Questio
     // --- Vorschläge -------------------------------------------------------------
     case 'v.dosen':
       return <OutletsQuestion project={project} />;
+    case 'v.vorhanden':
+      return <ExistingQuestion project={project} />;
     case 'v.kreise':
       return <CircuitsQuestion project={project} />;
     case 'fertig':
@@ -665,16 +661,59 @@ function OutletsQuestion({ project }: { project: Project }) {
   </Q>;
 }
 
+/** Große Anschlüsse zuerst: daran entscheidet sich, ob neu geplant wird. */
+const BIG_KINDS: Outlet['kind'][] = ['festanschluss', 'anschlussdose', 'herd', 'starkstrom'];
+
+function ExistingQuestion({ project }: { project: Project }) {
+  const rooms = project.rooms.filter((r) => r.inScope && r.outlets.some((o) => o.status === 'neu' || o.status === 'bestand_bleibt'));
+  const toggle = (room: Room, o: Outlet) => upRoom(room.id, `${room.name}: ${o.label} ${o.status === 'bestand_bleibt' ? 'wird neu' : 'schon vorhanden'}`, (r) => {
+    const x = r.outlets.find((y) => y.id === o.id);
+    if (!x) return;
+    if (x.status === 'bestand_bleibt') x.status = 'neu';
+    else { x.status = 'bestand_bleibt'; x.circuitId = undefined; } // hängt an einem bestehenden Stromkreis
+  });
+  const name = (room: Room, o: Outlet) => room.loads.find((l) => l.outletId === o.id)?.label ?? (o.note.split(/[–(,]/)[0].trim() || outletKindLabel[o.kind]);
+  const row = (room: Room, o: Outlet) => (
+    <Tile key={o.id} icon={BIG_KINDS.includes(o.kind) ? Zap : Square} label={name(room, o)} hint={`${o.label}, ${outletKindLabel[o.kind]}`}
+      badge={o.status === 'bestand_bleibt' ? 'Schon vorhanden' : undefined} selected={o.status === 'bestand_bleibt'} onClick={() => toggle(room, o)} />
+  );
+  const kept = project.rooms.flatMap((r) => r.outlets).filter((o) => o.status === 'bestand_bleibt').length;
+  return <Q title="Ist davon schon etwas installiert?" hint="Tippe an, was schon da ist und so bleibt. Dafür plant das Programm keine neue Leitung, kein Material und keinen neuen Stromkreis.">
+    {rooms.map((room) => {
+      const big = room.outlets.filter((o) => (o.status === 'neu' || o.status === 'bestand_bleibt') && (BIG_KINDS.includes(o.kind) || room.loads.some((l) => l.outletId === o.id && l.dedicated)));
+      const rest = room.outlets.filter((o) => (o.status === 'neu' || o.status === 'bestand_bleibt') && !big.includes(o));
+      return (
+        <div key={room.id} className="hub-section">
+          <div className="hub-h"><h2>{room.name}</h2></div>
+          {big.length > 0 && <Tiles cols={1}>{big.map((o) => row(room, o))}</Tiles>}
+          {rest.length > 0 && <More label={`Alle anderen Auslässe (${rest.length})`}><Tiles cols={2}>{rest.map((o) => row(room, o))}</Tiles></More>}
+        </div>
+      );
+    })}
+    {!rooms.length && <Note>Noch nichts geplant. Zuerst die Vorschläge für Dosen und Licht übernehmen.</Note>}
+    {kept > 0 && <Note>{kept} Auslass{kept === 1 ? '' : 'lässe'} als vorhanden markiert.</Note>}
+  </Q>;
+}
+
+/** Ohne erfasste Verteilung kann nichts zugeordnet werden: dann eine Hauptverteilung als Annahme anlegen. */
+function withHv(p: Project | Draft<Project>) {
+  if (!p.distributions.some((d) => d.kind === 'HV' || d.kind === 'Zaehlerschrank')) {
+    p.distributions.push({ id: newId('hv'), name: 'Hauptverteilung (HV)', kind: 'HV', feedCable: '', feedFuse: '', mainFuse: '', netForm: 'unbekannt', meter: '', freeModules: 0, breakers: [], rcds: [], hasSpd: false, photos: [], note: 'angenommen, Standort noch offen' } as any);
+  }
+}
+
 function CircuitsQuestion({ project }: { project: Project }) {
-  const prop = proposeCircuits(project, 'offen');
-  const open = project.rooms.flatMap((r) => r.outlets).filter((o) => !o.circuitId && ['steckdose', 'schalter', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom'].includes(o.kind)).length;
+  const noHv = !project.distributions.some((d) => d.kind === 'HV' || d.kind === 'Zaehlerschrank');
+  const prop = useMemo(() => proposeCircuits(noHv ? produce(project, (d) => { withHv(d); }) : project, 'offen'), [project, noHv]);
+  const open = project.rooms.flatMap((r) => r.outlets).filter((o) => !o.circuitId && o.status !== 'bestand_bleibt' && o.status !== 'bestand_entfaellt' && ['steckdose', 'schalter', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom'].includes(o.kind)).length;
   return <Q title="Stromkreise einteilen" hint="Das Programm verteilt die Dosen auf Sicherungen und FI-Schalter und prüft den Platz im Sicherungskasten.">
     <div className="a-facts">
       <div><span>Stromkreise</span><b className="a-figure">{project.circuits.length}</b></div>
       <div><span>Ohne Stromkreis</span><b className="a-figure">{open}</b></div>
     </div>
+    {noHv && open > 0 && <Note>Der Sicherungskasten ist noch nicht erfasst. Das Programm nimmt eine Hauptverteilung an; Standort und freie Plätze kannst du später nachtragen.</Note>}
     {open > 0
-      ? <button className="primary a-big" onClick={() => up('Stromkreisvorschlag übernommen (offen)', (p) => applyCircuitProposal(p as Project, prop, 'offen'))}><Check size={20} aria-hidden /> Vorschlag übernehmen ({prop.circuits.length} neue Kreise)</button>
+      ? <button className="primary a-big" onClick={() => up('Stromkreisvorschlag übernommen (offen)', (p) => { withHv(p); applyCircuitProposal(p as Project, proposeCircuits(p as Project, 'offen'), 'offen'); })}><Check size={20} aria-hidden /> Vorschlag übernehmen ({prop.circuits.filter((c) => !project.circuits.some((x) => x.id === c.id)).length} neue Kreise)</button>
       : <Note>Alle Dosen sind einem Stromkreis zugeordnet.</Note>}
     <button className="a-big" onClick={() => store.setUi({ view: 'verteilung' })}>Stromkreise im Detail ansehen</button>
   </Q>;

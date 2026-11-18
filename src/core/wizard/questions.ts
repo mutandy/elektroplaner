@@ -20,10 +20,10 @@ export const sectionLabel: Record<Section, string> = {
 
 export type QuestionKey =
   | 'p.art' | 'p.name' | 'p.gebaeude' | 'p.bundesland' | 'p.geschosse' | 'p.verlegung' | 'p.boden' | 'p.schalter'
-  | 'p.verteilung' | 'p.platz' | 'p.fi' | 'p.smart' | 'p.smartsystem' | 'p.netzwerk' | 'p.bestand'
+  | 'p.verteilung' | 'p.platz' | 'p.fi' | 'p.smart' | 'p.smartsystem' | 'p.netzwerk'
   | 'g.plan' | 'r.raeume'
   | 'raum.typ' | 'raum.masse' | 'raum.oeffnungen' | 'raum.waende' | 'raum.decke' | 'raum.fbh' | 'raum.leitungsweg' | 'raum.geraete' | 'raum.bestand' | 'raum.check'
-  | 'v.dosen' | 'v.kreise' | 'fertig';
+  | 'v.dosen' | 'v.vorhanden' | 'v.kreise' | 'fertig';
 
 export interface Question {
   /** eindeutig, wird in wizard.done gespeichert */
@@ -41,7 +41,8 @@ function skip(project: Project, key: QuestionKey, room?: Room): boolean {
   const bestand = project.projectType !== 'neubau';
   switch (key) {
     case 'p.smartsystem': return !project.smartHome.enabled;
-    case 'p.bestand': return !bestand;
+    // Was schon installiert ist, wird gefragt, wenn klar ist, was geplant wird
+    case 'v.vorhanden': return !bestand;
     case 'raum.bestand': return !bestand;
     // Mit dem Aufmaß Schritt für Schritt sind Türen/Fenster schon erfasst
     case 'raum.oeffnungen': return false;
@@ -59,7 +60,7 @@ export function roomQuestions(project: Project, room: Room): Question[] {
 export function questionList(project: Project): Question[] {
   const q = (key: QuestionKey, section: Section, extra: Partial<Question> = {}): Question => ({ id: extra.id ?? key, key, section, ...extra });
   const out: Question[] = [];
-  for (const key of ['p.art', 'p.name', 'p.gebaeude', 'p.bundesland', 'p.geschosse', 'p.verlegung', 'p.boden', 'p.schalter', 'p.verteilung', 'p.platz', 'p.fi', 'p.smart', 'p.smartsystem', 'p.netzwerk', 'p.bestand'] as QuestionKey[]) {
+  for (const key of ['p.art', 'p.name', 'p.gebaeude', 'p.bundesland', 'p.geschosse', 'p.verlegung', 'p.boden', 'p.schalter', 'p.verteilung', 'p.platz', 'p.fi', 'p.smart', 'p.smartsystem', 'p.netzwerk'] as QuestionKey[]) {
     if (!skip(project, key)) out.push(q(key, 'projekt'));
   }
   for (const f of project.floors) out.push(q('g.plan', 'grundriss', { id: `g.plan:${f.id}`, floorId: f.id }));
@@ -67,7 +68,9 @@ export function questionList(project: Project): Question[] {
     out.push(q('r.raeume', 'raeume', { id: `r.raeume:${f.id}`, floorId: f.id }));
     for (const r of project.rooms.filter((x) => x.floorId === f.id && x.inScope)) out.push(...roomQuestions(project, r));
   }
-  out.push(q('v.dosen', 'vorschlaege'), q('v.kreise', 'vorschlaege'), q('fertig', 'fertig'));
+  out.push(q('v.dosen', 'vorschlaege'));
+  if (!skip(project, 'v.vorhanden')) out.push(q('v.vorhanden', 'vorschlaege'));
+  out.push(q('v.kreise', 'vorschlaege'), q('fertig', 'fertig'));
   return out;
 }
 
