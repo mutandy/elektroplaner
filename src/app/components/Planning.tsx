@@ -11,6 +11,7 @@ import { Field, NumberInput, Select, opts, EditTable, type Col } from './ui';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 import { loadsForType, roomPower, projectDemand, kw, circuitPower, circuitCapacity } from '../../core/planning/loads';
 import { newId } from '../../core/model/factory';
+import { routingFeasibility, routeOptionLabel, type Verdict, type RouteOption } from '../../core/planning/feasibility';
 
 function acceptSuggestions(room: Room, list: Suggestion[]) {
   store.update(`${room.name}: ${list.length} Vorschlag/Vorschläge übernommen`, (p) => {
@@ -59,14 +60,16 @@ export function SuggestionsPanel({ project, room }: { project: Project; room: Ro
 export function RoutingPanel({ project, room }: { project: Project; room: Room }) {
   const rr = useMemo(() => computeRoomRoutes(project, room), [project, room]);
   const t = routeTotals(rr);
-  const auto = resolveStrategy({ ...room, routing: { ...room.routing, strategy: 'auto' } });
+  const auto = resolveStrategy({ ...room, routing: { ...room.routing, strategy: 'auto' } }, project);
   const entry = defaultEntry(room);
   const set = (text: string, fn: (r: Room['routing']) => void) => store.update(`${room.name}: ${text}`, (p) => fn(p.rooms.find((x) => x.id === room.id)!.routing as any));
   return (
     <div>
+      <FeasibilityPanel project={project} room={room} compact />
+      <h4>Feineinstellung</h4>
       <div className="grid3">
         <Field label="Leitungsweg" hint={room.routing.strategy === 'auto' ? `automatisch: ${auto.reason}` : undefined}>
-          <Select value={room.routing.strategy} options={opts({ auto: `automatisch (${auto.strategy})`, boden: 'Bodenschlitz vor der Wand', decke: 'über Decke / Deckenhohlraum', wand_waagerecht: 'waagerechte Wandschlitze oben', aufputz: 'Aufputz unter der Decke' })} onChange={(v) => v && set('Leitungsweg', (r) => { r.strategy = v as any; })} />
+          <Select value={room.routing.strategy} options={opts({ auto: `automatisch (${auto.strategy})`, boden: 'Bodenschlitz vor der Wand', decke: 'über Decke / Deckenhohlraum', sockelleiste: 'Sockelleisten-Kabelkanal', wand_waagerecht: 'waagerechte Wandschlitze oben', aufputz: 'Aufputz unter der Decke' })} onChange={(v) => v && set('Leitungsweg', (r) => { r.strategy = v as any; })} />
         </Field>
         <Field label="Bodentrasse: Abstand vor der Wand (cm)"><NumberInput value={room.routing.floorOffset} onChange={(v) => v && set('Abstand Bodentrasse', (r) => { r.floorOffset = v; })} /></Field>
         <Field label="Aufputz: Abstand unter der Decke (cm)"><NumberInput value={room.routing.surfaceBelowCeiling} onChange={(v) => v && set('Abstand Aufputz', (r) => { r.surfaceBelowCeiling = v; })} /></Field>
@@ -187,6 +190,59 @@ export function DemandSummary({ project }: { project: Project }) {
       <p>Installiert: <b>{kw(d.installed)}</b> · gleichzeitig geschätzt: <b>{kw(d.simultaneous)}</b>{d.mainFuse ? <> · Hauptsicherung {d.mainFuse.phases}× {d.mainFuse.amps} A ≈ {kw(d.mainFuse.watts)} → <b className={d.ratio! > 0.8 ? 'sev-warnung' : ''}>{fmt(d.ratio! * 100, 0)} %</b></> : ' · Hauptsicherung nicht erfasst'}</p>
       <p className="muted">Größte Verbraucher: {d.biggest.map((b) => `${b.label} (${b.room}, ${kw(b.power)})`).join(' · ')}</p>
       <p className="muted">Schätzung (größter Verbraucher voll, weitere anteilig) – die Bemessung nach DIN 18015-1 macht die Elektrofachkraft.</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Leitungswege: was ist möglich?
+// ---------------------------------------------------------------------------
+
+const verdictIcon: Record<Verdict, string> = { ja: '✔', bedingt: '?', nein: '✖' };
+const optionStrategy: Record<RouteOption, Room['routing']['strategy']> = { boden: 'boden', decke: 'decke', decke_abhaengen: 'decke', sockelleiste: 'sockelleiste', wand_waagerecht: 'wand_waagerecht', aufputz: 'aufputz' };
+
+export function FeasibilityPanel({ project, room, compact }: { project: Project; room: Room; compact?: boolean }) {
+  const f = routingFeasibility(project, room);
+  const o = room.routingOptions;
+  const set = (text: string, fn: (r: Room) => void) => store.update(`${room.name}: ${text}`, (p) => fn(p.rooms.find((x) => x.id === room.id) as Room));
+  const tri = (v: 'ja' | 'nein' | 'unbekannt', onChange: (v: 'ja' | 'nein' | 'unbekannt') => void) => (
+    <span className="seg">{(['ja', 'nein', 'unbekannt'] as const).map((x) => <button key={x} className={v === x ? 'active' : ''} onClick={() => onChange(x)}>{x === 'unbekannt' ? 'weiß nicht' : x}</button>)}</span>
+  );
+  const chosen: string = room.routing.strategy === 'auto' ? 'auto' : room.routing.strategy === 'decke' && o.ceilingSuspend === 'ja' && !(room.ceiling.cavityDepth > 0 || room.ceiling.slotsAllowed) ? 'decke_abhaengen' : room.routing.strategy;
+  return (
+    <div className="feas">
+      {!compact && <p className="muted small">Lichte Höhe heute (über künftigem Fertigfußboden): <b>{fmt(f.clearHeight)} cm</b> · Mindesthöhe {room.roomType ? 'für diesen Raum' : ''}: {fmt(f.minHeight)} cm (Landesbauordnung ⚠). Boden und Decke stammen aus den Schritten davor.</p>}
+      <div className="qgrid">
+        <span>Darf/soll die Decke abgehängt werden?</span>
+        <span>{tri(o.ceilingSuspend, (v) => set('Decke abhängen', (r) => { r.routingOptions.ceilingSuspend = v; }))} <span className="muted small">Aufbau</span> <NumberInput width="4.5em" value={o.suspendDepth} onChange={(v) => v && set('Abhängehöhe', (r) => { r.routingOptions.suspendDepth = v; })} /> <span className="muted small">cm → lichte Höhe {fmt(f.clearHeight - o.suspendDepth)} cm</span></span>
+        <span>Sind sichtbare Leitungen (Aufputz-Rohr/Kanal) in Ordnung?</span>
+        <span>{tri(o.surfaceAccepted, (v) => set('Aufputz akzeptiert', (r) => { r.routingOptions.surfaceAccepted = v; }))}</span>
+        <span>Ist ein Sockelleisten-Kabelkanal in Ordnung?</span>
+        <span>{tri(o.skirtingAccepted, (v) => set('Sockelleistenkanal', (r) => { r.routingOptions.skirtingAccepted = v; }))}</span>
+        <span>Dürfen Wände waagerecht geschlitzt werden? <span className="muted small">(Statik – meist nein)</span></span>
+        <span className="checks">{room.walls.map((w) => <label key={w.index} className="check small"><input type="checkbox" checked={w.horizontalSlotsAllowed} onChange={(e) => set(`W${w.index + 1} waagerecht`, (r) => { r.walls[w.index].horizontalSlotsAllowed = e.target.checked; })} />W{w.index + 1}</label>)}</span>
+      </div>
+      <table className="findings">
+        <thead><tr><th /><th>Leitungsweg</th><th>Bewertung</th><th>Wahl</th></tr></thead>
+        <tbody>
+          <tr className={chosen === 'auto' ? 'selected' : ''}><td /><td><b>Automatisch</b></td><td className="small">Empfehlung: {f.recommended ? `${routeOptionLabel[f.recommended.option]}${f.recommended.verdict === 'bedingt' ? ' (bedingt)' : ''}` : 'keiner möglich'}</td>
+            <td><input type="radio" checked={chosen === 'auto'} onChange={() => set('Leitungsweg automatisch', (r) => { r.routing.strategy = 'auto'; })} /></td></tr>
+          {f.options.map((x) => (
+            <tr key={x.option} className={chosen === x.option ? 'selected' : ''}>
+              <td className={`verdict v-${x.verdict}`}>{verdictIcon[x.verdict]}</td>
+              <td><b>{routeOptionLabel[x.option]}</b></td>
+              <td className="small">{x.reasons.join(' ')}</td>
+              <td><input type="radio" disabled={x.verdict === 'nein'} checked={chosen === x.option} onChange={() => set(`Leitungsweg ${routeOptionLabel[x.option]}`, (r) => { r.routing.strategy = optionStrategy[x.option]; if (x.option === 'decke_abhaengen') r.routingOptions.ceilingSuspend = 'ja'; })} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="inline">
+        {!o.answered
+          ? <button className="primary" onClick={() => set('Leitungswege bestätigt', (r) => { r.routingOptions.answered = true; })}>✔ So passt es</button>
+          : <span className="ok small">✔ bestätigt</span>}
+        <button className="small" onClick={() => store.update(`Leitungsweg-Antworten von ${room.name} auf das Geschoss übertragen`, (p) => { for (const r of p.rooms.filter((x) => x.floorId === room.floorId && x.id !== room.id && x.inScope)) r.routingOptions = { ...room.routingOptions, answered: false }; })}>Antworten für alle Räume im Geschoss übernehmen</button>
+      </div>
     </div>
   );
 }

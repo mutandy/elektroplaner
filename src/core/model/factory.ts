@@ -88,6 +88,11 @@ const migrations: Record<number, (p: any) => any> = {
     });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
+  // v5 → v6: Leitungsweg-Möglichkeiten je Raum (Standard „unbekannt“).
+  5: (p) => {
+    const up = (core: any) => ({ ...core, schemaVersion: 6 });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

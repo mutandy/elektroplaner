@@ -42,12 +42,16 @@ Ein neues Projekt beginnt immer im Assistenten. Er fragt Schritt für Schritt un
 1. **Projekt:** Art des Vorhabens, Gebäude und **alle Geschosse mit Geschosshöhe** (Schnellanlage KG/EG/OG/DG), Höhenbezug und üblicher Bodenaufbau, Installationsart und Schalterprogramm, Zähler und Verteilung (freie Sicherungen, FI/RCD, Unterverteilungen), was unverändert bleibt, Smart Home, Netzwerk.
 2. **Grundrisse je Geschoss (optional):** Bild hochladen, Maßstab über ein bekanntes Maß festlegen (zwei Punkte anklicken, Länge eingeben).
 3. **Räume je Geschoss anlegen:** Bezeichnung im Bestandsplan, künftiger Name, **Nutzung (Raumtyp)**. Mit Grundriss lässt sich jeder Raum darauf aufziehen; Lage und ungefähre Größe werden übernommen.
-4. **Je Raum:** zuerst **Nutzung und Verbraucher** (Raumtyp wählen → typische Geräte mit Leistung, z. B. Kochfeld 11 kW Drehstrom, Waschmaschine 2,2 kW mit eigenem Kreis; anpassbar), dann Maße und Höhe (auch Kamin/Vorsprung in einer Ecke), Wände, Türen (Bänder, Aufschlag, Brandschutz), Fenster, Vorwand/Tabuzonen/Hindernisse, Boden (Aufbau, Bodenschlitze, Folientiefe), Decke, Möbel und Geräte, Bestandsleitungen (nur im Bestand), Zusammenfassung zum Bestätigen.
+4. **Je Raum:** zuerst **Nutzung und Verbraucher** (Raumtyp wählen → typische Geräte mit Leistung, z. B. Kochfeld 11 kW Drehstrom, Waschmaschine 2,2 kW mit eigenem Kreis; anpassbar), dann Maße und Höhe (auch Kamin/Vorsprung in einer Ecke), Wände, Türen (Bänder, Aufschlag, Brandschutz), Fenster, Vorwand/Tabuzonen/Hindernisse, Boden (Aufbau, Bodenschlitze, Folientiefe), Decke, **Leitungswege: was ist möglich?**, Möbel und Geräte, Bestandsleitungen (nur im Bestand), Zusammenfassung zum Bestätigen.
 5. **Abschluss:** Liste aller offenen Punkte mit Sprung zum jeweiligen Schritt.
 
 Jeder Schritt erklärt unter „Warum wird das gefragt?“, wozu die Angabe dient. „Weiß ich noch nicht – später“ überspringt einen Schritt; der Punkt bleibt als offen markiert. Der Fortschritt wird im Projekt gespeichert. Der Assistent schreibt in dieselben Daten wie die Expertenansicht.
 
 Pläne sind oft nicht maßhaltig (Foto schräg, Zeichnung ungenau). Deshalb nutzt das Programm den Grundriss nur als Vorlage für die Lage. Verbindlich sind die vor Ort gemessenen Maße, die im Schritt „Maße und Höhe“ abgefragt werden.
+
+### Leitungswege: was ist möglich?
+
+Je Raum fragt der Assistent, was baulich geht und was gewünscht ist: Decke abhängen (mit Aufbauhöhe → lichte Höhe danach gegen die Mindesthöhe der Landesbauordnung), Estrichdicke und Lage von Folie/Dämmung (→ mögliche Bodenschlitztiefe gegen die nötige Tiefe), Aufputz sichtbar ok?, Sockelleisten-Kabelkanal ok?, waagerechte Wandschlitze je Wand. Daraus bewertet das Programm jeden Weg mit ✔/?/✖ und Begründung (z. B. „Decke abhängen: lichte Höhe danach 213,9 cm < 240 cm – Raum wird zu niedrig“) und empfiehlt den sinnvollsten; du bestätigst oder wählst einen anderen. Die Antworten lassen sich auf alle Räume eines Geschosses übertragen. Der Schlitzplan zeigt die Abwägung je Raum.
 
 ### Empfehlungen (Etappe 2)
 
@@ -55,7 +59,7 @@ Nach der Erfassung schlägt das Programm vor – nichts davon wird ohne Zustimmu
 
 * **Auslässe:** Schalter an jeder Tür (Griffseite, 15 cm neben Zarge; bei 3+ Türen Taster), Deckenlicht, Rauchwarnmelder, Steckdosen/Anschlüsse aus Möbeln und Geräten (Bett, Schreibtisch, TV, Rack, Küchenzeile, Kühlschrank, Spülmaschine, Herd, Waschtisch, Werkbank, Waschmaschine, Wallbox, Beamer …), fehlende Steckdosen je Wand nach Ausstattungswert. Positionen meiden Türöffnung, Türblatt, Fenster, Tabuzonen und Ecken; in Vorwänden wird automatisch die Hohlwanddose gewählt. Jeder Vorschlag wird vorab gegen die Regeln geprüft.
 * **Stromkreise:** Großgeräte und Drehstrom eigener Kreis, Küche zwei Arbeitsflächenkreise, Bad und AV/Technik getrennt, Steckdosen je Raum (max. 8 Plätze), Licht getrennt (bis 3 Räume), Außenbereich mit Erdkabel, Wallbox mit eigenem RCD. Verteilung auf RCDs (max. 4 je RCD, Licht und Steckdosen eines Raums möglichst getrennt), Abgleich mit den freien LS; fehlende LS und RCD werden benannt.
-* **Leitungswege je Raum:** automatisch Aufputz → Bodenschlitz → Decke → waagerechte Wandschlitze (je Raum änderbar). Alle Leitungen kommen an einer Einspeisung neben der Haupttür an (Durchbruch, bei Brandabschnitt mit Abschottungshinweis) und laufen auf einer gemeinsamen Trasse nebeneinander – dadurch kreuzungsfrei und einlagig. Bodenschlitze 12 cm vor der Wand, senkrechte Stiche zu den Dosen; in Vorwänden/Baffle-Wänden im Hohlraum ohne Schlitz, darüber Schlitz ab Vorwand-Oberkante; Lautsprecher sternförmig zum AV-Rack; waagerechte Wandschlitze nicht in Stürze; Aufputztrasse bei niedrigen Räumen knapp über dem höchsten Sturz.
+* **Leitungswege je Raum:** nach der Machbarkeit (siehe oben) – Bodenschlitz, Decke/Hohlraum, abgehängte Decke, Sockelleistenkanal, waagerechte Wandschlitze oder Aufputz (je Raum änderbar). Alle Leitungen kommen an einer Einspeisung neben der Haupttür an (Durchbruch, bei Brandabschnitt mit Abschottungshinweis) und laufen auf einer gemeinsamen Trasse nebeneinander – dadurch kreuzungsfrei und einlagig. Bodenschlitze 12 cm vor der Wand, senkrechte Stiche zu den Dosen; in Vorwänden/Baffle-Wänden im Hohlraum ohne Schlitz, darüber Schlitz ab Vorwand-Oberkante; Lautsprecher sternförmig zum AV-Rack; waagerechte Wandschlitze nicht in Stürze; Aufputztrasse bei niedrigen Räumen knapp über dem höchsten Sturz.
 * **Schlitzmaße** aus den Kabeldurchmessern (Breite = Summe + Abstände, Tiefe = dickstes Kabel + Überdeckung), geprüft gegen die erlaubte Bodenschlitztiefe und die Schlitztiefen ohne statischen Nachweis.
 * **Leitungslängen** je Verbindung (Kette Verteilung → Raum → Auslass → Auslass, LAN sternförmig zum Netzwerkschrank) inkl. Reserven und Zuschlag; **Spannungsfall** je Stromkreis (konservativ mit Nennstrom am Kreisende).
 
@@ -109,6 +113,7 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   wizard/steps.ts      Assistent: Schrittfolge, fehlende Angaben, Fortschritt
   planning/cables.ts   Kabelkatalog (Durchmesser, Gebinde), Leerrohr/Stecker-Prüfung
   planning/suggest.ts  Auslass-Vorschläge
+  planning/feasibility.ts  Machbarkeit der Leitungswege je Raum (mit Begründung)
   planning/routes.ts   Leitungswege je Raum: Schlitze, Stiche, Bohrungen, Durchbrüche
   planning/circuits.ts Leitungslängen, Spannungsfall, Stromkreisvorschlag
   planning/prices.ts   Richtpreise (änderbar)

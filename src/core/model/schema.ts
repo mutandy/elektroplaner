@@ -21,7 +21,7 @@
 import { z } from 'zod';
 import { ROOM_TYPES } from './roomTypes';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -447,7 +447,23 @@ export const RoutingStrategy = z.enum([
   'wand_waagerecht',
   /** Aufputz: Rohr/Kanal ca. 20 cm unter der Decke, senkrecht zu den Auslässen. */
   'aufputz',
+  /** Sockelleisten-Kabelkanal am Boden, Stiche senkrecht zu den Dosen. */
+  'sockelleiste',
 ]);
+
+/** Was ist in diesem Raum für Leitungswege möglich bzw. gewünscht? */
+export const RoutingOptions = z.object({
+  /** Darf/soll die Decke abgehängt werden (neuer Hohlraum)? */
+  ceilingSuspend: z.enum(['ja', 'nein', 'unbekannt']).default('unbekannt'),
+  /** Benötigte Abhängehöhe (Unterkonstruktion + Platte), cm */
+  suspendDepth: z.number().positive().default(8),
+  /** Sichtbare Aufputz-Leitungen (Rohr/Kanal) akzeptabel? */
+  surfaceAccepted: z.enum(['ja', 'nein', 'unbekannt']).default('unbekannt'),
+  /** Sockelleisten-Kabelkanal akzeptabel? */
+  skirtingAccepted: z.enum(['ja', 'nein', 'unbekannt']).default('unbekannt'),
+  /** Vom Nutzer bewusst geprüft/beantwortet */
+  answered: z.boolean().default(false),
+});
 
 export const RoomRouting = z.object({
   strategy: RoutingStrategy.default('auto'),
@@ -496,6 +512,7 @@ export const Room = z.object({
   heightOverrides: DefaultHeights.partial().default({}),
   distributionId: z.string().optional(),
   routing: RoomRouting.default({}),
+  routingOptions: RoutingOptions.default({}),
   /** Abgelehnte Auslass-Vorschläge (Schlüssel), damit sie nicht wiederkommen. */
   dismissedSuggestions: z.array(z.string()).default([]),
   /** Der Nutzer hat die Raum-Zusammenfassung bestätigt. */
@@ -663,6 +680,7 @@ export type SmartHomeSystem = z.infer<typeof SmartHomeSystem>;
 export type InstallationType = z.infer<typeof InstallationType>;
 export type WizardState = z.infer<typeof WizardState>;
 export type RoutingStrategy = z.infer<typeof RoutingStrategy>;
+export type RoutingOptions = z.infer<typeof RoutingOptions>;
 export type FloorLevel = z.infer<typeof FloorLevel>;
 export type CostSettings = z.infer<typeof CostSettings>;
 export type Load = z.infer<typeof Load>;

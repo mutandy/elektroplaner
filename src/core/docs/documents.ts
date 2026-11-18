@@ -23,6 +23,7 @@ import { RULES } from '../rules/rules';
 import { projectDemand, kw, circuitPower } from '../planning/loads';
 import { capacityChecks, LAYING_LABEL } from '../rules/norms';
 import { ROOM_TYPE_INFO } from '../model/roomTypes';
+import { routingFeasibility, routeOptionLabel } from '../planning/feasibility';
 
 export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan' | 'material' | 'kosten' | 'aufgaben' | 'pruefprotokoll';
 
@@ -354,14 +355,15 @@ function slotPlanRoomPages(project: Project, room: Room, rr: RoomRoutes, pages: 
   const layers: Layer[] = ['230v', 'daten', 'licht', 'beschriftung', 'masse', 'trassen'];
   const { svg, scale } = planFor(project, room, 150, BODY_H - 8, layers);
   const t = routeTotals(rr);
-  const fsRows = rr.floorSlots.map((f) => `<tr><td><b>${f.id}</b></td><td>W${f.wallIndex + 1}</td><td class="num">${fmt(f.sFrom)} → ${fmt(f.sTo)}</td><td class="num">${fmt(room.routing.floorOffset)}</td><td class="num">${fmt(f.length)}</td><td class="num">${f.inCavity ? '–' : `${f.width} × ${f.depth}`}</td><td>${f.inCavity ? 'im Vorwand-Hohlraum, kein Schlitz' : f.crossesDoor ? 'quert Türöffnung (Schwelle)' : ''}</td><td class="small">${esc(f.cables.join(', '))}</td></tr>`).join('');
+  const fsRows = rr.floorSlots.map((f) => `<tr><td><b>${f.id}</b></td><td>W${f.wallIndex + 1}</td><td class="num">${fmt(f.sFrom)} → ${fmt(f.sTo)}</td><td class="num">${fmt(room.routing.floorOffset)}</td><td class="num">${fmt(f.length)}</td><td class="num">${f.inCavity ? '–' : `${f.width} × ${f.depth}`}</td><td>${f.duct ? 'im Sockelleistenkanal' : f.inCavity ? 'im Vorwand-Hohlraum, kein Schlitz' : f.crossesDoor ? 'quert Türöffnung (Schwelle)' : ''}</td><td class="small">${esc(f.cables.join(', '))}</td></tr>`).join('');
   const wsRows = rr.wallSlots.map((w) => `<tr><td><b>${w.id}</b></td><td>W${w.wallIndex + 1}</td><td>${w.orientation}</td><td class="num">${w.orientation === 'senkrecht' ? fmt(w.s) : `${fmt(w.s)} → ${fmt(w.sTo)}`}</td><td class="num">${fmt(w.zFrom)} – ${fmt(w.zTo)}</td><td class="num">${w.width} × ${w.depth}</td><td>${w.inVerticalZone ? '✔' : 'außerhalb'}</td><td class="small">${esc(w.cables.join(', '))}</td></tr>`).join('');
-  const strat: Record<string, string> = { boden: 'Bodenschlitz-Trasse vor der Wand, senkrechte Stiche', decke: 'über Decke/Deckenhohlraum, Stiche von oben', wand_waagerecht: 'waagerechte Wandschlitze in der oberen Zone', aufputz: 'Aufputz (Rohr/Kanal) unter der Decke', keine: 'kein Leitungsweg möglich' };
+  const strat: Record<string, string> = { boden: 'Bodenschlitz-Trasse vor der Wand, senkrechte Stiche', decke: 'über Decke/Deckenhohlraum, Stiche von oben', wand_waagerecht: 'waagerechte Wandschlitze in der oberen Zone', aufputz: 'Aufputz (Rohr/Kanal) unter der Decke', sockelleiste: 'Sockelleisten-Kabelkanal, Stiche ab Kanaloberkante', keine: 'kein Leitungsweg möglich' };
   pages.push({
     title: `${room.name} – Schlitzplan`,
     subtitle: `${roomSubtitle(room)} · M 1:${scale}`,
     body: `<div class="col" style="width:155mm"><div class="planbox" style="flex:1">${svg}</div><div class="legend"><span style="color:#b45309">▬ Bodenschlitz (Breite maßstäblich)</span><span style="color:#b45309">■ Wandschlitz</span><span style="color:#7c3aed">┄ Decke</span><span style="color:#047857">▬ Aufputz</span><span style="color:#b45309">⊗ Durchbruch</span></div></div>
 <div class="col" style="flex:1"><dl class="kv"><dt>Leitungsweg</dt><dd>${esc(strat[rr.strategy])} (${esc(rr.strategyReason)})</dd>
+<dt>Abwägung</dt><dd class="small">${routingFeasibility(project, room).options.map((o) => `${o.verdict === 'ja' ? '✔' : o.verdict === 'nein' ? '✖' : '?'} ${esc(routeOptionLabel[o.option])}${o.verdict === 'nein' ? ` (${esc(o.reasons[0])})` : ''}`).join('<br>')}</dd>
 <dt>Höhenbezug</dt><dd>${esc(project.settings.heightReference.label)}; Bodenaufbau +${fmt(futureBuildup(room))} cm</dd>
 <dt>Boden</dt><dd>${room.floor.slotsAllowed ? `Schlitztiefe max. ${fmt(room.floor.maxSlotDepth * 10, 0)} mm (Folie ab ${fmt(room.floor.protectedLayerDepth)} cm)` : 'keine Bodenschlitze'}</dd>
 <dt>Summen</dt><dd>${fmt(t.floorSlotM, 2)} m Bodenschlitz · ${fmt(t.wallSlotM, 2)} m Wandschlitz${t.surfaceM ? ` · ${fmt(t.surfaceM, 1)} m Aufputz` : ''} · ${t.drillUP} UP-Bohrungen · ${t.drillHollow} Hohlwand · ${t.surfaceBoxes} Aufputzdosen · ${t.drillCeiling} Decke · ${t.penetrations} Durchbruch</dd></dl>

@@ -6,7 +6,7 @@
       "properties": {
         "schemaVersion": {
           "type": "number",
-          "const": 5
+          "const": 6
         },
         "id": {
           "type": "string",
@@ -258,6 +258,13 @@
               "type": "object",
               "additionalProperties": {
                 "type": "number"
+              },
+              "default": {}
+            },
+            "confirmedNorms": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
               },
               "default": {}
             },
@@ -1336,7 +1343,8 @@
                       "boden",
                       "decke",
                       "wand_waagerecht",
-                      "aufputz"
+                      "aufputz",
+                      "sockelleiste"
                     ],
                     "default": "auto"
                   },
@@ -1366,6 +1374,49 @@
                       "s"
                     ],
                     "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false,
+                "default": {}
+              },
+              "routingOptions": {
+                "type": "object",
+                "properties": {
+                  "ceilingSuspend": {
+                    "type": "string",
+                    "enum": [
+                      "ja",
+                      "nein",
+                      "unbekannt"
+                    ],
+                    "default": "unbekannt"
+                  },
+                  "suspendDepth": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 8
+                  },
+                  "surfaceAccepted": {
+                    "type": "string",
+                    "enum": [
+                      "ja",
+                      "nein",
+                      "unbekannt"
+                    ],
+                    "default": "unbekannt"
+                  },
+                  "skirtingAccepted": {
+                    "type": "string",
+                    "enum": [
+                      "ja",
+                      "nein",
+                      "unbekannt"
+                    ],
+                    "default": "unbekannt"
+                  },
+                  "answered": {
+                    "type": "boolean",
+                    "default": false
                   }
                 },
                 "additionalProperties": false,
@@ -1885,7 +1936,7 @@
                 "properties": {
                   "schemaVersion": {
                     "type": "number",
-                    "const": 5
+                    "const": 6
                   },
                   "id": {
                     "type": "string",
@@ -2137,6 +2188,13 @@
                         "type": "object",
                         "additionalProperties": {
                           "type": "number"
+                        },
+                        "default": {}
+                      },
+                      "confirmedNorms": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
                         },
                         "default": {}
                       },
@@ -3215,7 +3273,8 @@
                                 "boden",
                                 "decke",
                                 "wand_waagerecht",
-                                "aufputz"
+                                "aufputz",
+                                "sockelleiste"
                               ],
                               "default": "auto"
                             },
@@ -3245,6 +3304,49 @@
                                 "s"
                               ],
                               "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false,
+                          "default": {}
+                        },
+                        "routingOptions": {
+                          "type": "object",
+                          "properties": {
+                            "ceilingSuspend": {
+                              "type": "string",
+                              "enum": [
+                                "ja",
+                                "nein",
+                                "unbekannt"
+                              ],
+                              "default": "unbekannt"
+                            },
+                            "suspendDepth": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 8
+                            },
+                            "surfaceAccepted": {
+                              "type": "string",
+                              "enum": [
+                                "ja",
+                                "nein",
+                                "unbekannt"
+                              ],
+                              "default": "unbekannt"
+                            },
+                            "skirtingAccepted": {
+                              "type": "string",
+                              "enum": [
+                                "ja",
+                                "nein",
+                                "unbekannt"
+                              ],
+                              "default": "unbekannt"
+                            },
+                            "answered": {
+                              "type": "boolean",
+                              "default": false
                             }
                           },
                           "additionalProperties": false,

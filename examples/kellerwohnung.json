@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -431,6 +431,13 @@
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
       },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
       "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
@@ -806,6 +813,13 @@
         "strategy": "auto",
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
       },
       "dismissedSuggestions": [],
       "confirmed": false,
@@ -1297,6 +1311,13 @@
         "strategy": "auto",
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
       },
       "dismissedSuggestions": [],
       "confirmed": false,
@@ -1894,6 +1915,13 @@
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
       },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
       "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
@@ -2237,6 +2265,13 @@
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
       },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
       "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
@@ -2579,6 +2614,13 @@
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
       },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
       "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
@@ -2725,6 +2767,13 @@
         "strategy": "auto",
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
       },
       "dismissedSuggestions": [],
       "confirmed": false,
@@ -2986,6 +3035,13 @@
         "strategy": "auto",
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
       },
       "dismissedSuggestions": [],
       "confirmed": false,
@@ -3327,6 +3383,13 @@
         "strategy": "auto",
         "floorOffset": 12,
         "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
       },
       "dismissedSuggestions": [],
       "confirmed": false,

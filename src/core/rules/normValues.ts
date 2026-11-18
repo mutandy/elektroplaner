@@ -58,6 +58,10 @@ export const NORM_VALUES: NormValue[] = [
   v('spannungsfall.kappa', 56, 'm/(Ω·mm²)', 'Leitfähigkeit Kupfer (bei 20 °C; warm ca. 48)', 'Physik', false),
   v('stromkreis.maxSteckdosen', 8, 'Plätze', 'Steckdosenplätze je Stromkreis (Richtwert)', 'Praxisregel / DIN 18015-2', false),
   v('stromkreis.maxJeRcd', 4, 'Stromkreise', 'Stromkreise je RCD (Fehlerfall: Ausfall begrenzen)', 'Praxisregel / DIN 18015-1', false),
+  // Raumhöhen (Landesbauordnung, je Bundesland abweichend)
+  v('raum.minHoeheAufenthalt', 240, 'cm', 'Lichte Mindesthöhe Aufenthaltsraum (u. a. Keller-/Dachräume teils 2,20–2,30 m)', 'Landesbauordnung – je Bundesland prüfen'),
+  v('raum.minHoeheNebenraum', 200, 'cm', 'Lichte Mindesthöhe Nebenraum (Praxis, Durchgangshöhe)', 'Praxisregel', false),
+  v('boden.minUeberdeckungKabel', 10, 'mm', 'Mindestüberdeckung über dem Kabel im Bodenschlitz', 'Praxisregel', false),
   // Bad (DIN VDE 0100-701)
   v('bad.bereich2', 60, 'cm', 'Schutzbereich 2: Breite um Wanne/Dusche', 'DIN VDE 0100-701'),
   v('bad.hoehe', 225, 'cm', 'Schutzbereiche 1/2: Höhe über FFB', 'DIN VDE 0100-701'),

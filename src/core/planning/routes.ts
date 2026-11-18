@@ -18,8 +18,12 @@ import { boxCenters, doorHandleSide, futureBuildup, pointOnWall, wallGeoms, wall
 import { normValue } from '../rules/normValues';
 import { cableById } from './cables';
 import { outletKindLabel } from '../model/labels';
+import { routingFeasibility, routeOptionLabel } from './feasibility';
 
 export type ResolvedStrategy = Exclude<RoutingStrategy, 'auto'>;
+
+/** Oberkante Sockelleisten-Kabelkanal über FFB (cm) */
+const DUCT_TOP = 8;
 
 export interface FloorSlot {
   id: string;
@@ -33,8 +37,10 @@ export interface FloorSlot {
   width: number; // mm
   depth: number; // mm
   cables: string[]; // Auslass-Labels
-  /** Liegt im Hohlraum einer Vorwand/Baffle – kein Schlitz nötig. */
+  /** Liegt im Hohlraum einer Vorwand/Baffle bzw. im Sockelleistenkanal – kein Schlitz nötig. */
   inCavity: boolean;
+  /** Sockelleistenkanal statt Schlitz */
+  duct?: boolean;
   crossesDoor: boolean;
 }
 
@@ -150,9 +156,14 @@ export function outletCable(project: Project, o: Outlet): string {
   return 'NYM-J 3×2,5';
 }
 
-export function resolveStrategy(room: Room): { strategy: ResolvedStrategy | 'keine'; reason: string } {
+export function resolveStrategy(room: Room, project?: Project): { strategy: ResolvedStrategy | 'keine'; reason: string; option?: string } {
   const want = room.routing.strategy;
   if (want !== 'auto') return { strategy: want, reason: 'vom Nutzer festgelegt' };
+  if (project) {
+    const f = routingFeasibility(project, room);
+    if (!f.recommended) return { strategy: 'keine', reason: 'kein Leitungsweg möglich – Decke, Boden, Wände und Aufputz sind ausgeschlossen' };
+    return { strategy: f.recommended.strategy, option: f.recommended.option, reason: `${routeOptionLabel[f.recommended.option]}${f.recommended.verdict === 'bedingt' ? ' (bedingt)' : ''}: ${f.recommended.reasons[0]}` };
+  }
   if (room.installationType.startsWith('aufputz')) return { strategy: 'aufputz', reason: 'Aufputz-Installation' };
   if (room.floor.slotsAllowed && !room.floor.underfloorHeating) return { strategy: 'boden', reason: 'Bodenschlitze erlaubt (Wände waagerecht und Decke werden geschont)' };
   if (room.ceiling.slotsAllowed || room.ceiling.cavityDepth > 0 || room.ceiling.construction === 'abgehaengt' || room.ceiling.construction === 'holzbalken') return { strategy: 'decke', reason: 'Decke als Kabelweg nutzbar' };
@@ -190,7 +201,10 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
   const fb = futureBuildup(room);
   const H = room.height;
   const settings = project.settings;
-  const { strategy, reason } = resolveStrategy(room);
+  const { strategy, reason, option } = resolveStrategy(room, project);
+  const suspended = option === 'decke_abhaengen' || room.routingOptions.ceilingSuspend === 'ja';
+  const floorLike = strategy === 'boden' || strategy === 'sockelleiste';
+  const duct = strategy === 'sockelleiste';
   const entryWS = defaultEntry(room);
   const issues: RouteIssue[] = [];
   const res: RoomRoutes = {
@@ -199,6 +213,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
     floorSlots: [], wallSlots: [], surfaceRuns: [], ceilingRuns: [], drillings: [], penetrations: [], paths: [], issues, perimeter: P,
   };
   const tEntry = tOf(entryWS.wallIndex, entryWS.s);
+  if (reason.includes('(bedingt)') && room.outlets.some(needsCable)) issues.push({ severity: 'hinweis', message: `${room.name}: Leitungsweg nur bedingt geklärt – ${reason}. Bitte unter „Leitungswege“ bestätigen.` });
 
   // ---- Bohrungen (unabhängig vom Leitungsweg) --------------------------------
   for (const o of room.outlets) {
@@ -289,7 +304,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
 
   // Abschnitte der Trasse mit ihren Kabeln sammeln
   const usage: { iv: [number, number]; label: string }[] = [];
-  const offset = room.routing.floorOffset;
+  const offset = strategy === 'sockelleiste' ? 1.5 : room.routing.floorOffset;
 
   // Lautsprecher laufen sternförmig zum AV-Rack (falls im Raum), alles andere zur Einspeisung
   const rack = room.furniture.find((f) => f.kind === 'rack');
@@ -311,7 +326,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
     const wantsCeiling = tg.ceiling || strategy === 'decke';
     if (wantsCeiling && strategy !== 'aufputz') {
       // Weg über die Decke
-      const ceilingOk = room.ceiling.slotsAllowed || room.ceiling.cavityDepth > 0 || room.ceiling.construction === 'abgehaengt' || room.ceiling.construction === 'holzbalken';
+      const ceilingOk = room.ceiling.slotsAllowed || room.ceiling.cavityDepth > 0 || room.ceiling.construction === 'abgehaengt' || room.ceiling.construction === 'holzbalken' || suspended;
       if (!ceilingOk) {
         issues.push({ severity: 'fehler', outletId: tg.o.id, message: `${tg.o.label} (${outletKindLabel[tg.o.kind]}): neuer Deckenauslass, aber die Decke darf nicht geschlitzt werden und hat keinen Hohlraum. Bestandsauslass nutzen oder Aufputz/Leuchte an der Wand.` });
         res.paths.push({ outletId: tg.o.id, label: tg.o.label, t: tg.t, fromEntry: 0, along: 0, vertical: 0, source: 'einspeisung', z: H, routed: false });
@@ -328,8 +343,8 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
         const cav = cavityAt(tg.wi!, tg.s!);
         if (!cav || (cav.height ?? H) < H) res.wallSlots.push({ id: '', wallIndex: tg.wi!, orientation: 'senkrecht', s: tg.s!, sTo: tg.s!, zFrom: Math.max(tg.zHigh, cav ? cav.height ?? H : 0), zTo: H, width: 0, depth: 0, cables: [tg.o.label], inVerticalZone: true });
       }
-      res.paths.push({ outletId: tg.o.id, label: tg.o.label, t: tg.t, fromEntry: len + vertical + (strategy === 'boden' ? H : 0), along: len, vertical: vertical + (strategy === 'boden' ? H : 0), source: src === rackSrc ? 'rack' : 'einspeisung', z: H, routed: true });
-      if (strategy === 'boden') {
+      res.paths.push({ outletId: tg.o.id, label: tg.o.label, t: tg.t, fromEntry: len + vertical + (floorLike ? H : 0), along: len, vertical: vertical + (floorLike ? H : 0), source: src === rackSrc ? 'rack' : 'einspeisung', z: H, routed: true });
+      if (floorLike) {
         // Steigschlitz an der Einspeisung (bzw. am Rack) vom Boden bis in die Decke
         const cav = cavityAt(src.wi, src.s);
         if (!cav || (cav.height ?? H) < H) res.wallSlots.push({ id: '', wallIndex: src.wi, orientation: 'senkrecht', s: src.s, sTo: src.s, zFrom: cav ? cav.height ?? H : 0, zTo: H, width: 0, depth: 0, cables: [tg.o.label], inVerticalZone: true });
@@ -345,13 +360,14 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
     for (const x of iv) usage.push({ iv: x, label: tg.o.label });
     const along = iv.reduce((s, [a, b]) => s + (b - a), 0);
     let vertical: number;
-    if (strategy === 'boden') {
+    if (floorLike) {
       vertical = tg.zLow + 2 * offset;
-      // In einer Vorwand läuft die Leitung im Hohlraum hoch; darüber Wandschlitz ab Vorwand-Oberkante
+      // In einer Vorwand läuft die Leitung im Hohlraum hoch; darüber Wandschlitz ab Vorwand-Oberkante.
+      // Beim Sockelleistenkanal beginnt der Stich an der Kanaloberkante.
       const cav = cavityAt(tg.wi!, tg.s!);
-      const cavTop = cav ? cav.height ?? H : 0;
-      if (!cav || cavTop < tg.zLow) {
-        res.wallSlots.push({ id: '', wallIndex: tg.wi!, orientation: 'senkrecht', s: tg.s!, sTo: tg.s!, zFrom: cav ? cavTop : 0, zTo: tg.zLow, width: 0, depth: 0, cables: [tg.o.label], inVerticalZone: true });
+      const cavTop = cav ? cav.height ?? H : duct ? DUCT_TOP + fb : 0;
+      if (cavTop < tg.zLow) {
+        res.wallSlots.push({ id: '', wallIndex: tg.wi!, orientation: 'senkrecht', s: tg.s!, sTo: tg.s!, zFrom: cavTop, zTo: tg.zLow, width: 0, depth: 0, cables: [tg.o.label], inVerticalZone: true });
       }
     } else {
       vertical = Math.max(0, zTrack - tg.zHigh);
@@ -364,7 +380,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
         if (tg.ceiling) vertical = (H - zTrack) + Math.abs(tg.o.x! - p.x) + Math.abs(tg.o.y! - p.y);
       }
     }
-    res.paths.push({ outletId: tg.o.id, label: tg.o.label, t: tg.t, fromEntry: along + vertical, along, vertical, source: src === rackSrc ? 'rack' : 'einspeisung', z: strategy === 'boden' ? 0 : zTrack, routed: true });
+    res.paths.push({ outletId: tg.o.id, label: tg.o.label, t: tg.t, fromEntry: along + vertical, along, vertical, source: src === rackSrc ? 'rack' : 'einspeisung', z: floorLike ? 0 : zTrack, routed: true });
   }
 
   // ---- Trassenabschnitte zusammenfassen (je Wand, gleiche Kabelmenge) --------
@@ -373,7 +389,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
   for (const d of room.doors) { cuts.add(tOf(d.wallIndex, d.s)); cuts.add(tOf(d.wallIndex, d.s + d.width)); }
   for (const w of room.walls) for (const p of w.preWall) { cuts.add(tOf(w.index, p.from)); cuts.add(tOf(w.index, p.to)); }
   const pts = [...cuts].sort((a, b) => a - b);
-  const offPoly = offsetPolygon(room, strategy === 'boden' ? offset : 2);
+  const offPoly = offsetPolygon(room, floorLike ? offset : 2);
   const at = (t: number): { wi: number; s: number } => {
     let wi = cum.findIndex((c, i) => t >= c - 1e-6 && t <= c + ws[i].length + 1e-6);
     if (wi < 0) wi = ws.length - 1;
@@ -404,8 +420,8 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
   for (const pc of pieces) {
     const dims = slotDims(pc.cables, labelCable);
     const crossesDoor = room.doors.some((d) => d.wallIndex === pc.wi && pc.s1 < d.s + d.width && d.s < pc.s2);
-    if (strategy === 'boden') {
-      res.floorSlots.push({ id: '', wallIndex: pc.wi, sFrom: pc.s1, sTo: pc.s2, from: trackPoint(pc.wi, pc.s1), to: trackPoint(pc.wi, pc.s2), length: pc.s2 - pc.s1, ...dims, cables: pc.cables, inCavity: !!cavityAt(pc.wi, (pc.s1 + pc.s2) / 2), crossesDoor });
+    if (floorLike) {
+      res.floorSlots.push({ id: '', wallIndex: pc.wi, sFrom: pc.s1, sTo: pc.s2, from: trackPoint(pc.wi, pc.s1), to: trackPoint(pc.wi, pc.s2), length: pc.s2 - pc.s1, ...dims, cables: pc.cables, inCavity: duct || !!cavityAt(pc.wi, (pc.s1 + pc.s2) / 2), duct, crossesDoor });
     } else if (strategy === 'wand_waagerecht') {
       res.wallSlots.push({ id: '', wallIndex: pc.wi, orientation: 'waagerecht', s: pc.s1, sTo: pc.s2, zFrom: zTrack, zTo: zTrack, ...dims, cables: pc.cables, inVerticalZone: true });
     } else if (strategy === 'aufputz') {
@@ -431,7 +447,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
       const len = ws[sl.wallIndex].length;
       const edges = [0, len, ...room.doors.filter((x) => x.wallIndex === sl.wallIndex).flatMap((x) => [x.s, x.s + x.width]), ...room.windows.filter((x) => x.wallIndex === sl.wallIndex).flatMap((x) => [x.s, x.s + x.width])];
       sl.inVerticalZone = edges.some((e) => Math.abs(sl.s - e) >= vFrom - 0.5 && Math.abs(sl.s - e) <= vTo + 0.5);
-      const shortStub = strategy === 'boden' ? sl.zTo <= lowZoneTop + 5 : sl.zFrom >= H - fb - 45 - 5;
+      const shortStub = floorLike ? sl.zTo <= lowZoneTop + 5 : sl.zFrom >= H - fb - 45 - 5;
       if (!sl.inVerticalZone && !shortStub) issues.push({ severity: 'warnung', message: `Wandschlitz an ${wallName(room, sl.wallIndex)} bei ${fmt(sl.s)} cm (${sl.cables.join(', ')}) liegt außerhalb der senkrechten Installationszonen (DIN 18015-3).` });
       if (sl.depth / 10 > normValue(project, 'schlitz.senkrecht.maxTiefe')) issues.push({ severity: 'warnung', message: `Wandschlitz ${wallName(room, sl.wallIndex)} bei ${fmt(sl.s)} cm braucht ${sl.depth} mm Tiefe – mehr als ohne Nachweis zulässig (${fmt(normValue(project, 'schlitz.senkrecht.maxTiefe') * 10, 0)} mm). Leitungen aufteilen oder Statik fragen.` });
       if (sl.width / 10 > normValue(project, 'schlitz.senkrecht.maxBreite')) issues.push({ severity: 'warnung', message: `Wandschlitz ${wallName(room, sl.wallIndex)} bei ${fmt(sl.s)} cm wird ${sl.width} mm breit – über dem Richtwert ohne Nachweis.` });
@@ -446,7 +462,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
   for (const fs of res.floorSlots) {
     if (!fs.inCavity && fs.depth > maxDepthMm) issues.push({ severity: 'fehler', message: `Bodenschlitz entlang ${wallName(room, fs.wallIndex)} braucht ${fs.depth} mm Tiefe, erlaubt sind ${fmt(maxDepthMm, 0)} mm. Leitungen auf eine andere Trasse verteilen oder dünnere Leitungen wählen.` });
   }
-  if (res.floorSlots.some((f) => f.crossesDoor)) issues.push({ severity: 'hinweis', message: `${room.name}: Bodentrasse quert eine Türöffnung – Übergang unter der Türschwelle einplanen (Schutzrohr, Schwelle erst danach setzen).` });
+  if (res.floorSlots.some((f) => f.crossesDoor)) issues.push({ severity: 'hinweis', message: duct ? `${room.name}: Sockelleistenkanal endet an Türen – Querung im Boden unter der Schwelle (kurzer Schlitz/Schutzrohr) oder über die Türzarge.` : `${room.name}: Bodentrasse quert eine Türöffnung – Übergang unter der Türschwelle einplanen (Schutzrohr, Schwelle erst danach setzen).` });
 
   // ---- Durchbruch an der Einspeisung ----------------------------------------
   const all = targets.filter((t) => res.paths.find((p) => p.outletId === t.o.id)?.routed && !(t.o.kind === 'lautsprecher' && rackSrc));
@@ -456,7 +472,7 @@ export function computeRoomRoutes(project: Project, room: Room): RoomRoutes {
     const wall = room.walls[entryWS.wallIndex];
     const doorFire = room.doors.some((d) => d.wallIndex === entryWS.wallIndex && d.fireRating !== 'keine');
     const fire = doorFire || wall.zones.some((z) => z.kind === 'brandwand');
-    const z = strategy === 'boden' ? 5 + fb : strategy === 'decke' ? H - 10 : zTrack;
+    const z = floorLike ? 5 + fb : strategy === 'decke' ? H - 10 : zTrack;
     res.penetrations.push({ id: 'D1', wallIndex: entryWS.wallIndex, s: entryWS.s, z, diameter, cables: all.length, fireStop: fire, note: fire ? 'Brandabschnitt: zugelassene Abschottung (MLAR) – nur durch Fachbetrieb' : 'Durchbruch zum Nachbarraum, nach Verlegung verschließen' });
     res.entry.z = z;
   }

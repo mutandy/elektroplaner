@@ -188,3 +188,9 @@ table.edit tr.done td, .tasklist li.done > label span { opacity: .55; text-decor
 .floorcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
 .pill.sev-ok { background: var(--ok); color: #fff; }
 .pill.sev-aus { background: var(--muted); color: #fff; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: none; border-radius: 0; padding: 2px 10px; }
+.qgrid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; margin-bottom: 8px; }
+.verdict { font-weight: 800; text-align: center; }
+.v-ja { color: var(--ok); } .v-bedingt { color: var(--warn); } .v-nein { color: var(--err); }
+@media (max-width: 760px) { .qgrid { grid-template-columns: 1fr; } }

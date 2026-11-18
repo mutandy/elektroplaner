@@ -19,7 +19,7 @@ import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
 import { runRules } from '../../core/rules/rules';
-import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions, RoomTypeCards, LoadsEditor, DemandSummary } from '../components/Planning';
+import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions, RoomTypeCards, LoadsEditor, DemandSummary, FeasibilityPanel } from '../components/Planning';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 import { setRoomType } from '../components/Planning';
 import { suggestOutlets } from '../../core/planning/suggest';
@@ -87,7 +87,7 @@ export function Wizard({ project }: { project: Project }) {
             <h2>{step.title}</h2>
           </div>
           <div className="wiz-body">
-            {room && step.sub && !['zusammenfassung', 'nutzung', 'einrichtung'].includes(step.sub) ? (
+            {room && step.sub && !['zusammenfassung', 'nutzung', 'einrichtung', 'leitungsweg'].includes(step.sub) ? (
               <div className="wiz-split">
                 <div><RoomStep project={project} room={room} step={step} /></div>
                 <div className="wiz-preview"><RoomPlan project={project} room={room} layers={['moebel', '230v', 'daten', 'licht', 'beschriftung', 'masse']} /></div>
@@ -546,6 +546,11 @@ function RoomStep({ project, room, step }: { project: Project; room: Room; step:
     case 'decke': return <CeilingStep room={room} />;
     case 'nutzung': return <UsageStep project={project} room={room} />;
     case 'einrichtung': return <FurnitureStep project={project} room={room} />;
+    case 'leitungsweg': return (<>
+      <p>Wie können in <b>{room.name}</b> Leitungen geführt werden? Das Programm bewertet jeden Weg mit Begründung – du bestätigst oder wählst einen anderen.</p>
+      <FeasibilityPanel project={project} room={room} />
+      <Why>Die Wahl entscheidet über Schlitzplan, Material und Aufwand. Beispiel Keller: Die Decke ist eine Hohlkörperdecke (nicht schlitzen) und zum Abhängen zu niedrig – dann bleibt der Bodenschlitz im Estrich, sofern Folie/Dämmung tief genug liegen.</Why>
+    </>);
     case 'bestand': return <ExistingStep room={room} />;
     case 'zusammenfassung': return <SummaryTab project={project} room={room} findings={runRules(project, { roomId: room.id }).findings} />;
   }
@@ -749,6 +754,16 @@ function FloorStep({ project, room }: { project: Project; room: Room }) {
         { value: 'nein', label: 'Nein', hint: 'Leitungen über Wand/Decke' },
         { value: 'fbh', label: 'Fußbodenheizung', hint: 'Bodenschlitze ausgeschlossen' },
       ]} />
+      <div className="grid2">
+        <Field label="Wie dick ist der vorhandene Estrich? (cm)" hint="an einer Bodendose, Revisionsöffnung oder per Probebohrung messen">
+          <NumberInput nullable value={f.existingBelowRef.find((l) => /estrich/i.test(l.name))?.thickness ?? null} onChange={(v) => setF('Estrichdicke', (x) => {
+            const i = x.existingBelowRef.findIndex((l) => /estrich/i.test(l.name));
+            if (v == null) { if (i >= 0) x.existingBelowRef.splice(i, 1); return; }
+            if (i >= 0) x.existingBelowRef[i].thickness = v; else x.existingBelowRef.unshift({ name: 'Estrich (Bestand)', thickness: v });
+            if (x.protectedLayerDepth == null) x.protectedLayerDepth = v;
+          })} />
+        </Field>
+      </div>
       {f.slotsAllowed && (
         <div className="grid2">
           <Field label="In welcher Tiefe liegen Folie / Dämmung? (cm ab Bezug)" hint="Probebohrung an unauffälliger Stelle"><NumberInput nullable value={f.protectedLayerDepth} onChange={(v) => setF('Tiefe Folie', (x) => { x.protectedLayerDepth = v; if (v != null && (x.maxSlotDepth === 0 || x.maxSlotDepth > v - 1)) x.maxSlotDepth = Math.max(0, Math.min(2.5, v - 1)); })} /></Field>

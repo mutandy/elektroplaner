@@ -11,7 +11,7 @@ import { wallGeoms } from '../geometry/room';
 
 export type StepGroup = 'Projekt' | 'Grundriss' | 'Räume' | 'Empfehlungen' | 'Abschluss';
 
-export const ROOM_SUBSTEPS = ['nutzung', 'masse', 'waende', 'tueren', 'fenster', 'besonderheiten', 'boden', 'decke', 'einrichtung', 'bestand', 'zusammenfassung'] as const;
+export const ROOM_SUBSTEPS = ['nutzung', 'masse', 'waende', 'tueren', 'fenster', 'besonderheiten', 'boden', 'decke', 'leitungsweg', 'einrichtung', 'bestand', 'zusammenfassung'] as const;
 export type RoomSubstep = (typeof ROOM_SUBSTEPS)[number];
 
 export const roomSubstepLabel: Record<RoomSubstep, string> = {
@@ -24,6 +24,7 @@ export const roomSubstepLabel: Record<RoomSubstep, string> = {
   decke: 'Decke',
   nutzung: 'Nutzung und Verbraucher',
   einrichtung: 'Möbel und Geräte',
+  leitungsweg: 'Leitungswege: was ist möglich?',
   bestand: 'Bestandsleitungen',
   zusammenfassung: 'Zusammenfassung',
 };
@@ -123,6 +124,9 @@ export function missingForRoom(project: Project, room: Room, sub: RoomSubstep): 
       break;
     case 'nutzung':
       if (!room.roomType) m.push('Raumtyp (Nutzung)');
+      break;
+    case 'leitungsweg':
+      if (!room.routingOptions.answered) m.push('Leitungswege prüfen und bestätigen');
       break;
     case 'zusammenfassung':
       if (!room.confirmed) m.push('Zusammenfassung bestätigen');

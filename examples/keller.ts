@@ -367,6 +367,9 @@ export function buildKellerProject(): Project {
   const types: Record<string, RoomTypeId> = { flur: 'flur', bad: 'bad', kueche: 'kueche', heimkino: 'heimkino', partyraum: 'hobby', buero: 'gaeste', technik: 'technik', kellerraum: 'werkstatt', garage: 'garage' };
   const manual: Record<string, string> = { 'AV-Receiver / Verstärker': 'h15' };
   for (const r of rooms) {
+    // Leitungswege: Wohnräume ohne sichtbare Leitungen, Decke zu niedrig/nicht gewünscht; Nebenräume Aufputz
+    const ap = r.installationType.startsWith('aufputz');
+    r.routingOptions = { ceilingSuspend: 'nein', suspendDepth: 8, surfaceAccepted: ap ? 'ja' : 'nein', skirtingAccepted: 'nein', answered: true };
     r.roomType = types[r.id];
     if (!r.roomType) continue;
     r.loads = loadsForType(r.roomType).map((l, i) => {

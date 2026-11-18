@@ -47,16 +47,24 @@ describe('Leitungswege', () => {
   });
 
   it('zu tiefer Bodenschlitz wird als Fehler gemeldet', () => {
-    const p = produce(bodenProject([sd({ label: 'H1', kind: 'herd', s: 300, inserts: ['geraeteanschluss'] })]), (d) => { d.rooms[0].floor.maxSlotDepth = 1.5; d.rooms[0].floor.protectedLayerDepth = 3; });
+    const p = produce(bodenProject([sd({ label: 'H1', kind: 'herd', s: 300, inserts: ['geraeteanschluss'] })]), (d) => { d.rooms[0].floor.maxSlotDepth = 1.5; d.rooms[0].floor.protectedLayerDepth = 3; d.rooms[0].routing.strategy = 'boden'; });
     const rr = computeRoomRoutes(p, p.rooms[0]);
     expect(rr.issues.some((i) => i.severity === 'fehler' && /Bodenschlitz/.test(i.message))).toBe(true);
   });
 
-  it('kein Leitungsweg, wenn nichts freigegeben ist', () => {
+  it('nichts freigegeben → Decke abhängen „bedingt“ (Raum hoch genug); alles abgelehnt → kein Leitungsweg (Fehler)', () => {
     const p = produce(miniProject(), (d) => { d.rooms[0].outlets.push(sd({ label: 'A1' }) as any); });
     const rr = computeRoomRoutes(p, p.rooms[0]);
-    expect(rr.strategy).toBe('keine');
-    expect(runRules(p).findings.some((f) => f.ruleId === 'TRASSE' && f.severity === 'fehler')).toBe(true);
+    expect(rr.strategy).toBe('decke');
+    expect(rr.strategyReason).toMatch(/abhängen/);
+    expect(rr.paths[0].routed).toBe(true);
+    // niedriger Raum: Abhängen scheidet aus
+    const low = produce(p, (d) => { d.rooms[0].height = 240; });
+    expect(computeRoomRoutes(low, low.rooms[0]).strategy).toBe('sockelleiste'); // Abhängen scheidet aus, Kanal vor sichtbarem Aufputz
+    expect(rr.issues.some((i) => /bedingt/.test(i.message))).toBe(true);
+    const none = produce(p, (d) => { d.rooms[0].routingOptions.surfaceAccepted = 'nein'; d.rooms[0].routingOptions.skirtingAccepted = 'nein'; d.rooms[0].routingOptions.ceilingSuspend = 'nein'; });
+    expect(computeRoomRoutes(none, none.rooms[0]).strategy).toBe('keine');
+    expect(runRules(none).findings.some((f) => f.ruleId === 'TRASSE' && f.severity === 'fehler')).toBe(true);
   });
 
   it('waagerechte Wandschlitze laufen nicht über den Türsturz', () => {
@@ -167,5 +175,31 @@ describe('Schlitzplan', () => {
     expect(html).toMatch(/WS1/);
     expect(html).toContain('Bohrungen und Durchbrüche');
     expect(html).toContain('zementärem Reparaturmörtel');
+  });
+});
+
+describe('Machbarkeit der Leitungswege', () => {
+  it('Kellerwohnung: Decke zu niedrig zum Abhängen → Bodenschlitz im Estrich', async () => {
+    const { routingFeasibility } = await import('../src/core/planning/feasibility');
+    const p = produce(example(), (d) => { d.rooms.find((r) => r.id === 'heimkino')!.routingOptions.ceilingSuspend = 'unbekannt'; });
+    const f = routingFeasibility(p, p.rooms.find((r) => r.id === 'heimkino')!);
+    expect(f.options.find((o) => o.option === 'decke_abhaengen')!.verdict).toBe('nein');
+    expect(f.options.find((o) => o.option === 'decke_abhaengen')!.reasons[0]).toMatch(/zu niedrig/);
+    expect(f.options.find((o) => o.option === 'boden')!.verdict).toBe('ja');
+    expect(f.recommended!.option).toBe('boden');
+  });
+
+  it('Estrich zu dünn bzw. Folie zu flach → Bodenschlitz nicht möglich', async () => {
+    const { routingFeasibility } = await import('../src/core/planning/feasibility');
+    const p = produce(bodenProject([]), (d) => { d.rooms[0].floor.maxSlotDepth = 1.2; });
+    expect(routingFeasibility(p, p.rooms[0]).options.find((o) => o.option === 'boden')!.verdict).toBe('nein');
+  });
+
+  it('Sockelleistenkanal: Trasse im Kanal ohne Bodenschlitz, Stiche ab Kanaloberkante', () => {
+    const p = produce(bodenProject([sd({ label: 'A1', s: 300, z: 30 })]), (d) => { d.rooms[0].routing.strategy = 'sockelleiste'; });
+    const rr = computeRoomRoutes(p, p.rooms[0]);
+    expect(rr.floorSlots.every((f) => f.inCavity && f.duct)).toBe(true);
+    expect(routeTotals(rr).floorSlotM).toBe(0);
+    expect(rr.wallSlots[0].zFrom).toBe(8);
   });
 });
