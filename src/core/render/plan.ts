@@ -275,13 +275,16 @@ export function renderFloorOverview(project: Project, floorId: string, opts: { s
   for (const r of rooms) {
     const pts = r.polygon.map((p) => ({ x: p.x + r.originOnFloor.x, y: p.y + r.originOnFloor.y }));
     const c = { x: pts.reduce((a, p) => a + p.x, 0) / pts.length, y: pts.reduce((a, p) => a + p.y, 0) / pts.length };
+    // Schrift an schmale Räume anpassen (≈ 0,58 × Schriftgröße je Zeichen)
+    const rb = bbox(pts);
+    const fit = (txt: string, max: number) => Math.min(max, ((rb.maxX - rb.minX) * 0.9) / (txt.length * 0.58));
     parts.push(g({ 'data-room': r.id }, [
       title(`${r.name}${r.formerName && r.formerName !== r.name ? ` (Bestand: ${r.formerName})` : ''} – ${fmt(roomArea(r), 2)} m²`),
       el('path', { d: pathOf(pts), class: 'wall', 'stroke-width': 3 * u }),
       el('path', { d: pathOf(pts), class: 'room', style: r.inScope ? undefined : 'opacity:.6' }),
       el('circle', { cx: pts[0].x, cy: pts[0].y, r: 1.5 * u, class: 'origin', 'stroke-width': 0.5 * u }),
-      text(c.x, c.y - 1.8 * u, r.name, { class: 'ink', 'font-size': 3 * u, 'font-weight': 700, 'text-anchor': 'middle' }),
-      r.formerName && r.formerName !== r.name ? text(c.x, c.y + 2.2 * u, `Bestand: ${r.formerName}`, { class: 'muted', 'font-size': 2.2 * u, 'text-anchor': 'middle' }) : '',
+      text(c.x, c.y - 1.8 * u, r.name, { class: 'ink', 'font-size': fit(r.name, 3 * u), 'font-weight': 700, 'text-anchor': 'middle' }),
+      r.formerName && r.formerName !== r.name ? text(c.x, c.y + 2.2 * u, `Bestand: ${r.formerName}`, { class: 'muted', 'font-size': fit(`Bestand: ${r.formerName}`, 2.2 * u), 'text-anchor': 'middle' }) : '',
       text(c.x, c.y + 5.6 * u, `${fmt(roomArea(r), 1)} m²${r.inScope ? '' : ' · nicht geplant'}`, { class: 'muted', 'font-size': 2 * u, 'text-anchor': 'middle' }),
     ].join('')));
   }

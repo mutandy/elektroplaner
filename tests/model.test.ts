@@ -9,7 +9,7 @@ describe('Datenmodell', () => {
     const p = example();
     expect(p.schemaVersion).toBe(SCHEMA_VERSION);
     expect(p.rooms.map((r) => r.name)).toContain('Heimkino');
-    expect(p.rooms.find((r) => r.id === 'heimkino')!.formerName).toBe('Waschküche');
+    expect(p.rooms.find((r) => r.id === 'heimkino')!.formerName).toBe('KELLER ③ (oben rechts)');
   });
 
   it('Rundreise Export → Import verändert nichts', () => {

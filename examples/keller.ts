@@ -1,9 +1,9 @@
 /**
  * Beispielprojekt „Kellerwohnung“ (Bestand, Teilsanierung).
  *
- * Raummaße stammen aus der Aufgabenstellung. Lage der Räume zueinander, Türen,
- * Fenster, Vorwand-Abschnitte und Bestandsbezeichnungen sind ANNAHMEN
- * (provenance: 'annahme') und werden durch den echten Grundriss ersetzt.
+ * Raummaße = Aufmaß. Lage, Öffnungen und Bestandsbezeichnungen nach dem
+ * Bestandsplan Kellergeschoss ('aus_plan'). Noch angenommen ('annahme'):
+ * Treppenhaus-/Partyraumtür, Standort HV, Kellerraum mit UV, Garage.
  */
 import { createProject, createRectRoom, createPolygonRoom } from '../src/core/model/factory';
 import type { Project, Room } from '../src/core/model/schema';
@@ -41,7 +41,6 @@ const A = 'annahme' as const;
 
 export function buildKellerProject(): Project {
   const KG = 'geschoss_kg';
-  const EG = 'geschoss_eg';
   const p = createProject({
     id: 'beispiel_kellerwohnung',
     name: 'Beispiel: Kellerwohnung mit Garage',
@@ -62,7 +61,6 @@ export function buildKellerProject(): Project {
     network: { rackLocation: 'Heimkino, AV-Rack', poeAccessPoints: 1 },
     floors: [
       { id: KG, name: 'Kellergeschoss', level: -1 },
-      { id: EG, name: 'Erdgeschoss / Garage', level: 0 },
     ],
     settings: {
       heightReference: { label: 'OK Estrich (Bestand)', description: 'Alle Höhen ab heutiger Oberkante Estrich. Künftiger Aufbau (1,5 cm) ist je Raum eingerechnet.' },
@@ -117,44 +115,49 @@ export function buildKellerProject(): Project {
   });
 
   const rooms: Room[] = [];
+  /*
+   * Lage nach Bestandsplan Kellergeschoss (Außenmaß 18,00 × 10,50 m; Nullpunkt
+   * des Geschosses = Außenecke oben links, Außenwände 30 cm, Innenwände 12/24 cm).
+   * Raummaße = Aufmaß vor Ort; Lage im Geschoss daraus abgeleitet.
+   */
+  const PLAN = 'aus_plan' as const;
 
-  // ---------------- Flur 438 × 125 × 225 ----------------
+  // ---------------- Flur 438 × 125 × 225 (Plan: FLUR, schraffiert) ----------------
   rooms.push(createRectRoom({
-    id: 'flur', floorId: KG, name: 'Flur', formerName: 'Kellerflur', usage: 'Flur (führt zu Gästezimmer)',
-    width: 438, depth: 125, height: 225, originOnFloor: { x: 0, y: 340 },
+    id: 'flur', floorId: KG, name: 'Flur', formerName: 'FLUR', usage: 'Flur (führt zu Gästezimmer)',
+    width: 438, depth: 125, height: 225, originOnFloor: { x: 975, y: 380 },
     wallDefaults: bims, floor: kellerFloor, ceiling: hourdis, provenance: 'gemessen',
-    walls: [{ index: 0, label: 'zu Bad/Küche' }, { index: 1, label: 'zu Büro/Gäste' }, { index: 2, label: 'zu Heimkino/Partyraum' }, { index: 3, label: 'Treppe' }],
+    walls: [{ index: 0, label: 'zu Bad/Küche' }, { index: 1, label: 'zu Heimkino' }, { index: 2, label: 'zu Treppenhaus/Büro' }, { index: 3 }],
     doors: [
-      { id: 'flur_t_treppe', wallIndex: 3, s: 32, width: 76, hinge: 'rechts', swing: 'innen', leadsTo: 'Kellertreppe', isMainEntrance: true, provenance: A },
-      { id: 'flur_t_bad', wallIndex: 0, s: 60, width: 76, hinge: 'rechts', swing: 'aussen', leadsToRoomId: 'bad', provenance: A },
-      { id: 'flur_t_kueche', wallIndex: 0, s: 260, width: 86, hinge: 'links', swing: 'aussen', leadsToRoomId: 'kueche', provenance: A },
-      { id: 'flur_t_buero', wallIndex: 1, s: 20, width: 86, hinge: 'links', swing: 'aussen', leadsToRoomId: 'buero', provenance: A },
-      { id: 'flur_t_kino', wallIndex: 2, s: 172, width: 86, hinge: 'links', swing: 'aussen', leadsToRoomId: 'heimkino', provenance: A },
-      { id: 'flur_t_party', wallIndex: 2, s: 22, width: 86, hinge: 'rechts', swing: 'aussen', leadsToRoomId: 'partyraum', provenance: A },
+      { id: 'flur_t_treppe', wallIndex: 2, s: 330, width: 88, hinge: 'rechts', swing: 'aussen', leadsTo: 'Treppenhaus', isMainEntrance: true, provenance: A },
+      { id: 'flur_t_bad', wallIndex: 0, s: 102, width: 76, hinge: 'rechts', swing: 'aussen', leadsToRoomId: 'bad', provenance: PLAN },
+      { id: 'flur_t_kueche', wallIndex: 0, s: 309, width: 86, hinge: 'links', swing: 'aussen', leadsToRoomId: 'kueche', provenance: PLAN },
+      { id: 'flur_t_kino', wallIndex: 1, s: 20, width: 86, hinge: 'links', swing: 'aussen', leadsToRoomId: 'heimkino', provenance: PLAN },
+      { id: 'flur_t_buero', wallIndex: 2, s: 120, width: 86, hinge: 'rechts', swing: 'aussen', leadsToRoomId: 'buero', provenance: A },
     ],
     outlets: [
-      { id: 'f1', label: 'F1', kind: 'taster', mount: 'wand', wallIndex: 3, s: 32 - 15, z: SW, inserts: ['taster'], circuitId: 'c1', note: 'Taster + Stromstoßschalter (3 Schaltstellen)' },
-      { id: 'f2', label: 'F2', kind: 'taster', mount: 'wand', wallIndex: 0, s: 360, z: SW, inserts: ['taster'], circuitId: 'c1' },
-      { id: 'f3', label: 'F3', kind: 'taster', mount: 'wand', wallIndex: 0, s: 420, z: SW, inserts: ['taster'], circuitId: 'c1' },
-      { id: 'f4', label: 'F4', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 200, z: SD, inserts: ['steckdose'], circuitId: 'c2', note: 'Staubsauger' },
+      { id: 'f1', label: 'F1', kind: 'taster', mount: 'wand', wallIndex: 2, s: 315, z: SW, inserts: ['taster'], circuitId: 'c1', note: 'Taster + Stromstoßschalter (3 Schaltstellen)' },
+      { id: 'f2', label: 'F2', kind: 'taster', mount: 'wand', wallIndex: 0, s: 420, z: SW, inserts: ['taster'], circuitId: 'c1', note: 'am Flurende (Heimkino)' },
+      { id: 'f3', label: 'F3', kind: 'taster', mount: 'wand', wallIndex: 2, s: 105, z: SW, inserts: ['taster'], circuitId: 'c1', note: 'an der Tür Büro/Gäste' },
+      { id: 'f4', label: 'F4', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 240, z: SD, inserts: ['steckdose'], circuitId: 'c2', note: 'Staubsauger' },
       { id: 'f5', label: 'F5', kind: 'licht_decke', mount: 'decke', x: 110, y: 62.5, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1' },
       { id: 'f6', label: 'F6', kind: 'licht_decke', mount: 'decke', x: 330, y: 62.5, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1' },
       { id: 'f7', label: 'F7', kind: 'rauchwarnmelder', mount: 'decke', x: 219, y: 62.5, boxType: 'aufputz', note: 'Batteriegerät, keine Leitung' },
     ],
     existingCables: [
-      { id: 'flur_bc1', label: 'Bestand Decke F5', cableType: 'NYM 3×1,5 (vermutet)', fromOutletId: 'f5', goesTo: 'Schalterdose Treppe (alt)', reuse: 'pruefen' },
+      { id: 'flur_bc1', label: 'Bestand Decke F5', cableType: 'NYM 3×1,5 (vermutet)', fromOutletId: 'f5', goesTo: 'Schalterdose Treppenhaus (alt)', reuse: 'pruefen' },
     ],
   }));
 
-  // ---------------- Bad 182 × 317 ----------------
+  // ---------------- Bad 182 × 317 (Plan: KELLER ④) ----------------
   rooms.push(createRectRoom({
-    id: 'bad', floorId: KG, name: 'Bad', formerName: 'Dusche/WC (Bestand)', usage: 'Duschbad',
-    width: 182, depth: 317, height: 225, originOnFloor: { x: 0, y: 11.5 }, wetRoom: true,
+    id: 'bad', floorId: KG, name: 'Bad', formerName: 'KELLER ④', usage: 'Duschbad',
+    width: 182, depth: 317, height: 225, originOnFloor: { x: 981, y: 30 }, wetRoom: true,
     wallDefaults: bims, floor: kellerFloor, ceiling: hourdis, provenance: 'gemessen',
     walls: [
-      { index: 0, label: 'Außenwand', exterior: true },
+      { index: 0, label: 'Außenwand (Lichtschacht)', exterior: true },
       {
-        index: 1, label: 'Vorwand-Wand',
+        index: 1, label: 'zur Küche',
         preWall: [
           { id: 'bad_vw_dusche', from: 0, to: 95, height: null, depth: 20, label: 'Dusche (raumhoch)' },
           { id: 'bad_vw_wc', from: 95, to: 200, height: 120, depth: 20, label: 'WC' },
@@ -162,17 +165,17 @@ export function buildKellerProject(): Project {
         ],
       },
       { index: 2, label: 'Flurwand' },
-      { index: 3 },
+      { index: 3, label: 'zu Keller (Nachbar)' },
     ],
-    doors: [{ id: 'bad_t', wallIndex: 2, s: 46, width: 76, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: A }],
-    windows: [{ id: 'bad_f', wallIndex: 0, s: 60, width: 60, sill: 160, height: 45, lightWell: true, provenance: A }],
+    doors: [{ id: 'bad_t', wallIndex: 2, s: 6, width: 76, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: PLAN }],
+    windows: [{ id: 'bad_f', wallIndex: 0, s: 41, width: 100, sill: 160, height: 45, lightWell: true, provenance: PLAN }],
     furniture: [
       { id: 'bad_dusche', kind: 'dusche', label: 'Dusche', x: 92, y: 0, w: 90, d: 95, wallIndex: 1 },
       { id: 'bad_wc', kind: 'wc', label: 'WC', x: 106, y: 125, w: 56, d: 40, wallIndex: 1 },
       { id: 'bad_wt', kind: 'waschtisch', label: 'Waschtisch', x: 132, y: 215, w: 50, d: 70, height: 85, wallIndex: 1 },
     ],
     outlets: [
-      { id: 'b1', label: 'B1', kind: 'schalter', mount: 'wand', wallIndex: 2, s: 46 + 76 + 15, z: SW, gangs: 2, orientation: 'senkrecht', growth: 'unten', inserts: ['ausschalter', 'ausschalter'], circuitId: 'c1', note: 'oben Licht, unten Spiegel' },
+      { id: 'b1', label: 'B1', kind: 'schalter', mount: 'wand', wallIndex: 2, s: 6 + 76 + 15, z: SW, gangs: 2, orientation: 'senkrecht', growth: 'unten', inserts: ['ausschalter', 'ausschalter'], circuitId: 'c1', note: 'oben Licht, unten Spiegel' },
       { id: 'b2', label: 'B2', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 250, z: SW, gangs: 2, boxType: 'vorwand', growth: 'links', convention: 'mittig', inserts: ['steckdose', 'steckdose'], circuitId: 'c2', note: 'neben Waschtisch, in Vorwand (120 hoch)' },
       { id: 'b3', label: 'B3', kind: 'licht_wand', mount: 'wand', wallIndex: 1, s: 250, z: 185, boxType: 'up_tief', inserts: ['geraeteanschluss'], circuitId: 'c1', note: 'Spiegelleuchte – über der Vorwand im Mauerwerk' },
       { id: 'b4', label: 'B4', kind: 'licht_decke', mount: 'decke', x: 91, y: 160, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1', note: 'Bestand, Zugtest; ggf. Leuchte Schutzklasse II' },
@@ -181,76 +184,73 @@ export function buildKellerProject(): Project {
     ],
   }));
 
-  // ---------------- Küche 235 × 331 mit Kaminwange 54 × 38 ----------------
+  // ---------------- Küche 235 × 331, Kaminwange 54 × 38 unten links (Plan: WASCH.+TROCKNEN ③) ----------------
   rooms.push(createPolygonRoom({
-    id: 'kueche', floorId: KG, name: 'Küche', formerName: 'Vorratskeller', usage: 'Küche',
-    polygon: [{ x: 0, y: 0 }, { x: 181, y: 0 }, { x: 181, y: 38 }, { x: 235, y: 38 }, { x: 235, y: 331 }, { x: 0, y: 331 }],
-    height: 225, originOnFloor: { x: 193.5, y: 0 },
+    id: 'kueche', floorId: KG, name: 'Küche', formerName: 'WASCH.+TROCKNEN ③', usage: 'Küche',
+    polygon: [{ x: 0, y: 0 }, { x: 235, y: 0 }, { x: 235, y: 331 }, { x: 54, y: 331 }, { x: 54, y: 293 }, { x: 0, y: 293 }],
+    height: 225, originOnFloor: { x: 1175, y: 30 },
     wallDefaults: bims, floor: kellerFloor, ceiling: hourdis, provenance: 'gemessen',
     walls: [
-      { index: 0, label: 'Außenwand (Fenster)', exterior: true },
-      { index: 1, label: 'Kaminwange seitlich', zones: [{ id: 'k_kw1', kind: 'kaminwange', from: 0, to: 38 }] },
-      { index: 2, label: 'Kaminwange vorn', zones: [{ id: 'k_kw2', kind: 'kaminwange', from: 0, to: 54 }] },
-      { index: 3, label: 'zu Büro/Gäste' },
-      { index: 4, label: 'Flurwand' },
-      { index: 5, label: 'Küchenzeile', preWall: [{ id: 'k_vw', from: 140, to: 230, height: 82, depth: 15, label: 'Installationsvorwand Spüle' }] },
+      { index: 0, label: 'Außenwand (Lichtschacht)', exterior: true },
+      { index: 1, label: 'zum Heimkino' },
+      { index: 2, label: 'Flurwand' },
+      { index: 3, label: 'Kaminwange vorn', zones: [{ id: 'k_kw1', kind: 'kaminwange', from: 0, to: 38, note: 'Kamin nicht im Bestandsplan eingezeichnet' }] },
+      { index: 4, label: 'Kaminwange oben', zones: [{ id: 'k_kw2', kind: 'kaminwange', from: 0, to: 54 }] },
+      { index: 5, label: 'Küchenzeile (zum Bad)', preWall: [{ id: 'k_vw', from: 140, to: 230, height: 82, depth: 15, label: 'Installationsvorwand Spüle' }] },
     ],
-    doors: [{ id: 'kue_t', wallIndex: 4, s: 82.5, width: 86, hinge: 'rechts', swing: 'innen', leadsToRoomId: 'flur', provenance: A }],
-    windows: [{ id: 'kue_f', wallIndex: 0, s: 40, width: 100, sill: 160, height: 50, lightWell: true, provenance: A }],
+    doors: [{ id: 'kue_t', wallIndex: 2, s: 40, width: 86, hinge: 'rechts', swing: 'innen', leadsToRoomId: 'flur', provenance: PLAN }],
+    windows: [{ id: 'kue_f', wallIndex: 0, s: 67, width: 100, sill: 160, height: 50, lightWell: true, provenance: PLAN }],
     furniture: [
-      { id: 'kue_zeile', kind: 'kuechenzeile', label: 'Küchenzeile (Unterschränke, AF 90)', x: 0, y: 30, w: 60, d: 280, height: 90, wallIndex: 5 },
-      { id: 'kue_ks', kind: 'kuehlschrank', label: 'Kühlschrank hoch', x: 175, y: 271, w: 60, d: 60, height: 200, wallIndex: 3 },
+      { id: 'kue_zeile', kind: 'kuechenzeile', label: 'Küchenzeile (Unterschränke, AF 90)', x: 0, y: 5, w: 60, d: 280, height: 90, wallIndex: 5 },
+      { id: 'kue_ks', kind: 'kuehlschrank', label: 'Kühlschrank hoch', x: 175, y: 0, w: 60, d: 60, height: 200, wallIndex: 1 },
     ],
     outlets: [
-      { id: 'k1', label: 'K1', kind: 'schalter', mount: 'wand', wallIndex: 4, s: 82.5 - 15, z: SW, inserts: ['ausschalter'], circuitId: 'c1' },
+      { id: 'k1', label: 'K1', kind: 'schalter', mount: 'wand', wallIndex: 2, s: 40 - 15, z: SW, inserts: ['ausschalter'], circuitId: 'c1' },
       { id: 'k2', label: 'K2', kind: 'steckdose', mount: 'wand', wallIndex: 5, s: 100, z: 115 + REF, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c3', note: 'Arbeitsfläche' },
       { id: 'k3', label: 'K3', kind: 'steckdose', mount: 'wand', wallIndex: 5, s: 250, z: 115 + REF, gangs: 3, growth: 'links', inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c3', note: 'Arbeitsfläche, weg von der Ecke' },
       { id: 'k4', label: 'K4', kind: 'steckdose', mount: 'wand', wallIndex: 5, s: 160, z: 40, boxType: 'vorwand', inserts: ['steckdose'], circuitId: 'c4', note: 'Spülmaschine, hinter Unterschrank' },
       { id: 'k5', label: 'K5', kind: 'herd', mount: 'wand', wallIndex: 5, s: 60, z: 45, inserts: ['geraeteanschluss'], circuitId: 'c6', note: 'Herdanschlussdose 5×2,5' },
-      { id: 'k6', label: 'K6', kind: 'steckdose', mount: 'wand', wallIndex: 3, s: 260, z: 200, inserts: ['steckdose'], circuitId: 'c5', note: 'Kühlschrank, über dem Gerät' },
+      { id: 'k6', label: 'K6', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 30, z: 200, inserts: ['steckdose'], circuitId: 'c5', note: 'Kühlschrank, über dem Gerät' },
       { id: 'k7', label: 'K7', kind: 'steckdose', mount: 'wand', wallIndex: 5, s: 60, z: 205, inserts: ['steckdose'], circuitId: 'c5', note: 'Dunstabzug' },
       { id: 'k8', label: 'K8', kind: 'licht_wand', mount: 'wand', wallIndex: 5, s: 180, z: 150, inserts: ['geraeteanschluss'], circuitId: 'c1', note: 'Unterbauleuchte, Auslass hinter Oberschrank' },
-      { id: 'k9', label: 'K9', kind: 'licht_decke', mount: 'decke', x: 117, y: 180, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1' },
+      { id: 'k9', label: 'K9', kind: 'licht_decke', mount: 'decke', x: 140, y: 170, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1' },
     ],
   }));
 
-  // ---------------- Heimkino 347,7 × 486,2 × 223,4 ----------------
+  // ---------------- Heimkino 347,7 × 486,2 × 223,4 (Plan: KELLER ③ oben rechts) ----------------
   const kinoW = 347.7, kinoD = 486.2;
   rooms.push(createRectRoom({
-    id: 'heimkino', floorId: KG, name: 'Heimkino', formerName: 'Waschküche', usage: 'Heimkino 7.1.4', futureUsage: '',
-    width: kinoW, depth: kinoD, height: 223.4, originOnFloor: { x: -60, y: 476.5 },
+    id: 'heimkino', floorId: KG, name: 'Heimkino', formerName: 'KELLER ③ (oben rechts)', usage: 'Heimkino 7.1.4',
+    width: kinoW, depth: kinoD, height: 223.4, originOnFloor: { x: 1422.3, y: 30 },
     wallDefaults: bims, floor: kellerFloor, provenance: 'gemessen', smartHome: 'home_assistant',
     ceiling: { ...hourdis, cavityDepth: 6, note: 'Hourdis; Akustikpaneele auf Lattung (6 cm Hohlraum) als Kabelweg für Atmos und Beamer.' },
     walls: [
-      { index: 0, label: 'Rückwand (Flur)' },
-      { index: 1, label: 'Seite rechts' },
-      {
-        index: 2, label: 'Leinwand/Baffle', exterior: true,
-        preWall: [{ id: 'kino_baffle', from: 0, to: kinoW, height: null, depth: 60, construction: 'holz', label: 'Baffle-Wall 60 cm' }],
-        note: 'Außenwand: Luftspalt hinter Baffle, keine Dämmung direkt an der Außenwand.',
-      },
-      { index: 3, label: 'Seite links' },
+      { index: 0, label: 'Rückwand außen (Lichtschacht)', exterior: true, note: 'Außenwand: keine Dämmung direkt an der Wand, Feuchte beachten.' },
+      { index: 1, label: 'Seite rechts (außen)', exterior: true },
+      { index: 2, label: 'Leinwand/Baffle (zum Partyraum)', preWall: [{ id: 'kino_baffle', from: 0, to: kinoW, height: null, depth: 60, construction: 'holz', label: 'Baffle-Wall 60 cm' }], note: 'Luftspalt hinter der Baffle-Wall.' },
+      { index: 3, label: 'Seite links (Küche/Flur)' },
     ],
-    doors: [{ id: 'kino_t', wallIndex: 0, s: 266, width: 76, hinge: 'rechts', swing: 'innen', leadsToRoomId: 'flur', provenance: A }],
+    doors: [{ id: 'kino_t', wallIndex: 3, s: 20, width: 86, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: PLAN }],
+    windows: [{ id: 'kino_f', wallIndex: 0, s: 124, width: 100, sill: 160, height: 45, lightWell: true, provenance: PLAN, status: 'bleibt' }],
     furniture: [
       { id: 'kino_sofa', kind: 'sofa', label: 'Sofa (Hörplatz)', x: 74, y: 150, w: 200, d: 95, height: 85 },
-      { id: 'kino_rack', kind: 'rack', label: 'AV-Rack', x: 0, y: 330, w: 60, d: 60, height: 120, wallIndex: 3 },
+      { id: 'kino_rack', kind: 'rack', label: 'AV-Rack', x: 0, y: 270, w: 60, d: 60, height: 120, wallIndex: 3 },
     ],
     outlets: [
-      { id: 'h1', label: 'H1', kind: 'taster', mount: 'wand', wallIndex: 0, s: 266 - 15, z: SW, gangs: 2, orientation: 'senkrecht', growth: 'unten', inserts: ['smart_taster', 'blind'], smart: true, circuitId: 'c8', note: 'Smart-Taster, Szenen' },
+      { id: 'h1', label: 'H1', kind: 'taster', mount: 'wand', wallIndex: 3, s: 20 + 86 + 15, z: SW, gangs: 2, orientation: 'senkrecht', growth: 'unten', inserts: ['smart_taster', 'blind'], smart: true, circuitId: 'c8', note: 'Smart-Taster, Szenen' },
       { id: 'h2', label: 'H2', kind: 'steckdose', mount: 'wand', wallIndex: 2, s: 173.85, z: 25, boxType: 'aufputz_holz', gangs: 3, convention: 'mittig', inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c7', note: 'Subwoofer/Center in Baffle' },
       { id: 'h3', label: 'H3', kind: 'lautsprecher', mount: 'wand', wallIndex: 2, s: 60, z: 110, boxType: 'aufputz_holz', inserts: ['lautsprecher_klemme'], note: 'Front L (Baffle)' },
       { id: 'h4', label: 'H4', kind: 'lautsprecher', mount: 'wand', wallIndex: 2, s: 173.85, z: 60, boxType: 'aufputz_holz', inserts: ['lautsprecher_klemme'], note: 'Center (Baffle)' },
       { id: 'h5', label: 'H5', kind: 'lautsprecher', mount: 'wand', wallIndex: 2, s: kinoW - 60, z: 110, boxType: 'aufputz_holz', inserts: ['lautsprecher_klemme'], note: 'Front R (Baffle)' },
-      { id: 'h6', label: 'H6', kind: 'lautsprecher', mount: 'wand', wallIndex: 1, s: 165, z: 121.5, inserts: ['lautsprecher_klemme'], note: 'Surround R, leicht hinter Hörplatz' },
-      { id: 'h7', label: 'H7', kind: 'lautsprecher', mount: 'wand', wallIndex: 3, s: kinoD - 165, z: 121.5, inserts: ['lautsprecher_klemme'], note: 'Surround L, leicht hinter Hörplatz' },
-      { id: 'h8', label: 'H8', kind: 'lautsprecher', mount: 'wand', wallIndex: 0, s: 103.85, z: 150, inserts: ['lautsprecher_klemme'], note: 'Rear Surround L' },
-      { id: 'h9', label: 'H9', kind: 'lautsprecher', mount: 'wand', wallIndex: 0, s: 243.85, z: 150, inserts: ['lautsprecher_klemme'], note: 'Rear Surround R' },
-      { id: 'h10', label: 'H10', kind: 'lautsprecher', mount: 'decke', x: kinoW - 60, y: 280, boxType: 'decke_hohl', note: 'Atmos Top Front L (in Linie mit Front L)' },
-      { id: 'h11', label: 'H11', kind: 'lautsprecher', mount: 'decke', x: 60, y: 280, boxType: 'decke_hohl', note: 'Atmos Top Front R (in Linie mit Front R)' },
-      { id: 'h12', label: 'H12', kind: 'lautsprecher', mount: 'decke', x: kinoW - 60, y: 100, boxType: 'decke_hohl', note: 'Atmos Top Rear L' },
-      { id: 'h13', label: 'H13', kind: 'lautsprecher', mount: 'decke', x: 60, y: 100, boxType: 'decke_hohl', note: 'Atmos Top Rear R' },
-      { id: 'h14', label: 'H14', kind: 'steckdose', mount: 'decke', x: kinoW / 2, y: 120, boxType: 'decke_hohl', inserts: ['steckdose'], circuitId: 'c7', note: 'Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser ohne Leerrohr-Engpass' },
+      { id: 'h6', label: 'H6', kind: 'lautsprecher', mount: 'wand', wallIndex: 1, s: 165, z: 121.5, inserts: ['lautsprecher_klemme'], note: 'Surround (rechts), leicht hinter Hörplatz' },
+      { id: 'h7', label: 'H7', kind: 'lautsprecher', mount: 'wand', wallIndex: 3, s: kinoD - 165, z: 121.5, inserts: ['lautsprecher_klemme'], note: 'Surround (links), leicht hinter Hörplatz' },
+      { id: 'h8', label: 'H8', kind: 'lautsprecher', mount: 'wand', wallIndex: 0, s: 103.85, z: 150, inserts: ['lautsprecher_klemme'], note: 'Rear Surround' },
+      { id: 'h9', label: 'H9', kind: 'lautsprecher', mount: 'wand', wallIndex: 0, s: 243.85, z: 150, inserts: ['lautsprecher_klemme'], note: 'Rear Surround' },
+      { id: 'h10', label: 'H10', kind: 'lautsprecher', mount: 'decke', x: kinoW - 60, y: 280, boxType: 'decke_hohl', note: 'Atmos Top Front (in Linie mit Front L)' },
+      { id: 'h11', label: 'H11', kind: 'lautsprecher', mount: 'decke', x: 60, y: 280, boxType: 'decke_hohl', note: 'Atmos Top Front (in Linie mit Front R)' },
+      { id: 'h12', label: 'H12', kind: 'lautsprecher', mount: 'decke', x: kinoW - 60, y: 100, boxType: 'decke_hohl', note: 'Atmos Top Rear' },
+      { id: 'h13', label: 'H13', kind: 'lautsprecher', mount: 'decke', x: 60, y: 100, boxType: 'decke_hohl', note: 'Atmos Top Rear' },
+      { id: 'h14', label: 'H14', kind: 'steckdose', mount: 'decke', x: kinoW / 2, y: 120, boxType: 'decke_hohl', inserts: ['steckdose'], circuitId: 'c7', note: 'Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser' },
       { id: 'h15', label: 'H15', kind: 'steckdose', mount: 'wand', wallIndex: 3, s: kinoD - 300, z: SD, gangs: 4, convention: 'mittig', inserts: ['steckdose', 'steckdose', 'steckdose', 'steckdose'], circuitId: 'c7', note: 'AV-Rack' },
       { id: 'h16', label: 'H16', kind: 'lan', mount: 'wand', wallIndex: 3, s: kinoD - 300, z: SD + 15, gangs: 1, inserts: ['lan_2fach'], note: 'AV-Rack Uplink' },
       { id: 'h17', label: 'H17', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 40, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c11' },
@@ -258,103 +258,107 @@ export function buildKellerProject(): Project {
     ],
   }));
 
-  // ---------------- Partyraum/Büro 341 × 472,5 ----------------
+  // ---------------- Partyraum/Büro 341 × 472,5 (Plan: KELLER ③ unten rechts) ----------------
   rooms.push(createRectRoom({
-    id: 'partyraum', floorId: KG, name: 'Partyraum / Büro', formerName: 'Kellerraum 1', usage: 'Partyraum', futureUsage: 'vielleicht Büro',
-    width: 341, depth: 472.5, height: 225, originOnFloor: { x: 305, y: 476.5 }, smartHome: 'home_assistant',
+    id: 'partyraum', floorId: KG, name: 'Partyraum / Spielzimmer', formerName: 'KELLER ③ (unten rechts)', usage: 'Partyraum, Spielzimmer', futureUsage: 'vielleicht Büro',
+    width: 341, depth: 472.5, height: 225, originOnFloor: { x: 1429, y: 547.5 }, smartHome: 'home_assistant',
     wallDefaults: bims, floor: kellerFloor, ceiling: hourdis, provenance: 'gemessen',
-    walls: [{ index: 0, label: 'Flurwand' }, { index: 1, label: 'Außenwand (Fenster)', exterior: true }, { index: 2, exterior: true }, { index: 3 }],
-    doors: [{ id: 'party_t', wallIndex: 0, s: 25, width: 86, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: A }],
-    windows: [{ id: 'party_f', wallIndex: 1, s: 180, width: 100, sill: 155, height: 55, lightWell: true, provenance: A }],
+    walls: [{ index: 0, label: 'zum Heimkino' }, { index: 1, label: 'Außenwand rechts', exterior: true }, { index: 2, label: 'Außenwand unten', exterior: true }, { index: 3, label: 'zum Büro/Gäste' }],
+    doors: [{ id: 'party_t', wallIndex: 0, s: 10, width: 86, hinge: 'links', swing: 'innen', leadsTo: 'Flur/Vorraum', provenance: A }],
+    windows: [
+      { id: 'party_f1', wallIndex: 1, s: 180, width: 100, sill: 155, height: 55, lightWell: true, provenance: PLAN },
+      { id: 'party_f2', wallIndex: 2, s: 60, width: 100, sill: 155, height: 55, lightWell: true, provenance: PLAN },
+    ],
     outlets: [
-      { id: 'p1', label: 'P1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 25 + 86 + 15, z: SW, inserts: ['ausschalter'], circuitId: 'c8' },
-      { id: 'p2', label: 'P2', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 126, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c9' },
+      { id: 'p1', label: 'P1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 10 + 86 + 15, z: SW, inserts: ['ausschalter'], circuitId: 'c8' },
+      { id: 'p2', label: 'P2', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 200, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c9' },
       { id: 'p3', label: 'P3', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 80, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c9' },
-      { id: 'p4', label: 'P4', kind: 'steckdose', mount: 'wand', wallIndex: 2, s: 170, z: SD, gangs: 3, convention: 'mittig', inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c9', note: 'später Schreibtisch' },
-      { id: 'p5', label: 'P5', kind: 'lan', mount: 'wand', wallIndex: 2, s: 200, z: SD, inserts: ['lan_2fach'] },
+      { id: 'p4', label: 'P4', kind: 'steckdose', mount: 'wand', wallIndex: 2, s: 230, z: SD, gangs: 3, convention: 'mittig', inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c9', note: 'später Schreibtisch' },
+      { id: 'p5', label: 'P5', kind: 'lan', mount: 'wand', wallIndex: 2, s: 260, z: SD, inserts: ['lan_2fach'] },
       { id: 'p6', label: 'P6', kind: 'steckdose', mount: 'wand', wallIndex: 3, s: 240, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c9' },
       { id: 'p7', label: 'P7', kind: 'licht_decke', mount: 'decke', x: 170, y: 236, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c8' },
     ],
   }));
 
-  // ---------------- Büro/Gäste 283,7 × 471,9 ----------------
+  // ---------------- Büro/Gäste 283,7 × 471,9 (Plan: KELLER ①) ----------------
   rooms.push(createRectRoom({
-    id: 'buero', floorId: KG, name: 'Büro / Gäste', formerName: 'Kellerraum 2', usage: 'Büro, Gästezimmer (Schlafen)',
-    width: 283.7, depth: 471.9, height: 225, originOnFloor: { x: 449.5, y: 0 },
+    id: 'buero', floorId: KG, name: 'Büro / Gäste', formerName: 'KELLER ①', usage: 'Büro, Gästezimmer (Schlafen)',
+    width: 283.7, depth: 471.9, height: 225, originOnFloor: { x: 1133.3, y: 548 },
     wallDefaults: bims, floor: kellerFloor, ceiling: hourdis, provenance: 'gemessen',
-    walls: [{ index: 0, exterior: true, label: 'Außenwand (Fenster)' }, { index: 1, exterior: true }, { index: 2 }, { index: 3, label: 'Flurwand' }],
-    doors: [{ id: 'buero_t', wallIndex: 3, s: 25.9, width: 86, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: A }],
-    windows: [{ id: 'buero_f', wallIndex: 0, s: 90, width: 100, sill: 155, height: 55, lightWell: true, provenance: A }],
+    walls: [{ index: 0, label: 'Flurseite' }, { index: 1, label: 'zum Partyraum' }, { index: 2, label: 'Außenwand (Fenster)', exterior: true }, { index: 3, label: 'zum Treppenhaus' }],
+    doors: [{ id: 'buero_t', wallIndex: 0, s: 74, width: 86, hinge: 'links', swing: 'innen', leadsToRoomId: 'flur', provenance: PLAN }],
+    windows: [{ id: 'buero_f', wallIndex: 2, s: 90, width: 100, sill: 155, height: 55, lightWell: true, provenance: PLAN }],
     furniture: [
-      { id: 'buero_tisch', kind: 'schreibtisch', label: 'Schreibtisch (elektrisch, 2 Monitore)', x: 60, y: 0, w: 160, d: 80, height: 75, wallIndex: 0 },
-      { id: 'buero_bett', kind: 'bett', label: 'Gästebett / Schlafsofa', x: 183.7, y: 250, w: 100, d: 200, height: 45, wallIndex: 1 },
+      { id: 'buero_tisch', kind: 'schreibtisch', label: 'Schreibtisch (elektrisch, 2 Monitore)', x: 60, y: 391.9, w: 160, d: 80, height: 75, wallIndex: 2 },
+      { id: 'buero_bett', kind: 'bett', label: 'Gästebett / Schlafsofa', x: 183.7, y: 120, w: 100, d: 200, height: 45, wallIndex: 1 },
     ],
     outlets: [
-      { id: 'g1', label: 'G1', kind: 'schalter', mount: 'wand', wallIndex: 3, s: 25.9 + 86 + 15, z: SW, inserts: ['ausschalter'], circuitId: 'c8' },
-      { id: 'g2', label: 'G2', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 70, z: SD, gangs: 3, inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c10', note: 'Schreibtisch' },
-      { id: 'g3', label: 'G3', kind: 'lan', mount: 'wand', wallIndex: 0, s: 210, z: SD, inserts: ['lan_2fach'], note: 'Schreibtisch' },
-      { id: 'g4', label: 'G4', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 240, z: 70 + REF, inserts: ['steckdose_usb'], circuitId: 'c10', note: 'Nachttisch' },
-      { id: 'g5', label: 'G5', kind: 'steckdose', mount: 'wand', wallIndex: 2, s: 140, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c10' },
+      { id: 'g1', label: 'G1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 74 + 86 + 15, z: SW, inserts: ['ausschalter'], circuitId: 'c8' },
+      { id: 'g2', label: 'G2', kind: 'steckdose', mount: 'wand', wallIndex: 2, s: 70, z: SD, gangs: 3, inserts: ['steckdose', 'steckdose', 'steckdose'], circuitId: 'c10', note: 'Schreibtisch' },
+      { id: 'g3', label: 'G3', kind: 'lan', mount: 'wand', wallIndex: 2, s: 210, z: SD, inserts: ['lan_2fach'], note: 'Schreibtisch' },
+      { id: 'g4', label: 'G4', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 100, z: 70 + REF, inserts: ['steckdose_usb'], circuitId: 'c10', note: 'Nachttisch' },
+      { id: 'g5', label: 'G5', kind: 'steckdose', mount: 'wand', wallIndex: 3, s: 140, z: SD, gangs: 2, inserts: ['steckdose', 'steckdose'], circuitId: 'c10' },
       { id: 'g6', label: 'G6', kind: 'licht_decke', mount: 'decke', x: 141.85, y: 236, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c8' },
-      { id: 'g7', label: 'G7', kind: 'rauchwarnmelder', mount: 'decke', x: 141.85, y: 320, boxType: 'aufputz', note: 'Pflicht (Schlafraum)' },
+      { id: 'g7', label: 'G7', kind: 'rauchwarnmelder', mount: 'decke', x: 141.85, y: 160, boxType: 'aufputz', note: 'Pflicht (Schlafraum)' },
     ],
   }));
 
-  // ---------------- Technik / Hausanschluss (Aufputz) ----------------
+  // ---------------- Heizung mit HV (Plan: HEIZUNG; HV-Standort angenommen) ----------------
+  const apCeiling = { construction: 'hourdis' as const, slotsAllowed: false, drillingAllowed: true, note: 'Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln.' };
   rooms.push(createRectRoom({
-    id: 'technik', floorId: KG, name: 'Technik / Hausanschluss', formerName: 'Heizungskeller', usage: 'Hausanschluss, HV, Heizung',
-    width: 250, depth: 200, height: 225, originOnFloor: { x: -270, y: 230 }, installationType: 'aufputz_rohr',
-    wallDefaults: bims, ceiling: { construction: 'stahlbeton', slotsAllowed: false, drillingAllowed: true }, provenance: A, inScope: false,
+    id: 'technik', floorId: KG, name: 'Heizung / HV', formerName: 'HEIZUNG', usage: 'Heizung, Hauptverteilung (Standort angenommen)',
+    width: 240, depth: 338, height: 225, originOnFloor: { x: 537, y: 30 }, installationType: 'aufputz_rohr',
+    wallDefaults: bims, ceiling: apCeiling, provenance: PLAN, inScope: false,
     floor: { slotsAllowed: false },
-    doors: [{ id: 'tech_t', wallIndex: 1, s: 60, width: 88.5, hinge: 'links', swing: 'innen', leadsTo: 'Kellertreppe', fireRating: 'T30', provenance: A }],
-    note: 'Bestand, nicht Teil der Planung (HV-Standort).',
+    doors: [{ id: 'tech_t', wallIndex: 3, s: 30, width: 88.5, hinge: 'links', swing: 'innen', leadsTo: 'Flur', fireRating: 'T30', provenance: PLAN }],
+    note: 'Bestand, nicht Teil der Planung. Tür im Plan als FHT eingezeichnet.',
   }));
 
-  // ---------------- Kellerraum mit UV und Gartenanschluss (Aufputz) ----------------
+  // ---------------- Kellerraum mit UV und Gartenanschluss (Plan: KELLER neben HEIZUNG; Annahme) ----------------
   rooms.push(createRectRoom({
-    id: 'kellerraum', floorId: KG, name: 'Kellerraum / Werkstatt', formerName: 'Kohlenkeller', usage: 'Werkstatt, Lager',
-    width: 300, depth: 250, height: 210, originOnFloor: { x: -330, y: 460 }, installationType: 'aufputz_rohr',
-    wallDefaults: bims, ceiling: { construction: 'stahlbeton', slotsAllowed: false, drillingAllowed: true }, provenance: A,
-    floor: { slotsAllowed: false, note: 'Rohbeton, kein künftiger Aufbau' },
-    walls: [{ index: 0 }, { index: 1, label: 'Tür' }, { index: 2, label: 'Außenwand (Garten)', exterior: true }, { index: 3 }],
-    doors: [{ id: 'kr_t', wallIndex: 1, s: 20, width: 86, hinge: 'links', swing: 'innen', leadsTo: 'Kellertreppe', provenance: A }],
+    id: 'kellerraum', floorId: KG, name: 'Kellerraum / Werkstatt', formerName: 'KELLER (1,80 × 3,38)', usage: 'Werkstatt, Lager',
+    width: 180, depth: 338, height: 225, originOnFloor: { x: 789, y: 30 }, installationType: 'aufputz_rohr',
+    wallDefaults: bims, ceiling: apCeiling, provenance: A,
+    floor: { slotsAllowed: false, note: 'kein künftiger Aufbau' },
+    walls: [{ index: 0, label: 'Außenwand (Lichtschacht, Garten)', exterior: true }, { index: 1 }, { index: 2, label: 'Tür' }, { index: 3 }],
+    doors: [{ id: 'kr_t', wallIndex: 2, s: 20, width: 86, hinge: 'links', swing: 'innen', leadsTo: 'Flur', provenance: PLAN }],
+    windows: [{ id: 'kr_f', wallIndex: 0, s: 40, width: 100, sill: 160, height: 45, lightWell: true, provenance: PLAN }],
     furniture: [
-      { id: 'kr_werkbank', kind: 'werkbank', label: 'Werkbank', x: 0, y: 0, w: 200, d: 70, height: 90, wallIndex: 0 },
-      { id: 'kr_regal', kind: 'regal', label: 'Regal', x: 0, y: 200, w: 200, d: 50, height: 200, wallIndex: 2 },
+      { id: 'kr_werkbank', kind: 'werkbank', label: 'Werkbank', x: 0, y: 0, w: 70, d: 160, height: 90, wallIndex: 3 },
+      { id: 'kr_regal', kind: 'regal', label: 'Regal', x: 140, y: 40, w: 40, d: 200, height: 200, wallIndex: 1 },
     ],
     outlets: [
-      { id: 'kr1', label: 'KR1', kind: 'schalter', mount: 'wand', wallIndex: 1, s: 20 + 86 + 18, z: 105, boxType: 'aufputz', inserts: ['ausschalter'], circuitId: 'k1' },
-      { id: 'kr2', label: 'KR2', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 60, z: 105, gangs: 3, boxType: 'aufputz', inserts: ['steckdose_klappdeckel', 'steckdose_klappdeckel', 'steckdose_klappdeckel'], circuitId: 'k1', note: 'über Werkbank' },
-      { id: 'kr3', label: 'KR3', kind: 'licht_decke', mount: 'decke', x: 150, y: 125, boxType: 'aufputz', circuitId: 'k1', note: 'Feuchtraum-Wannenleuchte IP65' },
-      { id: 'kr4', label: 'KR4', kind: 'anschlussdose', mount: 'wand', wallIndex: 2, s: 250, z: 150, boxType: 'aufputz', inserts: ['geraeteanschluss'], circuitId: 'k2', note: 'Durchführung Erdkabel zum Garten (Außenverteiler), Abdichtung gegen Wasser' },
+      { id: 'kr1', label: 'KR1', kind: 'schalter', mount: 'wand', wallIndex: 2, s: 20 + 86 + 18, z: 105, boxType: 'aufputz', inserts: ['ausschalter'], circuitId: 'k1' },
+      { id: 'kr2', label: 'KR2', kind: 'steckdose', mount: 'wand', wallIndex: 3, s: 260, z: 105, gangs: 3, boxType: 'aufputz', inserts: ['steckdose_klappdeckel', 'steckdose_klappdeckel', 'steckdose_klappdeckel'], circuitId: 'k1', note: 'über Werkbank' },
+      { id: 'kr3', label: 'KR3', kind: 'licht_decke', mount: 'decke', x: 90, y: 169, boxType: 'aufputz', circuitId: 'k1', note: 'Feuchtraum-Wannenleuchte IP65' },
+      { id: 'kr4', label: 'KR4', kind: 'anschlussdose', mount: 'wand', wallIndex: 0, s: 160, z: 150, boxType: 'aufputz', inserts: ['geraeteanschluss'], circuitId: 'k2', note: 'Durchführung Erdkabel zum Garten (Außenverteiler), Abdichtung gegen Wasser' },
     ],
   }));
 
-  // ---------------- Garage (EG, Aufputz) ----------------
+  // ---------------- Garage (Plan: GARAGE ②; Zuordnung angenommen) ----------------
   rooms.push(createRectRoom({
-    id: 'garage', floorId: EG, name: 'Garage', formerName: 'Garage', usage: 'Garage mit Wallbox',
-    width: 300, depth: 600, height: 250, originOnFloor: { x: 0, y: 0 }, installationType: 'aufputz_rohr', wetRoom: true,
-    wallDefaults: { material: 'kalksandstein' }, ceiling: { construction: 'stahlbeton', slotsAllowed: false, drillingAllowed: true }, provenance: A,
+    id: 'garage', floorId: KG, name: 'Garage', formerName: 'GARAGE ②', usage: 'Garage mit Wallbox',
+    width: 368, depth: 628, height: 250, originOnFloor: { x: 419, y: 392 }, installationType: 'aufputz_rohr', wetRoom: true,
+    wallDefaults: bims, ceiling: apCeiling, provenance: A,
     floor: { slotsAllowed: false },
-    walls: [{ index: 0, label: 'Hauswand' }, { index: 1, exterior: true }, { index: 2, label: 'Torwand', exterior: true }, { index: 3, exterior: true }],
+    walls: [{ index: 0, label: 'zum Keller ②' }, { index: 1, label: 'zu Waschen+Trocknen ②' }, { index: 2, label: 'Torwand', exterior: true }, { index: 3, label: 'zur Doppelgarage' }],
     doors: [
-      { id: 'ga_t_haus', wallIndex: 0, s: 40, width: 88.5, hinge: 'links', swing: 'innen', fireRating: 'T30', leadsTo: 'Haus (Flur EG)', provenance: A },
-      { id: 'ga_tor', wallIndex: 2, s: 25, width: 250, height: 212, hinge: 'links', swing: 'aussen', hasFrame: false, leadsTo: 'Sektionaltor', provenance: A },
+      { id: 'ga_t_haus', wallIndex: 0, s: 60, width: 88.5, hinge: 'links', swing: 'innen', fireRating: 'T30', leadsTo: 'KELLER ② (FHT)', provenance: PLAN },
+      { id: 'ga_tor', wallIndex: 2, s: 59, width: 250, height: 212, hinge: 'links', swing: 'aussen', hasFrame: false, leadsTo: 'Sektionaltor', provenance: A },
     ],
     obstacles: [
-      { id: 'ga_tor_offen', kind: 'tor', label: 'Sektionaltor geöffnet', x: 25, y: 330, w: 250, d: 270, zFrom: 212, zTo: 250 },
-      { id: 'ga_schiene', kind: 'torlaufschiene', label: 'Laufschiene Antrieb', x: 145, y: 280, w: 10, d: 320, zFrom: 235, zTo: 250 },
+      { id: 'ga_tor_offen', kind: 'tor', label: 'Sektionaltor geöffnet', x: 59, y: 358, w: 250, d: 270, zFrom: 212, zTo: 250 },
+      { id: 'ga_schiene', kind: 'torlaufschiene', label: 'Laufschiene Antrieb', x: 179, y: 300, w: 10, d: 328, zFrom: 235, zTo: 250 },
     ],
     outlets: [
-      { id: 'ga1', label: 'GA1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 40 + 88.5 + 15, z: 105, gangs: 2, orientation: 'senkrecht', growth: 'unten', boxType: 'aufputz', inserts: ['ausschalter', 'taster'], circuitId: 'g2', note: 'oben Licht, unten Tortaster' },
-      { id: 'ga2', label: 'GA2', kind: 'steckdose', mount: 'decke', x: 150, y: 265, boxType: 'aufputz', inserts: ['steckdose'], circuitId: 'g2', note: 'Deckensteckdose Torantrieb, hinter Schienenende' },
-      { id: 'ga3', label: 'GA3', kind: 'anschlussdose', mount: 'wand', wallIndex: 3, s: 150, z: 125, boxType: 'aufputz', inserts: ['geraeteanschluss'], circuitId: 'g1', note: 'Wallbox 11 kW (NYM-J 5×6), Anfahrschutz' },
-      { id: 'ga4', label: 'GA4', kind: 'starkstrom', mount: 'wand', wallIndex: 0, s: 230, z: 105, boxType: 'aufputz', inserts: ['sonstiges'], circuitId: 'g3', note: 'CEE 16 A' },
-      { id: 'ga5', label: 'GA5', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 260, z: 105, gangs: 2, boxType: 'aufputz', inserts: ['steckdose_klappdeckel', 'steckdose_klappdeckel'], circuitId: 'g3' },
-      { id: 'ga6', label: 'GA6', kind: 'licht_decke', mount: 'decke', x: 150, y: 120, boxType: 'aufputz', circuitId: 'g2', note: 'Feuchtraum-Wannenleuchte' },
-      { id: 'ga7', label: 'GA7', kind: 'licht_decke', mount: 'decke', x: 70, y: 300, boxType: 'aufputz', circuitId: 'g2', note: 'Wannenleuchte vor dem Torbereich' },
+      { id: 'ga1', label: 'GA1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 60 + 88.5 + 15, z: 105, gangs: 2, orientation: 'senkrecht', growth: 'unten', boxType: 'aufputz', inserts: ['ausschalter', 'taster'], circuitId: 'g2', note: 'oben Licht, unten Tortaster' },
+      { id: 'ga2', label: 'GA2', kind: 'steckdose', mount: 'decke', x: 184, y: 285, boxType: 'aufputz', inserts: ['steckdose'], circuitId: 'g2', note: 'Deckensteckdose Torantrieb, hinter Schienenende' },
+      { id: 'ga3', label: 'GA3', kind: 'anschlussdose', mount: 'wand', wallIndex: 3, s: 200, z: 125, boxType: 'aufputz', inserts: ['geraeteanschluss'], circuitId: 'g1', note: 'Wallbox 11 kW (NYM-J 5×6), Anfahrschutz' },
+      { id: 'ga4', label: 'GA4', kind: 'starkstrom', mount: 'wand', wallIndex: 0, s: 260, z: 105, boxType: 'aufputz', inserts: ['sonstiges'], circuitId: 'g3', note: 'CEE 16 A' },
+      { id: 'ga5', label: 'GA5', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 300, z: 105, gangs: 2, boxType: 'aufputz', inserts: ['steckdose_klappdeckel', 'steckdose_klappdeckel'], circuitId: 'g3' },
+      { id: 'ga6', label: 'GA6', kind: 'licht_decke', mount: 'decke', x: 184, y: 120, boxType: 'aufputz', circuitId: 'g2', note: 'Feuchtraum-Wannenleuchte' },
+      { id: 'ga7', label: 'GA7', kind: 'licht_decke', mount: 'decke', x: 80, y: 320, boxType: 'aufputz', circuitId: 'g2', note: 'Wannenleuchte vor dem Torbereich' },
     ],
   }));
-
   return ProjectSchema.parse({ ...p, rooms });
 }

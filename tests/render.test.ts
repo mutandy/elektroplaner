@@ -29,7 +29,7 @@ describe('Rendering', () => {
   it('Gesamtansicht zeigt neue und alte Raumnamen', () => {
     const svg = renderFloorOverview(p, 'geschoss_kg');
     expect(svg).toContain('Heimkino');
-    expect(svg).toContain('Bestand: Waschküche');
+    expect(svg).toContain('Bestand: WASCH.+TROCKNEN ③');
   });
   it('Dosentabelle gibt jede Dosenmitte einer Kombination aus', () => {
     const b2 = boxTable(p, bad).find((r) => r.label === 'B2')!;

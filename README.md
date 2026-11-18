@@ -97,9 +97,18 @@ Bausteine wie Bad, Küche, Heimkino, Garage, Garten und Unterverteilung werden F
 
 ## Beispielprojekt „Kellerwohnung mit Garage“
 
-Raummaße aus der Aufgabenstellung: Flur 438 × 125 × 225, Bad 182 × 317 mit Vorwand (Dusche raumhoch, WC/Waschtisch 120), Küche 235 × 331 mit Kaminwange 54 × 38 und Installationsvorwand, Heimkino 347,7 × 486,2 × 223,4 mit 60-cm-Baffle-Wall und 7.1.4, Partyraum/Büro 341 × 472,5, Büro/Gäste 283,7 × 471,9. Wände Bims, Decke Hourdis (nicht schlitzbar), Estrich mit Folie in 5–6 cm, Bodenschlitze max. 2,5 cm. Hauptverteilung mit 9× B16 und 3× B10 frei. Dazu Technikraum (HV), Kellerraum mit Unterverteilung und Gartenzuleitung, Garage (Aufputz) mit Wallbox, Torantrieb, Sektionaltor-Bereich und T30-Tür.
+Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß vor Ort. Die Wände sind aus Bims, die Decke ist Hourdis (nicht schlitzbar). Der Boden ist Estrich mit Folie in 5–6 cm Tiefe, Bodenschlitze maximal 2,5 cm. In der Hauptverteilung sind 9× B16 und 3× B10 frei.
 
-**Annahmen:** Lage der Räume zueinander, Türen, Fenster, Vorwand-Abschnitte, Bestandsbezeichnungen und die Räume Technik/Kellerraum/Garage sind angenommen und als „Annahme“ markiert. Sie werden durch den echten Grundriss ersetzt.
+| Neuer Raum | Bestandsplan | Aufmaß (cm) |
+|---|---|---|
+| Flur | FLUR (schraffiert) | 438 × 125 × 225 |
+| Bad | KELLER ④ | 182 × 317, Vorwand: Dusche raumhoch, WC/Waschtisch 120 |
+| Küche | WASCH.+TROCKNEN ③ | 235 × 331, Kaminwange 54 × 38 unten links (im Plan nicht eingezeichnet), Installationsvorwand |
+| Heimkino | KELLER ③ oben rechts | 347,7 × 486,2 × 223,4, Baffle-Wall 60 cm, 7.1.4 |
+| Partyraum / Spielzimmer | KELLER ③ unten rechts | 341 × 472,5 |
+| Büro / Gäste | KELLER ① | 283,7 × 471,9 |
+
+**Noch angenommen** (im Projekt als „Annahme“ markiert): der Standort der Hauptverteilung (Raum HEIZUNG), die Tür zum Treppenhaus und die Tür zum Partyraum, der Kellerraum mit Unterverteilung und Gartenanschluss (KELLER 1,80 × 3,38), die Garage (GARAGE ②) und alle Brüstungshöhen. Die Farben und Kreisnummern im Bestandsplan haben keine Bedeutung.
 
 ## Was fehlt / vereinfacht
 

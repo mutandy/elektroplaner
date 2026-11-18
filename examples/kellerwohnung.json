@@ -57,11 +57,6 @@
       "id": "geschoss_kg",
       "name": "Kellergeschoss",
       "level": -1
-    },
-    {
-      "id": "geschoss_eg",
-      "name": "Erdgeschoss / Garage",
-      "level": 0
     }
   ],
   "rooms": [
@@ -69,12 +64,12 @@
       "id": "flur",
       "floorId": "geschoss_kg",
       "name": "Flur",
-      "formerName": "Kellerflur",
+      "formerName": "FLUR",
       "usage": "Flur (führt zu Gästezimmer)",
       "futureUsage": "",
       "originOnFloor": {
-        "x": 0,
-        "y": 340
+        "x": 975,
+        "y": 380
       },
       "polygon": [
         {
@@ -109,7 +104,7 @@
         },
         {
           "index": 1,
-          "label": "zu Büro/Gäste",
+          "label": "zu Heimkino",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -120,7 +115,7 @@
         },
         {
           "index": 2,
-          "label": "zu Heimkino/Partyraum",
+          "label": "zu Treppenhaus/Büro",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -131,7 +126,7 @@
         },
         {
           "index": 3,
-          "label": "Treppe",
+          "label": "",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -144,22 +139,22 @@
       "doors": [
         {
           "id": "flur_t_treppe",
-          "wallIndex": 3,
-          "s": 32,
-          "width": 76,
+          "wallIndex": 2,
+          "s": 330,
+          "width": 88,
           "height": 201,
           "hinge": "rechts",
-          "swing": "innen",
+          "swing": "aussen",
           "hasFrame": true,
           "fireRating": "keine",
-          "leadsTo": "Kellertreppe",
+          "leadsTo": "Treppenhaus",
           "isMainEntrance": true,
           "provenance": "annahme"
         },
         {
           "id": "flur_t_bad",
           "wallIndex": 0,
-          "s": 60,
+          "s": 102,
           "width": 76,
           "height": 201,
           "hinge": "rechts",
@@ -169,12 +164,12 @@
           "leadsToRoomId": "bad",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         },
         {
           "id": "flur_t_kueche",
           "wallIndex": 0,
-          "s": 260,
+          "s": 309,
           "width": 86,
           "height": 201,
           "hinge": "links",
@@ -184,27 +179,12 @@
           "leadsToRoomId": "kueche",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
-        },
-        {
-          "id": "flur_t_buero",
-          "wallIndex": 1,
-          "s": 20,
-          "width": 86,
-          "height": 201,
-          "hinge": "links",
-          "swing": "aussen",
-          "hasFrame": true,
-          "fireRating": "keine",
-          "leadsToRoomId": "buero",
-          "leadsTo": "",
-          "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         },
         {
           "id": "flur_t_kino",
-          "wallIndex": 2,
-          "s": 172,
+          "wallIndex": 1,
+          "s": 20,
           "width": 86,
           "height": 201,
           "hinge": "links",
@@ -214,19 +194,19 @@
           "leadsToRoomId": "heimkino",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         },
         {
-          "id": "flur_t_party",
+          "id": "flur_t_buero",
           "wallIndex": 2,
-          "s": 22,
+          "s": 120,
           "width": 86,
           "height": 201,
           "hinge": "rechts",
           "swing": "aussen",
           "hasFrame": true,
           "fireRating": "keine",
-          "leadsToRoomId": "partyraum",
+          "leadsToRoomId": "buero",
           "leadsTo": "",
           "isMainEntrance": false,
           "provenance": "annahme"
@@ -241,8 +221,8 @@
           "label": "F1",
           "kind": "taster",
           "mount": "wand",
-          "wallIndex": 3,
-          "s": 17,
+          "wallIndex": 2,
+          "s": 315,
           "z": 106.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -263,27 +243,6 @@
           "kind": "taster",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 360,
-          "z": 106.5,
-          "gangs": 1,
-          "orientation": "waagerecht",
-          "growth": "rechts",
-          "boxType": "up_tief",
-          "inserts": [
-            "taster"
-          ],
-          "circuitId": "c1",
-          "controls": [],
-          "smart": false,
-          "status": "neu",
-          "note": ""
-        },
-        {
-          "id": "f3",
-          "label": "F3",
-          "kind": "taster",
-          "mount": "wand",
-          "wallIndex": 0,
           "s": 420,
           "z": 106.5,
           "gangs": 1,
@@ -297,7 +256,28 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": ""
+          "note": "am Flurende (Heimkino)"
+        },
+        {
+          "id": "f3",
+          "label": "F3",
+          "kind": "taster",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 105,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "taster"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "an der Tür Büro/Gäste"
         },
         {
           "id": "f4",
@@ -305,7 +285,7 @@
           "kind": "steckdose",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 200,
+          "s": 240,
           "z": 31.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -381,7 +361,7 @@
           "description": "",
           "cableType": "NYM 3×1,5 (vermutet)",
           "fromOutletId": "f5",
-          "goesTo": "Schalterdose Treppe (alt)",
+          "goesTo": "Schalterdose Treppenhaus (alt)",
           "condition": "unbekannt",
           "reuse": "pruefen",
           "note": ""
@@ -438,12 +418,12 @@
       "id": "bad",
       "floorId": "geschoss_kg",
       "name": "Bad",
-      "formerName": "Dusche/WC (Bestand)",
+      "formerName": "KELLER ④",
       "usage": "Duschbad",
       "futureUsage": "",
       "originOnFloor": {
-        "x": 0,
-        "y": 11.5
+        "x": 981,
+        "y": 30
       },
       "polygon": [
         {
@@ -467,7 +447,7 @@
       "walls": [
         {
           "index": 0,
-          "label": "Außenwand",
+          "label": "Außenwand (Lichtschacht)",
           "material": "bims",
           "exterior": true,
           "loadBearing": false,
@@ -478,7 +458,7 @@
         },
         {
           "index": 1,
-          "label": "Vorwand-Wand",
+          "label": "zur Küche",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -528,7 +508,7 @@
         },
         {
           "index": 3,
-          "label": "",
+          "label": "zu Keller (Nachbar)",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -542,7 +522,7 @@
         {
           "id": "bad_t",
           "wallIndex": 2,
-          "s": 46,
+          "s": 6,
           "width": 76,
           "height": 201,
           "hinge": "links",
@@ -552,20 +532,20 @@
           "leadsToRoomId": "flur",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "windows": [
         {
           "id": "bad_f",
           "wallIndex": 0,
-          "s": 60,
-          "width": 60,
+          "s": 41,
+          "width": 100,
           "sill": 160,
           "height": 45,
           "status": "bleibt",
           "lightWell": true,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "obstacles": [],
@@ -614,7 +594,7 @@
           "kind": "schalter",
           "mount": "wand",
           "wallIndex": 2,
-          "s": 137,
+          "s": 97,
           "z": 106.5,
           "gangs": 2,
           "orientation": "senkrecht",
@@ -787,12 +767,12 @@
       "id": "kueche",
       "floorId": "geschoss_kg",
       "name": "Küche",
-      "formerName": "Vorratskeller",
+      "formerName": "WASCH.+TROCKNEN ③",
       "usage": "Küche",
       "futureUsage": "",
       "originOnFloor": {
-        "x": 193.5,
-        "y": 0
+        "x": 1175,
+        "y": 30
       },
       "polygon": [
         {
@@ -800,31 +780,31 @@
           "y": 0
         },
         {
-          "x": 181,
+          "x": 235,
           "y": 0
         },
         {
-          "x": 181,
-          "y": 38
-        },
-        {
-          "x": 235,
-          "y": 38
-        },
-        {
           "x": 235,
           "y": 331
+        },
+        {
+          "x": 54,
+          "y": 331
+        },
+        {
+          "x": 54,
+          "y": 293
         },
         {
           "x": 0,
-          "y": 331
+          "y": 293
         }
       ],
       "height": 225,
       "walls": [
         {
           "index": 0,
-          "label": "Außenwand (Fenster)",
+          "label": "Außenwand (Lichtschacht)",
           "material": "bims",
           "exterior": true,
           "loadBearing": false,
@@ -835,7 +815,29 @@
         },
         {
           "index": 1,
-          "label": "Kaminwange seitlich",
+          "label": "zum Heimkino",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Flurwand",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "Kaminwange vorn",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -848,15 +850,15 @@
               "to": 38,
               "zFrom": 0,
               "depth": 0,
-              "note": ""
+              "note": "Kamin nicht im Bestandsplan eingezeichnet"
             }
           ],
           "preWall": [],
           "note": ""
         },
         {
-          "index": 2,
-          "label": "Kaminwange vorn",
+          "index": 4,
+          "label": "Kaminwange oben",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -876,30 +878,8 @@
           "note": ""
         },
         {
-          "index": 3,
-          "label": "zu Büro/Gäste",
-          "material": "bims",
-          "exterior": false,
-          "loadBearing": false,
-          "horizontalSlotsAllowed": false,
-          "zones": [],
-          "preWall": [],
-          "note": ""
-        },
-        {
-          "index": 4,
-          "label": "Flurwand",
-          "material": "bims",
-          "exterior": false,
-          "loadBearing": false,
-          "horizontalSlotsAllowed": false,
-          "zones": [],
-          "preWall": [],
-          "note": ""
-        },
-        {
           "index": 5,
-          "label": "Küchenzeile",
+          "label": "Küchenzeile (zum Bad)",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -922,8 +902,8 @@
       "doors": [
         {
           "id": "kue_t",
-          "wallIndex": 4,
-          "s": 82.5,
+          "wallIndex": 2,
+          "s": 40,
           "width": 86,
           "height": 201,
           "hinge": "rechts",
@@ -933,20 +913,20 @@
           "leadsToRoomId": "flur",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "windows": [
         {
           "id": "kue_f",
           "wallIndex": 0,
-          "s": 40,
+          "s": 67,
           "width": 100,
           "sill": 160,
           "height": 50,
           "status": "bleibt",
           "lightWell": true,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "obstacles": [],
@@ -956,7 +936,7 @@
           "kind": "kuechenzeile",
           "label": "Küchenzeile (Unterschränke, AF 90)",
           "x": 0,
-          "y": 30,
+          "y": 5,
           "w": 60,
           "d": 280,
           "height": 90,
@@ -968,11 +948,11 @@
           "kind": "kuehlschrank",
           "label": "Kühlschrank hoch",
           "x": 175,
-          "y": 271,
+          "y": 0,
           "w": 60,
           "d": 60,
           "height": 200,
-          "wallIndex": 3,
+          "wallIndex": 1,
           "note": ""
         }
       ],
@@ -982,8 +962,8 @@
           "label": "K1",
           "kind": "schalter",
           "mount": "wand",
-          "wallIndex": 4,
-          "s": 67.5,
+          "wallIndex": 2,
+          "s": 25,
           "z": 106.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -1090,8 +1070,8 @@
           "label": "K6",
           "kind": "steckdose",
           "mount": "wand",
-          "wallIndex": 3,
-          "s": 260,
+          "wallIndex": 1,
+          "s": 30,
           "z": 200,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -1153,8 +1133,8 @@
           "label": "K9",
           "kind": "licht_decke",
           "mount": "decke",
-          "x": 117,
-          "y": 180,
+          "x": 140,
+          "y": 170,
           "gangs": 1,
           "orientation": "waagerecht",
           "growth": "rechts",
@@ -1219,12 +1199,12 @@
       "id": "heimkino",
       "floorId": "geschoss_kg",
       "name": "Heimkino",
-      "formerName": "Waschküche",
+      "formerName": "KELLER ③ (oben rechts)",
       "usage": "Heimkino 7.1.4",
       "futureUsage": "",
       "originOnFloor": {
-        "x": -60,
-        "y": 476.5
+        "x": 1422.3,
+        "y": 30
       },
       "polygon": [
         {
@@ -1248,20 +1228,20 @@
       "walls": [
         {
           "index": 0,
-          "label": "Rückwand (Flur)",
+          "label": "Rückwand außen (Lichtschacht)",
           "material": "bims",
-          "exterior": false,
+          "exterior": true,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
           "preWall": [],
-          "note": ""
+          "note": "Außenwand: keine Dämmung direkt an der Wand, Feuchte beachten."
         },
         {
           "index": 1,
-          "label": "Seite rechts",
+          "label": "Seite rechts (außen)",
           "material": "bims",
-          "exterior": false,
+          "exterior": true,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
@@ -1270,9 +1250,9 @@
         },
         {
           "index": 2,
-          "label": "Leinwand/Baffle",
+          "label": "Leinwand/Baffle (zum Partyraum)",
           "material": "bims",
-          "exterior": true,
+          "exterior": false,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
@@ -1287,11 +1267,11 @@
               "label": "Baffle-Wall 60 cm"
             }
           ],
-          "note": "Außenwand: Luftspalt hinter Baffle, keine Dämmung direkt an der Außenwand."
+          "note": "Luftspalt hinter der Baffle-Wall."
         },
         {
           "index": 3,
-          "label": "Seite links",
+          "label": "Seite links (Küche/Flur)",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -1304,21 +1284,33 @@
       "doors": [
         {
           "id": "kino_t",
-          "wallIndex": 0,
-          "s": 266,
-          "width": 76,
+          "wallIndex": 3,
+          "s": 20,
+          "width": 86,
           "height": 201,
-          "hinge": "rechts",
+          "hinge": "links",
           "swing": "innen",
           "hasFrame": true,
           "fireRating": "keine",
           "leadsToRoomId": "flur",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
-      "windows": [],
+      "windows": [
+        {
+          "id": "kino_f",
+          "wallIndex": 0,
+          "s": 124,
+          "width": 100,
+          "sill": 160,
+          "height": 45,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
       "obstacles": [],
       "furniture": [
         {
@@ -1337,7 +1329,7 @@
           "kind": "rack",
           "label": "AV-Rack",
           "x": 0,
-          "y": 330,
+          "y": 270,
           "w": 60,
           "d": 60,
           "height": 120,
@@ -1351,8 +1343,8 @@
           "label": "H1",
           "kind": "taster",
           "mount": "wand",
-          "wallIndex": 0,
-          "s": 251,
+          "wallIndex": 3,
+          "s": 121,
           "z": 106.5,
           "gangs": 2,
           "orientation": "senkrecht",
@@ -1470,7 +1462,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Surround R, leicht hinter Hörplatz"
+          "note": "Surround (rechts), leicht hinter Hörplatz"
         },
         {
           "id": "h7",
@@ -1490,7 +1482,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Surround L, leicht hinter Hörplatz"
+          "note": "Surround (links), leicht hinter Hörplatz"
         },
         {
           "id": "h8",
@@ -1510,7 +1502,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Rear Surround L"
+          "note": "Rear Surround"
         },
         {
           "id": "h9",
@@ -1530,7 +1522,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Rear Surround R"
+          "note": "Rear Surround"
         },
         {
           "id": "h10",
@@ -1547,7 +1539,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Front L (in Linie mit Front L)"
+          "note": "Atmos Top Front (in Linie mit Front L)"
         },
         {
           "id": "h11",
@@ -1564,7 +1556,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Front R (in Linie mit Front R)"
+          "note": "Atmos Top Front (in Linie mit Front R)"
         },
         {
           "id": "h12",
@@ -1581,7 +1573,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Rear L"
+          "note": "Atmos Top Rear"
         },
         {
           "id": "h13",
@@ -1598,7 +1590,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Rear R"
+          "note": "Atmos Top Rear"
         },
         {
           "id": "h14",
@@ -1618,7 +1610,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser ohne Leerrohr-Engpass"
+          "note": "Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser"
         },
         {
           "id": "h15",
@@ -1758,13 +1750,13 @@
     {
       "id": "partyraum",
       "floorId": "geschoss_kg",
-      "name": "Partyraum / Büro",
-      "formerName": "Kellerraum 1",
-      "usage": "Partyraum",
+      "name": "Partyraum / Spielzimmer",
+      "formerName": "KELLER ③ (unten rechts)",
+      "usage": "Partyraum, Spielzimmer",
       "futureUsage": "vielleicht Büro",
       "originOnFloor": {
-        "x": 305,
-        "y": 476.5
+        "x": 1429,
+        "y": 547.5
       },
       "polygon": [
         {
@@ -1788,7 +1780,7 @@
       "walls": [
         {
           "index": 0,
-          "label": "Flurwand",
+          "label": "zum Heimkino",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -1799,7 +1791,7 @@
         },
         {
           "index": 1,
-          "label": "Außenwand (Fenster)",
+          "label": "Außenwand rechts",
           "material": "bims",
           "exterior": true,
           "loadBearing": false,
@@ -1810,7 +1802,7 @@
         },
         {
           "index": 2,
-          "label": "",
+          "label": "Außenwand unten",
           "material": "bims",
           "exterior": true,
           "loadBearing": false,
@@ -1821,7 +1813,7 @@
         },
         {
           "index": 3,
-          "label": "",
+          "label": "zum Büro/Gäste",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -1835,22 +1827,21 @@
         {
           "id": "party_t",
           "wallIndex": 0,
-          "s": 25,
+          "s": 10,
           "width": 86,
           "height": 201,
           "hinge": "links",
           "swing": "innen",
           "hasFrame": true,
           "fireRating": "keine",
-          "leadsToRoomId": "flur",
-          "leadsTo": "",
+          "leadsTo": "Flur/Vorraum",
           "isMainEntrance": false,
           "provenance": "annahme"
         }
       ],
       "windows": [
         {
-          "id": "party_f",
+          "id": "party_f1",
           "wallIndex": 1,
           "s": 180,
           "width": 100,
@@ -1858,7 +1849,18 @@
           "height": 55,
           "status": "bleibt",
           "lightWell": true,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "party_f2",
+          "wallIndex": 2,
+          "s": 60,
+          "width": 100,
+          "sill": 155,
+          "height": 55,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
         }
       ],
       "obstacles": [],
@@ -1870,7 +1872,7 @@
           "kind": "schalter",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 126,
+          "s": 111,
           "z": 106.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -1891,7 +1893,7 @@
           "kind": "steckdose",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 126,
+          "s": 200,
           "z": 31.5,
           "gangs": 2,
           "orientation": "waagerecht",
@@ -1935,7 +1937,7 @@
           "kind": "steckdose",
           "mount": "wand",
           "wallIndex": 2,
-          "s": 170,
+          "s": 230,
           "z": 31.5,
           "gangs": 3,
           "orientation": "waagerecht",
@@ -1959,7 +1961,7 @@
           "kind": "lan",
           "mount": "wand",
           "wallIndex": 2,
-          "s": 200,
+          "s": 260,
           "z": 31.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2067,12 +2069,12 @@
       "id": "buero",
       "floorId": "geschoss_kg",
       "name": "Büro / Gäste",
-      "formerName": "Kellerraum 2",
+      "formerName": "KELLER ①",
       "usage": "Büro, Gästezimmer (Schlafen)",
       "futureUsage": "",
       "originOnFloor": {
-        "x": 449.5,
-        "y": 0
+        "x": 1133.3,
+        "y": 548
       },
       "polygon": [
         {
@@ -2096,6 +2098,28 @@
       "walls": [
         {
           "index": 0,
+          "label": "Flurseite",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zum Partyraum",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
           "label": "Außenwand (Fenster)",
           "material": "bims",
           "exterior": true,
@@ -2106,30 +2130,8 @@
           "note": ""
         },
         {
-          "index": 1,
-          "label": "",
-          "material": "bims",
-          "exterior": true,
-          "loadBearing": false,
-          "horizontalSlotsAllowed": false,
-          "zones": [],
-          "preWall": [],
-          "note": ""
-        },
-        {
-          "index": 2,
-          "label": "",
-          "material": "bims",
-          "exterior": false,
-          "loadBearing": false,
-          "horizontalSlotsAllowed": false,
-          "zones": [],
-          "preWall": [],
-          "note": ""
-        },
-        {
           "index": 3,
-          "label": "Flurwand",
+          "label": "zum Treppenhaus",
           "material": "bims",
           "exterior": false,
           "loadBearing": false,
@@ -2142,8 +2144,8 @@
       "doors": [
         {
           "id": "buero_t",
-          "wallIndex": 3,
-          "s": 25.9,
+          "wallIndex": 0,
+          "s": 74,
           "width": 86,
           "height": 201,
           "hinge": "links",
@@ -2153,20 +2155,20 @@
           "leadsToRoomId": "flur",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "windows": [
         {
           "id": "buero_f",
-          "wallIndex": 0,
+          "wallIndex": 2,
           "s": 90,
           "width": 100,
           "sill": 155,
           "height": 55,
           "status": "bleibt",
           "lightWell": true,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "obstacles": [],
@@ -2176,11 +2178,11 @@
           "kind": "schreibtisch",
           "label": "Schreibtisch (elektrisch, 2 Monitore)",
           "x": 60,
-          "y": 0,
+          "y": 391.9,
           "w": 160,
           "d": 80,
           "height": 75,
-          "wallIndex": 0,
+          "wallIndex": 2,
           "note": ""
         },
         {
@@ -2188,7 +2190,7 @@
           "kind": "bett",
           "label": "Gästebett / Schlafsofa",
           "x": 183.7,
-          "y": 250,
+          "y": 120,
           "w": 100,
           "d": 200,
           "height": 45,
@@ -2202,8 +2204,8 @@
           "label": "G1",
           "kind": "schalter",
           "mount": "wand",
-          "wallIndex": 3,
-          "s": 126.9,
+          "wallIndex": 0,
+          "s": 175,
           "z": 106.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2223,7 +2225,7 @@
           "label": "G2",
           "kind": "steckdose",
           "mount": "wand",
-          "wallIndex": 0,
+          "wallIndex": 2,
           "s": 70,
           "z": 31.5,
           "gangs": 3,
@@ -2246,7 +2248,7 @@
           "label": "G3",
           "kind": "lan",
           "mount": "wand",
-          "wallIndex": 0,
+          "wallIndex": 2,
           "s": 210,
           "z": 31.5,
           "gangs": 1,
@@ -2267,7 +2269,7 @@
           "kind": "steckdose",
           "mount": "wand",
           "wallIndex": 1,
-          "s": 240,
+          "s": 100,
           "z": 71.5,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2287,7 +2289,7 @@
           "label": "G5",
           "kind": "steckdose",
           "mount": "wand",
-          "wallIndex": 2,
+          "wallIndex": 3,
           "s": 140,
           "z": 31.5,
           "gangs": 2,
@@ -2328,7 +2330,7 @@
           "kind": "rauchwarnmelder",
           "mount": "decke",
           "x": 141.85,
-          "y": 320,
+          "y": 160,
           "gangs": 1,
           "orientation": "waagerecht",
           "growth": "rechts",
@@ -2391,13 +2393,13 @@
     {
       "id": "technik",
       "floorId": "geschoss_kg",
-      "name": "Technik / Hausanschluss",
-      "formerName": "Heizungskeller",
-      "usage": "Hausanschluss, HV, Heizung",
+      "name": "Heizung / HV",
+      "formerName": "HEIZUNG",
+      "usage": "Heizung, Hauptverteilung (Standort angenommen)",
       "futureUsage": "",
       "originOnFloor": {
-        "x": -270,
-        "y": 230
+        "x": 537,
+        "y": 30
       },
       "polygon": [
         {
@@ -2405,16 +2407,16 @@
           "y": 0
         },
         {
-          "x": 250,
+          "x": 240,
           "y": 0
         },
         {
-          "x": 250,
-          "y": 200
+          "x": 240,
+          "y": 338
         },
         {
           "x": 0,
-          "y": 200
+          "y": 338
         }
       ],
       "height": 225,
@@ -2467,17 +2469,17 @@
       "doors": [
         {
           "id": "tech_t",
-          "wallIndex": 1,
-          "s": 60,
+          "wallIndex": 3,
+          "s": 30,
           "width": 88.5,
           "height": 201,
           "hinge": "links",
           "swing": "innen",
           "hasFrame": true,
           "fireRating": "T30",
-          "leadsTo": "Kellertreppe",
+          "leadsTo": "Flur",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
       "windows": [],
@@ -2495,31 +2497,31 @@
         "note": ""
       },
       "ceiling": {
-        "construction": "stahlbeton",
+        "construction": "hourdis",
         "slotsAllowed": false,
         "drillingAllowed": true,
         "cavityDepth": 0,
-        "note": ""
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
       },
       "installationType": "aufputz_rohr",
       "wetRoom": false,
       "inScope": false,
       "heightOverrides": {},
       "confirmed": false,
-      "provenance": "annahme",
+      "provenance": "aus_plan",
       "photos": [],
-      "note": "Bestand, nicht Teil der Planung (HV-Standort)."
+      "note": "Bestand, nicht Teil der Planung. Tür im Plan als FHT eingezeichnet."
     },
     {
       "id": "kellerraum",
       "floorId": "geschoss_kg",
       "name": "Kellerraum / Werkstatt",
-      "formerName": "Kohlenkeller",
+      "formerName": "KELLER (1,80 × 3,38)",
       "usage": "Werkstatt, Lager",
       "futureUsage": "",
       "originOnFloor": {
-        "x": -330,
-        "y": 460
+        "x": 789,
+        "y": 30
       },
       "polygon": [
         {
@@ -2527,22 +2529,33 @@
           "y": 0
         },
         {
-          "x": 300,
+          "x": 180,
           "y": 0
         },
         {
-          "x": 300,
-          "y": 250
+          "x": 180,
+          "y": 338
         },
         {
           "x": 0,
-          "y": 250
+          "y": 338
         }
       ],
-      "height": 210,
+      "height": 225,
       "walls": [
         {
           "index": 0,
+          "label": "Außenwand (Lichtschacht, Garten)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
           "label": "",
           "material": "bims",
           "exterior": false,
@@ -2553,21 +2566,10 @@
           "note": ""
         },
         {
-          "index": 1,
+          "index": 2,
           "label": "Tür",
           "material": "bims",
           "exterior": false,
-          "loadBearing": false,
-          "horizontalSlotsAllowed": false,
-          "zones": [],
-          "preWall": [],
-          "note": ""
-        },
-        {
-          "index": 2,
-          "label": "Außenwand (Garten)",
-          "material": "bims",
-          "exterior": true,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
@@ -2589,7 +2591,7 @@
       "doors": [
         {
           "id": "kr_t",
-          "wallIndex": 1,
+          "wallIndex": 2,
           "s": 20,
           "width": 86,
           "height": 201,
@@ -2597,12 +2599,24 @@
           "swing": "innen",
           "hasFrame": true,
           "fireRating": "keine",
-          "leadsTo": "Kellertreppe",
+          "leadsTo": "Flur",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         }
       ],
-      "windows": [],
+      "windows": [
+        {
+          "id": "kr_f",
+          "wallIndex": 0,
+          "s": 40,
+          "width": 100,
+          "sill": 160,
+          "height": 45,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
       "obstacles": [],
       "furniture": [
         {
@@ -2611,22 +2625,22 @@
           "label": "Werkbank",
           "x": 0,
           "y": 0,
-          "w": 200,
-          "d": 70,
+          "w": 70,
+          "d": 160,
           "height": 90,
-          "wallIndex": 0,
+          "wallIndex": 3,
           "note": ""
         },
         {
           "id": "kr_regal",
           "kind": "regal",
           "label": "Regal",
-          "x": 0,
-          "y": 200,
-          "w": 200,
-          "d": 50,
+          "x": 140,
+          "y": 40,
+          "w": 40,
+          "d": 200,
           "height": 200,
-          "wallIndex": 2,
+          "wallIndex": 1,
           "note": ""
         }
       ],
@@ -2636,7 +2650,7 @@
           "label": "KR1",
           "kind": "schalter",
           "mount": "wand",
-          "wallIndex": 1,
+          "wallIndex": 2,
           "s": 124,
           "z": 105,
           "gangs": 1,
@@ -2657,8 +2671,8 @@
           "label": "KR2",
           "kind": "steckdose",
           "mount": "wand",
-          "wallIndex": 0,
-          "s": 60,
+          "wallIndex": 3,
+          "s": 260,
           "z": 105,
           "gangs": 3,
           "orientation": "waagerecht",
@@ -2680,8 +2694,8 @@
           "label": "KR3",
           "kind": "licht_decke",
           "mount": "decke",
-          "x": 150,
-          "y": 125,
+          "x": 90,
+          "y": 169,
           "gangs": 1,
           "orientation": "waagerecht",
           "growth": "rechts",
@@ -2698,8 +2712,8 @@
           "label": "KR4",
           "kind": "anschlussdose",
           "mount": "wand",
-          "wallIndex": 2,
-          "s": 250,
+          "wallIndex": 0,
+          "s": 160,
           "z": 150,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2723,14 +2737,14 @@
         "maxSlotDepth": 0,
         "underfloorHeating": false,
         "slotsAllowed": false,
-        "note": "Rohbeton, kein künftiger Aufbau"
+        "note": "kein künftiger Aufbau"
       },
       "ceiling": {
-        "construction": "stahlbeton",
+        "construction": "hourdis",
         "slotsAllowed": false,
         "drillingAllowed": true,
         "cavityDepth": 0,
-        "note": ""
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
       },
       "installationType": "aufputz_rohr",
       "wetRoom": false,
@@ -2743,14 +2757,14 @@
     },
     {
       "id": "garage",
-      "floorId": "geschoss_eg",
+      "floorId": "geschoss_kg",
       "name": "Garage",
-      "formerName": "Garage",
+      "formerName": "GARAGE ②",
       "usage": "Garage mit Wallbox",
       "futureUsage": "",
       "originOnFloor": {
-        "x": 0,
-        "y": 0
+        "x": 419,
+        "y": 392
       },
       "polygon": [
         {
@@ -2758,24 +2772,24 @@
           "y": 0
         },
         {
-          "x": 300,
+          "x": 368,
           "y": 0
         },
         {
-          "x": 300,
-          "y": 600
+          "x": 368,
+          "y": 628
         },
         {
           "x": 0,
-          "y": 600
+          "y": 628
         }
       ],
       "height": 250,
       "walls": [
         {
           "index": 0,
-          "label": "Hauswand",
-          "material": "kalksandstein",
+          "label": "zum Keller ②",
+          "material": "bims",
           "exterior": false,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
@@ -2785,9 +2799,9 @@
         },
         {
           "index": 1,
-          "label": "",
-          "material": "kalksandstein",
-          "exterior": true,
+          "label": "zu Waschen+Trocknen ②",
+          "material": "bims",
+          "exterior": false,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
@@ -2797,7 +2811,7 @@
         {
           "index": 2,
           "label": "Torwand",
-          "material": "kalksandstein",
+          "material": "bims",
           "exterior": true,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
@@ -2807,9 +2821,9 @@
         },
         {
           "index": 3,
-          "label": "",
-          "material": "kalksandstein",
-          "exterior": true,
+          "label": "zur Doppelgarage",
+          "material": "bims",
+          "exterior": false,
           "loadBearing": false,
           "horizontalSlotsAllowed": false,
           "zones": [],
@@ -2821,21 +2835,21 @@
         {
           "id": "ga_t_haus",
           "wallIndex": 0,
-          "s": 40,
+          "s": 60,
           "width": 88.5,
           "height": 201,
           "hinge": "links",
           "swing": "innen",
           "hasFrame": true,
           "fireRating": "T30",
-          "leadsTo": "Haus (Flur EG)",
+          "leadsTo": "KELLER ② (FHT)",
           "isMainEntrance": false,
-          "provenance": "annahme"
+          "provenance": "aus_plan"
         },
         {
           "id": "ga_tor",
           "wallIndex": 2,
-          "s": 25,
+          "s": 59,
           "width": 250,
           "height": 212,
           "hinge": "links",
@@ -2853,8 +2867,8 @@
           "id": "ga_tor_offen",
           "kind": "tor",
           "label": "Sektionaltor geöffnet",
-          "x": 25,
-          "y": 330,
+          "x": 59,
+          "y": 358,
           "w": 250,
           "d": 270,
           "zFrom": 212,
@@ -2865,10 +2879,10 @@
           "id": "ga_schiene",
           "kind": "torlaufschiene",
           "label": "Laufschiene Antrieb",
-          "x": 145,
-          "y": 280,
+          "x": 179,
+          "y": 300,
           "w": 10,
-          "d": 320,
+          "d": 328,
           "zFrom": 235,
           "zTo": 250,
           "note": ""
@@ -2882,7 +2896,7 @@
           "kind": "schalter",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 143.5,
+          "s": 163.5,
           "z": 105,
           "gangs": 2,
           "orientation": "senkrecht",
@@ -2903,8 +2917,8 @@
           "label": "GA2",
           "kind": "steckdose",
           "mount": "decke",
-          "x": 150,
-          "y": 265,
+          "x": 184,
+          "y": 285,
           "gangs": 1,
           "orientation": "waagerecht",
           "growth": "rechts",
@@ -2924,7 +2938,7 @@
           "kind": "anschlussdose",
           "mount": "wand",
           "wallIndex": 3,
-          "s": 150,
+          "s": 200,
           "z": 125,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2945,7 +2959,7 @@
           "kind": "starkstrom",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 230,
+          "s": 260,
           "z": 105,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -2966,7 +2980,7 @@
           "kind": "steckdose",
           "mount": "wand",
           "wallIndex": 0,
-          "s": 260,
+          "s": 300,
           "z": 105,
           "gangs": 2,
           "orientation": "waagerecht",
@@ -2987,7 +3001,7 @@
           "label": "GA6",
           "kind": "licht_decke",
           "mount": "decke",
-          "x": 150,
+          "x": 184,
           "y": 120,
           "gangs": 1,
           "orientation": "waagerecht",
@@ -3005,8 +3019,8 @@
           "label": "GA7",
           "kind": "licht_decke",
           "mount": "decke",
-          "x": 70,
-          "y": 300,
+          "x": 80,
+          "y": 320,
           "gangs": 1,
           "orientation": "waagerecht",
           "growth": "rechts",
@@ -3030,11 +3044,11 @@
         "note": ""
       },
       "ceiling": {
-        "construction": "stahlbeton",
+        "construction": "hourdis",
         "slotsAllowed": false,
         "drillingAllowed": true,
         "cavityDepth": 0,
-        "note": ""
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
       },
       "installationType": "aufputz_rohr",
       "wetRoom": true,
