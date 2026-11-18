@@ -12,12 +12,15 @@ import { normValue } from '../rules/normValues';
 import { newId } from '../model/factory';
 import { runRules } from '../rules/rules';
 import { produce } from 'immer';
+import { kw } from './loads';
 
 export interface Suggestion {
   key: string;
   reason: string;
   outlet: Outlet;
-  source: 'tuer' | 'moebel' | 'raum' | 'ausstattung';
+  source: 'tuer' | 'moebel' | 'raum' | 'ausstattung' | 'verbraucher';
+  /** Verbraucher, der beim Übernehmen mit dem Auslass verknüpft wird */
+  loadId?: string;
 }
 
 type Partial0 = Omit<Outlet, 'id' | 'label' | 'controls' | 'smart' | 'status' | 'note' | 'orientation' | 'growth' | 'boxType' | 'inserts' | 'gangs'> & Partial<Outlet>;
@@ -190,6 +193,33 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
         wall(mid, zSD, { gangs: 2, inserts: ['steckdose', 'steckdose'] }, 'fitness', 'Fitnessgerät: Steckdose');
         break;
     }
+  }
+
+  // --- Verbraucher ohne Anschluss (aus der Raumnutzung) -----------------------------
+  const longest = [...ws].sort((a, b) => b.length - a.length);
+  for (const l of room.loads) {
+    if (l.outletId && room.outlets.some((o) => o.id === l.outletId)) continue;
+    const word = l.label.split(/[ /(]/)[0].toLowerCase();
+    if (word.length > 3 && room.outlets.some((o) => o.note.toLowerCase().includes(word))) continue;
+    if (!l.dedicated && l.connection === 'steckdose') continue; // normale Steckdosen deckt die Raumausstattung ab
+    const kind: Outlet['kind'] = l.connection === 'herd' ? 'herd' : l.connection === 'starkstrom' ? 'starkstrom' : l.connection === 'anschlussdose' ? 'anschlussdose' : 'steckdose';
+    const z = Math.round(ffbToZ(room, l.height ?? (kind === 'steckdose' ? (isAp(room) ? 105 : 30) : kind === 'anschlussdose' ? 125 : 40)) * 10) / 10;
+    let placed: { wi: number; s: number } | null = null;
+    search: for (const w of longest) {
+      for (const f of [0.5, 0.3, 0.7, 0.15, 0.85]) {
+        const s = findFreeS(room, w.index, w.length * f, 5, z);
+        const clash = (o: Outlet) => o.wallIndex === w.index && o.s != null && Math.abs(o.s - (s ?? 0)) < 25;
+        if (s != null && !out.some((x) => clash(x.outlet)) && !room.outlets.some(clash)) { placed = { wi: w.index, s }; break search; }
+      }
+    }
+    if (!placed) continue;
+    const key = `last:${l.id}`;
+    if (room.dismissedSuggestions.includes(key)) continue;
+    out.push({
+      key, source: 'verbraucher', loadId: l.id,
+      reason: `${l.label} (${kw(l.power)}${l.phases === 3 ? ', Drehstrom' : ''}) – ${l.dedicated ? 'eigener Stromkreis' : 'eigener Anschluss'}; Lage bitte an Möbel/Gerät anpassen`,
+      outlet: { id: newId('v'), label: '?', kind, mount: 'wand', wallIndex: placed.wi, s: placed.s, z, gangs: 1, orientation: 'waagerecht', growth: 'rechts', boxType: isAp(room) ? 'aufputz' : 'up_tief', inserts: [kind === 'steckdose' ? (isAp(room) ? 'steckdose_klappdeckel' : 'steckdose') : kind === 'starkstrom' ? 'sonstiges' : 'geraeteanschluss'], controls: [], smart: false, status: 'neu', note: l.label } as Outlet,
+    });
   }
 
   // --- Raumausstattung: freie Wandabschnitte ohne Steckdose ------------------------

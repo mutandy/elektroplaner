@@ -185,3 +185,6 @@ table.edit tr.done td, .tasklist li.done > label span { opacity: .55; text-decor
 .who-fb { background: color-mix(in srgb, var(--warn) 15%, var(--panel)); color: var(--warn); }
 .who-own { background: color-mix(in srgb, var(--accent) 12%, var(--panel)); color: var(--accent); }
 @media (max-width: 760px) { .tasklist li { grid-template-columns: 1fr; } }
+.floorcard { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.pill.sev-ok { background: var(--ok); color: #fff; }
+.pill.sev-aus { background: var(--muted); color: #fff; }

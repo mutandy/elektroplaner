@@ -111,18 +111,23 @@ export function RulesView({ project }: { project: Project }) {
         </div>
         <FindingsList findings={items} project={project} />
       </Section>
-      <Section title={`Regelbasis (${RULES.length} Regeln)`} open={false}>
+      <Section title={`Regelübersicht (${RULES.length} Regeln)`}>
         <table className="findings">
-          <thead><tr><th>Regel</th><th>Beschreibung</th><th>Quelle</th><th>aktiv</th></tr></thead>
-          <tbody>{RULES.map((r) => (
-            <tr key={r.id}><td className="small">{r.id}</td><td>{r.title}</td><td className="small">{r.source}{r.confirm ? ' ⚠' : ''}</td>
+          <thead><tr><th>Status</th><th>Regel</th><th>Beschreibung</th><th>Quelle</th><th>aktiv</th></tr></thead>
+          <tbody>{RULES.map((r) => {
+            const fs = report.findings.filter((f) => f.ruleId === r.id);
+            const sev = project.settings.disabledRules[r.id] ? 'aus' : fs.some((f) => f.severity === 'fehler') ? 'fehler' : fs.some((f) => f.severity === 'warnung') ? 'warnung' : fs.length ? 'hinweis' : 'ok';
+            return (
+            <tr key={r.id}><td><span className={`pill sev-${sev}`}>{sev === 'ok' ? 'OK' : sev === 'aus' ? 'aus' : `${fs.length}`}</span></td><td className="small">{r.id}</td><td>{r.title}</td><td className="small">{r.source}{r.confirm ? ' ⚠' : ''}</td>
               <td><input type="checkbox" checked={!project.settings.disabledRules[r.id]} onChange={(e) => {
                 const reason = e.target.checked ? '' : prompt('Warum wird die Regel deaktiviert?') ?? '';
                 if (!e.target.checked && !reason) return;
                 up(`Regel ${r.id} ${e.target.checked ? 'aktiviert' : 'deaktiviert'}`, (p) => { if (e.target.checked) delete p.settings.disabledRules[r.id]; else p.settings.disabledRules[r.id] = reason; });
               }} /></td></tr>
-          ))}</tbody>
+            );
+          })}</tbody>
         </table>
+        <p className="muted small">Das Prüfprotokoll (Planungsprüfung + leeres Messprotokoll für die Erstprüfung) steht unter „Ausgaben“.</p>
       </Section>
     </div>
   );

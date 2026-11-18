@@ -8,16 +8,25 @@ import { normValue } from '../rules/normValues';
 import { cableById } from './cables';
 import { computeAllRoutes, outletCable, type RoomRoutes } from './routes';
 import { newId } from '../model/factory';
+import { circuitForLoad, kw } from './loads';
 
 // ---------------------------------------------------------------------------
 // Geometrie zwischen Räumen (Schätzung über die Lage im Geschoss)
 // ---------------------------------------------------------------------------
 
-const FLOOR_HEIGHT = 300; // cm je Geschoss (Schätzung)
+/** Höhenlage eines Geschosses (OK Rohboden) relativ zum Geschoss mit Ebene 0, aus den Geschosshöhen. */
+export function floorElevation(project: Project, floorId: string): number {
+  const f = project.floors.find((x) => x.id === floorId);
+  if (!f) return 0;
+  const byLevel = (lv: number) => project.floors.find((x) => x.level === lv)?.height ?? 275;
+  let z = 0;
+  if (f.level > 0) for (let lv = 0; lv < f.level; lv++) z += byLevel(lv);
+  else for (let lv = f.level; lv < 0; lv++) z -= byLevel(lv);
+  return z;
+}
 
 function globalPoint(project: Project, room: Room, p: { x: number; y: number }) {
-  const level = project.floors.find((f) => f.id === room.floorId)?.level ?? 0;
-  return { x: p.x + room.originOnFloor.x, y: p.y + room.originOnFloor.y, level };
+  return { x: p.x + room.originOnFloor.x, y: p.y + room.originOnFloor.y, level: floorElevation(project, room.floorId) };
 }
 
 function roomCenter(project: Project, room: Room) {
@@ -29,9 +38,9 @@ export function entryGlobal(project: Project, room: Room, rr: RoomRoutes) {
   return globalPoint(project, room, pointOnWall(room, rr.entry.wallIndex, rr.entry.s));
 }
 
-/** Leitungsweg zwischen zwei Punkten im Gebäude (rechtwinklig + Geschosswechsel + Auf/Ab). */
+/** Leitungsweg zwischen zwei Punkten im Gebäude (rechtwinklig + Höhenunterschied der Geschosse + Auf/Ab im Raum). `level` = Höhenlage in cm. */
 export function interRoomLength(a: { x: number; y: number; level: number }, b: { x: number; y: number; level: number }, roomHeight = 250) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.level - b.level) * FLOOR_HEIGHT + roomHeight;
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.level - b.level) + roomHeight;
 }
 
 function distributionPoint(project: Project, distId: string) {
@@ -246,8 +255,20 @@ export function proposeCircuits(project: Project, mode: 'offen' | 'alle' = 'offe
   const isKitchen = (r: Room) => /küche|kueche/i.test(`${r.name} ${r.usage}`);
   const isBath = (r: Room) => r.wetRoom && /bad|dusche|wc/i.test(`${r.name} ${r.usage}`);
 
+  // 0) Verbraucher mit eigenem Stromkreis (aus der Raumnutzung) – Leitung/LS nach Leistung
+  for (const r of rooms) for (const l of r.loads.filter((x) => x.dedicated && x.outletId)) {
+    const o = r.outlets.find((x) => x.id === l.outletId);
+    if (!o || !open(o) || assignment[o.id]) continue;
+    const dim = circuitForLoad(l);
+    const kind = /wallbox/i.test(l.label) ? 'wallbox' : dim.poles === 3 ? 'drehstrom' : 'gross';
+    const c = mk(distOf(r), `${r.name}: ${l.label}`, kind, `${l.label} ${kw(l.power)} – eigener Kreis`, [r.id]);
+    Object.assign(c, dim);
+    assignment[o.id] = c.id;
+  }
+
   // 1) Großgeräte, Drehstrom, Wallbox – je eigener Kreis
   for (const r of rooms) for (const o of r.outlets.filter(open)) {
+    if (assignment[o.id]) continue;
     const txt = `${o.note} ${r.furniture.map((f) => '').join('')}`;
     if (o.kind === 'herd') assignment[o.id] = mk(distOf(r), `${r.name}: Herd/Kochfeld`, 'drehstrom', 'Großgerät Drehstrom – eigener Kreis', [r.id]).id;
     else if (/wallbox/i.test(txt)) assignment[o.id] = mk(distOf(r), `${r.name}: Wallbox`, 'wallbox', 'E-Mobilität (VDE 0100-722): eigener Kreis, RCD-Typ nach Wallbox', [r.id]).id;

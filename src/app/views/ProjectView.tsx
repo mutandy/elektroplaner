@@ -129,7 +129,7 @@ export function ProjectView({ project }: { project: Project }) {
           cols={[{ key: 'name', label: 'Geschoss', type: 'text' }, { key: 'level', label: 'Ebene', type: 'number' }]}
           onChange={(i, k, v) => up('Geschoss', (p) => { (p.floors[i] as any)[k] = v; })}
           onRemove={project.floors.length > 1 ? (i) => up('Geschoss entfernt', (p) => { const id = p.floors[i].id; if (p.rooms.some((r) => r.floorId === id)) { alert('Geschoss enthält noch Räume.'); return; } p.floors.splice(i, 1); }) : undefined}
-          onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Neues Geschoss', level: p.floors.length, backgroundOpacity: 0.6 }); })} addLabel="Geschoss" />
+          onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Neues Geschoss', level: p.floors.length, backgroundOpacity: 0.6, height: 275 }); })} addLabel="Geschoss" />
         <EditTable rows={project.rooms.map((r) => ({ ...r, area: fmt(roomArea(r), 2) }))} rowKey={(r) => r.id}
           onSelect={(r) => store.setUi({ view: 'raum', roomId: r.id })}
           cols={[
@@ -163,6 +163,7 @@ export function ProjectView({ project }: { project: Project }) {
             { key: 'value', label: 'Standard', type: 'readonly', render: (r: any) => <span>{fmt(r.value)} {r.unit}</span> },
             { key: 'override', label: 'Projektwert', type: 'nullnumber' },
             { key: 'source', label: 'Quelle', type: 'readonly', render: (r: any) => <span className="small">{r.source}{r.confirm ? ' ⚠' : ''}</span> },
+            { key: 'key', label: 'bestätigt von (Elektrofachkraft, Datum)', type: 'readonly', render: (r: any) => r.confirm ? <TextInput value={project.settings.confirmedNorms[r.key] ?? ''} placeholder="offen" onChange={(v) => up(`Normwert ${r.key} bestätigt`, (p) => { if (v.trim()) p.settings.confirmedNorms[r.key] = v; else delete p.settings.confirmedNorms[r.key]; })} /> : <span className="muted small">Praxiswert</span> },
           ] as Col<any>[]}
           onChange={(i, _k, v) => up(`Normwert ${NORM_VALUES[i].key}`, (p) => { if (v == null) delete p.settings.normOverrides[NORM_VALUES[i].key]; else p.settings.normOverrides[NORM_VALUES[i].key] = v; })} />
       </Section>

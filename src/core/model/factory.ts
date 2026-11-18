@@ -1,6 +1,7 @@
 /** Erzeugen, Laden und Migrieren von Projekten. */
 import { Project, Room, SCHEMA_VERSION, type ProjectInput, type RoomInput } from './schema';
 import { rectPolygon, isClockwise, type Pt } from '../geometry/room';
+import { guessRoomType } from './roomTypes';
 
 let counter = 0;
 export function newId(prefix = 'id'): string {
@@ -76,6 +77,15 @@ const migrations: Record<number, (p: any) => any> = {
   // v3 → v4: Material, Kosten, Aufgaben (alles mit Standardwerten).
   3: (p) => {
     const up = (core: any) => ({ ...core, schemaVersion: 4 });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
+  // v4 → v5: Raumtyp + Verbraucher je Raum, Geschosshöhe. Raumtyp wird aus Name/Nutzung erraten.
+  4: (p) => {
+    const up = (core: any) => ({
+      ...core,
+      schemaVersion: 5,
+      rooms: (core.rooms ?? []).map((r: any) => ({ ...r, roomType: r.roomType ?? guessRoomType(r.name) ?? guessRoomType(r.usage ?? '') })),
+    });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
 };

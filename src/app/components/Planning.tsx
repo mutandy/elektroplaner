@@ -7,7 +7,10 @@ import { computeLengths, proposeCircuits, applyCircuitProposal, describeDrop } f
 import { outletKindLabel, boxTypeLabel } from '../../core/model/labels';
 import { fmt, wallName, zToFfb, wallGeoms } from '../../core/geometry/room';
 import { store } from '../store';
-import { Field, NumberInput, Select, opts } from './ui';
+import { Field, NumberInput, Select, opts, EditTable, type Col } from './ui';
+import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
+import { loadsForType, roomPower, projectDemand, kw, circuitPower, circuitCapacity } from '../../core/planning/loads';
+import { newId } from '../../core/model/factory';
 
 function acceptSuggestions(room: Room, list: Suggestion[]) {
   store.update(`${room.name}: ${list.length} Vorschlag/Vorschläge übernommen`, (p) => {
@@ -17,6 +20,7 @@ function acceptSuggestions(room: Room, list: Suggestion[]) {
       const label = nextOutletLabel(r as Room, taken);
       taken.push(label);
       r.outlets.push({ ...sg.outlet, label, note: sg.outlet.note || sg.reason.split(':')[0] } as any);
+      if (sg.loadId) { const l = r.loads.find((x) => x.id === sg.loadId); if (l) l.outletId = sg.outlet.id; }
       r.dismissedSuggestions = r.dismissedSuggestions.filter((k) => k !== sg.key);
     }
   });
@@ -101,10 +105,12 @@ export function CircuitProposalPanel({ project }: { project: Project }) {
           })}
         </tbody>
       </table>
-      <h4>Aktuelle Stromkreise: Länge und Spannungsfall</h4>
+      <h4>Leistungsbedarf</h4>
+      <DemandSummary project={project} />
+      <h4>Aktuelle Stromkreise: Last, Länge und Spannungsfall</h4>
       <table className="findings">
-        <thead><tr><th>SK</th><th>Bezeichnung</th><th className="num">Leitung gesamt</th><th className="num">bis letzter Auslass</th><th className="num">ΔU</th></tr></thead>
-        <tbody>{project.circuits.map((c) => { const x = lengths.circuits.find((k) => k.circuitId === c.id); return <tr key={c.id}><td><b>{c.label}</b></td><td>{c.name}</td><td>{x?.lengthM ? `${fmt(x.lengthM)} m` : '–'}</td><td>{x?.farthestM ? `${fmt(x.farthestM)} m` : '–'}</td><td className={x?.ok === false ? 'sev-warnung' : ''}>{describeDrop(x)}</td></tr>; })}</tbody>
+        <thead><tr><th>SK</th><th>Bezeichnung</th><th className="num">Verbraucher</th><th className="num">Leitung gesamt</th><th className="num">bis letzter Auslass</th><th className="num">ΔU</th></tr></thead>
+        <tbody>{project.circuits.map((c) => { const x = lengths.circuits.find((k) => k.circuitId === c.id); const pw = circuitPower(project, c); return <tr key={c.id}><td><b>{c.label}</b></td><td>{c.name}</td><td className={pw > circuitCapacity(c) ? 'sev-warnung' : ''}>{pw ? kw(pw) : '–'}</td><td>{x?.lengthM ? `${fmt(x.lengthM)} m` : '–'}</td><td>{x?.farthestM ? `${fmt(x.farthestM)} m` : '–'}</td><td className={x?.ok === false ? 'sev-warnung' : ''}>{describeDrop(x)}</td></tr>; })}</tbody>
       </table>
       <p className="muted small">Gruppierung nach DIN 18015-2/Praxis: Großgeräte und Drehstrom eigener Kreis, Küche aufgeteilt, Bad und AV/Technik getrennt, Steckdosen je Raum (max. {fmt(8, 0)} Plätze), Licht getrennt (bis 3 Räume), max. 4 Kreise je RCD. Absicherung und Querschnitt legt die Elektrofachkraft fest.</p>
     </div>
@@ -112,3 +118,75 @@ export function CircuitProposalPanel({ project }: { project: Project }) {
 }
 
 export { acceptSuggestions };
+
+// ---------------------------------------------------------------------------
+// Raumtyp und Verbraucher
+// ---------------------------------------------------------------------------
+
+/** Raumtyp setzen: Verbraucher, Feuchtraum, Installationsart werden passend vorbelegt. */
+export function setRoomType(project: Project, room: Room, type: RoomTypeId) {
+  const info = ROOM_TYPE_INFO[type];
+  store.update(`${room.name}: Nutzung ${info.label}`, (p) => {
+    const r = p.rooms.find((x) => x.id === room.id)!;
+    const changed = r.roomType !== type;
+    r.roomType = type;
+    if (changed && (!r.loads.length || r.loads.every((l) => !l.outletId))) r.loads = loadsForType(type) as any;
+    if (info.wetRoom) r.wetRoom = true;
+    if (!r.outlets.length) r.installationType = info.installation ?? project.settings.defaultInstallationType;
+    if (!r.usage.trim()) r.usage = info.label;
+  });
+}
+
+export function RoomTypeCards({ project, room }: { project: Project; room: Room }) {
+  return (
+    <div className="cards">
+      {ROOM_TYPES.map((t) => (
+        <button key={t} className={`card ${room.roomType === t ? 'active' : ''}`} onClick={() => setRoomType(project, room, t)}>
+          <b>{ROOM_TYPE_INFO[t].label}</b><span>{ROOM_TYPE_INFO[t].hint}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function LoadsEditor({ room }: { room: Room }) {
+  const up = (text: string, fn: (r: Room) => void) => store.update(`${room.name}: ${text}`, (p) => fn(p.rooms.find((x) => x.id === room.id) as Room));
+  const templates = room.roomType ? ROOM_TYPE_INFO[room.roomType].loads.filter((t) => !room.loads.some((l) => l.label === t.label)) : [];
+  const outletOpts = room.outlets.map((o) => ({ value: o.id, label: `${o.label} ${outletKindLabel[o.kind]}${o.note ? ` – ${o.note.slice(0, 25)}` : ''}` }));
+  return (
+    <div>
+      <EditTable rows={room.loads} rowKey={(r) => r.id} empty="Noch keine Verbraucher. Raumtyp wählen oder unten ergänzen."
+        cols={[
+          { key: 'label', label: 'Verbraucher', type: 'text' },
+          { key: 'power', label: 'Leistung W', type: 'number' },
+          { key: 'phases', label: 'Phasen', type: 'select', options: [{ value: '1', label: '230 V' }, { value: '3', label: '400 V (3~)' }] },
+          { key: 'dedicated', label: 'eigener Kreis', type: 'check' },
+          { key: 'connection', label: 'Anschluss', type: 'select', options: opts({ steckdose: 'Steckdose', anschlussdose: 'Geräteanschlussdose', herd: 'Herdanschluss', starkstrom: 'CEE/Drehstrom' }) },
+          { key: 'outletId', label: 'an Auslass', type: 'select', allowEmpty: '– noch keiner –', options: outletOpts },
+        ] as Col<any>[]}
+        onChange={(i, k, v) => up(`Verbraucher ${k}`, (r) => { (r.loads[i] as any)[k] = k === 'phases' ? Number(v) : v; })}
+        onRemove={(i) => up('Verbraucher entfernt', (r) => { r.loads.splice(i, 1); })}
+        onAdd={() => up('Verbraucher ergänzt', (r) => { r.loads.push({ id: newId('last'), label: 'Gerät', power: 1000, phases: 1, dedicated: false, connection: 'steckdose' } as any); })} addLabel="eigener Verbraucher" />
+      {templates.length > 0 && (
+        <div className="inline">
+          <span className="muted small">Typisch für {ROOM_TYPE_INFO[room.roomType!].label}:</span>
+          {templates.map((t) => <button key={t.label} className="small" onClick={() => up(`${t.label} ergänzt`, (r) => { r.loads.push({ id: newId('last'), label: t.label, power: t.power, phases: t.phases, dedicated: t.dedicated, connection: t.connection, height: t.height } as any); })}>＋ {t.label} ({kw(t.power)})</button>)}
+        </div>
+      )}
+      <p className="small">Summe im Raum: <b>{kw(roomPower(room))}</b>{room.loads.some((l) => l.dedicated) ? ` · eigene Stromkreise: ${room.loads.filter((l) => l.dedicated).map((l) => l.label.split(' (')[0]).join(', ')}` : ''}</p>
+      <p className="muted small">Großverbraucher bekommen einen eigenen Stromkreis und einen Anschlussvorschlag (unter „Auslässe“). Leistungen sind Richtwerte – Typenschild/Datenblatt gilt.</p>
+    </div>
+  );
+}
+
+export function DemandSummary({ project }: { project: Project }) {
+  const d = projectDemand(project);
+  if (!d.installed) return <p className="muted small">Noch keine Verbraucher erfasst (je Raum unter „Nutzung“).</p>;
+  return (
+    <div className="small">
+      <p>Installiert: <b>{kw(d.installed)}</b> · gleichzeitig geschätzt: <b>{kw(d.simultaneous)}</b>{d.mainFuse ? <> · Hauptsicherung {d.mainFuse.phases}× {d.mainFuse.amps} A ≈ {kw(d.mainFuse.watts)} → <b className={d.ratio! > 0.8 ? 'sev-warnung' : ''}>{fmt(d.ratio! * 100, 0)} %</b></> : ' · Hauptsicherung nicht erfasst'}</p>
+      <p className="muted">Größte Verbraucher: {d.biggest.map((b) => `${b.label} (${b.room}, ${kw(b.power)})`).join(' · ')}</p>
+      <p className="muted">Schätzung (größter Verbraucher voll, weitere anteilig) – die Bemessung nach DIN 18015-1 macht die Elektrofachkraft.</p>
+    </div>
+  );
+}

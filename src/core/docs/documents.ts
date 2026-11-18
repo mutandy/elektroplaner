@@ -19,8 +19,12 @@ import { wallName, zToFfb } from '../geometry/room';
 import { computeMaterial, euro } from '../planning/bom';
 import { estimateCosts } from '../planning/costs';
 import { buildTasks, PHASES } from '../planning/tasks';
+import { RULES } from '../rules/rules';
+import { projectDemand, kw, circuitPower } from '../planning/loads';
+import { capacityChecks, LAYING_LABEL } from '../rules/norms';
+import { ROOM_TYPE_INFO } from '../model/roomTypes';
 
-export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan' | 'material' | 'kosten' | 'aufgaben';
+export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan' | 'material' | 'kosten' | 'aufgaben' | 'pruefprotokoll';
 
 export const documentLabel: Record<DocumentKind, string> = {
   raumlayout: 'Raumlayouts (Kontrolle Bauherr)',
@@ -28,6 +32,7 @@ export const documentLabel: Record<DocumentKind, string> = {
   material: 'Material- und Bestellliste',
   kosten: 'Kostenschätzung (Richtwert)',
   aufgaben: 'Aufgaben- und Prüfliste Bauphase',
+  pruefprotokoll: 'Prüfprotokoll (Planung + Erstprüfung)',
   ausfuehrung: 'Ausführungsplan (Elektrofachkraft)',
 };
 
@@ -243,9 +248,14 @@ ${i === Math.ceil(lengths.runs.length / 26) - 1 ? `<h3>Summe je Kabeltyp (inkl. 
       title: 'Verwendete Norm- und Praxiswerte',
       body: `<div class="col" style="flex:1"><table><thead><tr><th>Schlüssel</th><th>Bedeutung</th><th class="num">Wert</th><th>Quelle</th><th>Status</th></tr></thead><tbody>${NORM_VALUES.map((v) => {
         const o = project.settings.normOverrides[v.key];
-        return `<tr><td class="small">${esc(v.key)}</td><td>${esc(v.label)}</td><td class="num">${fmt(o ?? v.value)} ${esc(v.unit)}${o != null ? ' (angepasst)' : ''}</td><td class="small">${esc(v.source)}</td><td>${v.confirm ? '<span class="confirm">⚠ vom Elektriker zu bestätigen</span>' : 'Praxiswert'}</td></tr>`;
+        return `<tr><td class="small">${esc(v.key)}</td><td>${esc(v.label)}</td><td class="num">${fmt(o ?? v.value)} ${esc(v.unit)}${o != null ? ' (angepasst)' : ''}</td><td class="small">${esc(v.source)}</td><td>${v.confirm ? (project.settings.confirmedNorms[v.key] ? `✔ ${esc(project.settings.confirmedNorms[v.key])}` : '<span class="confirm">⚠ vom Elektriker zu bestätigen</span>') : 'Praxiswert'}</td></tr>`;
       }).join('')}</tbody></table></div>`,
     });
+  }
+
+  if (kind === 'pruefprotokoll') {
+    buildProtocolPages(project, report, pages);
+    return wrapPages(project, kind, pages);
   }
 
   if (kind === 'material' || kind === 'kosten' || kind === 'aufgaben') {
@@ -458,4 +468,61 @@ function buildTaskPages(tasks: ReturnType<typeof buildTasks>, pages: Page[]) {
     subtitle: i ? '(Fortsetzung)' : 'Reihenfolge der Arbeiten · ⛔ = Haltepunkt (erst erledigen, dann weiter)',
     body: `<div class="col" style="flex:1"><table><thead><tr><th>✓</th><th>Aufgabe</th><th>Wer</th><th>Datum / Kürzel</th></tr></thead><tbody>${part.map((r) => r.head ? `<tr><th colspan="4" style="background:#e5e7eb">${esc(r.head)}</th></tr>` : `<tr><td style="font-size:11pt">${r.t!.done ? '☑' : '☐'}</td><td>${r.t!.hold ? '⛔ ' : ''}${esc(r.t!.text)}</td><td class="small">${esc(r.t!.who)}</td><td style="width:30mm"></td></tr>`).join('')}</tbody></table></div>`,
   }));
+}
+
+// ===========================================================================
+// Prüfprotokoll
+// ===========================================================================
+
+function buildProtocolPages(project: Project, report: ReturnType<typeof runRules>, pages: Page[]) {
+  const d = projectDemand(project);
+  const lengths = computeLengths(project);
+  const cap = capacityChecks(project, lengths.routes);
+  const sig = (who: string) => `<div style="flex:1;border-top:.3mm solid #111;padding-top:1mm;margin-top:14mm" class="small">${esc(who)}<br>Name, Firma/Eintragung, Datum, Unterschrift</div>`;
+  const rooms = project.rooms.filter((r) => r.inScope);
+
+  // 1) Anlagendaten
+  pages.push({
+    title: 'Prüfprotokoll – Anlagendaten und Leistungsbilanz',
+    body: `<div class="col" style="flex:1"><dl class="kv">
+<dt>Projekt</dt><dd>${esc(project.name)}${project.address ? ', ' + esc(project.address) : ''} (${esc(projectTypeLabel[project.projectType])})</dd>
+<dt>Geschosse</dt><dd>${project.floors.map((f) => `${esc(f.name)} (Ebene ${f.level}, ${fmt(f.height)} cm, ${project.rooms.filter((r) => r.floorId === f.id).length} Räume)`).join(' · ')}</dd>
+<dt>Verteilungen</dt><dd>${project.distributions.map((x) => `${esc(x.name)} – ${x.netForm}${x.mainFuse ? `, Hauptsicherung ${esc(x.mainFuse)}` : ''}${x.feedCable ? `, Zuleitung ${esc(x.feedCable)} ${esc(x.feedFuse)}` : ''}${x.hasSpd ? ', SPD' : ''}; RCD: ${x.rcds.map((r) => esc(r.label)).join(', ') || '–'}`).join('<br>')}</dd>
+<dt>Stromkreise</dt><dd>${project.circuits.length}</dd>
+<dt>Leistung</dt><dd>installiert ${kw(d.installed)}, gleichzeitig geschätzt ${kw(d.simultaneous)}${d.mainFuse ? ` (${fmt(d.ratio! * 100, 0)} % der Hauptsicherung)` : ''}</dd>
+</dl>
+<h3>Leistungsbedarf je Raum</h3><table><thead><tr><th>Raum</th><th>Nutzung</th><th>Verbraucher</th><th class="num">Summe</th></tr></thead><tbody>${rooms.map((r) => `<tr><td>${esc(r.name)}</td><td>${r.roomType ? esc(ROOM_TYPE_INFO[r.roomType].label) : '–'}</td><td class="small">${r.loads.map((l) => `${esc(l.label)} ${kw(l.power)}${l.dedicated ? ' (eigener Kreis)' : ''}`).join(', ') || '–'}</td><td class="num">${kw(r.loads.reduce((a, l) => a + l.power, 0))}</td></tr>`).join('')}</tbody></table></div>`,
+  });
+
+  // 2) Planungsprüfung je Regel
+  const ruleRows = RULES.map((r) => {
+    const fs = report.findings.filter((f) => f.ruleId === r.id);
+    const off = project.settings.disabledRules[r.id];
+    const st = off ? `deaktiviert: ${esc(off)}` : fs.some((f) => f.severity === 'fehler') ? '<span class="sev-fehler">Fehler</span>' : fs.some((f) => f.severity === 'warnung') ? '<span class="sev-warnung">Warnung</span>' : fs.length ? '<span class="sev-hinweis">Hinweis</span>' : 'OK';
+    return `<tr><td>${st}${fs.length ? ` (${fs.length})` : ''}</td><td>${esc(r.title)}</td><td class="small">${esc(r.source)}${r.confirm ? ' ⚠' : ''}</td><td style="width:30mm"></td></tr>`;
+  });
+  for (const [i, part] of chunk(ruleRows, 24).entries()) {
+    pages.push({ title: 'Prüfprotokoll – Planungsprüfung', subtitle: i ? '(Fortsetzung)' : `${report.counts.fehler} Fehler · ${report.counts.warnung} Warnungen · ${report.counts.hinweis} Hinweise`, body: `<div class="col" style="flex:1"><table><thead><tr><th>Ergebnis</th><th>Prüfpunkt</th><th>Quelle</th><th>geprüft (Kürzel)</th></tr></thead><tbody>${part.join('')}</tbody></table><p class="small">Einzelmeldungen siehe Ausführungsplan („Hinweise und offene Prüfpunkte“). ⚠ = Werte/Regel von der Elektrofachkraft zu bestätigen.</p></div>` });
+  }
+
+  // 3) Belastbarkeit und Normwerte
+  pages.push({
+    title: 'Prüfprotokoll – Leitungsdimensionierung',
+    body: `<div class="col" style="flex:1"><table><thead><tr><th>SK</th><th>Bezeichnung</th><th>LS</th><th>Leitung</th><th>Verlegeart (ungünstigster Abschnitt)</th><th class="num">Häufung</th><th class="num">Iz red.</th><th class="num">Last</th><th class="num">ΔU</th><th>bestätigt</th></tr></thead><tbody>
+${cap.map((k) => { const c = k.circuit; const calc = lengths.circuits.find((x) => x.circuitId === c.id); const pw = circuitPower(project, c); return `<tr><td><b>${esc(c.label)}</b></td><td>${esc(c.name)}</td><td>${c.poles === 3 ? '3× ' : ''}${c.characteristic}${c.ratedCurrent}</td><td>${esc(c.cable)}</td><td class="small">${esc(LAYING_LABEL[k.method])}</td><td class="num">${k.grouped}</td><td class="num ${k.izReduced != null && c.ratedCurrent > k.izReduced ? 'sev-fehler' : ''}">${k.izReduced != null ? fmt(k.izReduced) + ' A' : '–'}</td><td class="num">${pw ? kw(pw) : '–'}</td><td class="num">${esc(describeDrop(calc))}</td><td style="width:18mm"></td></tr>`; }).join('')}
+</tbody></table><p class="small">Iz nach DIN VDE 0298-4 (Cu, PVC, 30 °C) mit Häufungsfaktor für den ungünstigsten Abschnitt der berechneten Leitungswege. Umgebungstemperatur, Wärmedämmung und Selektivität beurteilt die Elektrofachkraft.</p></div>`,
+  });
+
+  // 4) Messprotokoll (leer)
+  const meas = project.circuits.map((c) => `<tr><td><b>${esc(c.label)}</b></td><td class="small">${esc(c.name)}</td><td>${c.poles === 3 ? '3× ' : ''}${c.characteristic}${c.ratedCurrent}</td><td class="small">${esc(project.distributions.flatMap((x) => x.rcds).find((r) => r.id === c.rcdId)?.label ?? '–')}</td><td>☐</td><td></td><td></td><td></td><td></td><td></td><td>☐</td></tr>`);
+  for (const [i, part] of chunk(meas, 18).entries()) {
+    pages.push({
+      title: 'Messprotokoll Erstprüfung (DIN VDE 0100-600)',
+      subtitle: i ? '(Fortsetzung)' : 'von der Elektrofachkraft auszufüllen',
+      body: `<div class="col" style="flex:1"><table><thead><tr><th>SK</th><th>Bezeichnung</th><th>LS</th><th>RCD</th><th>Schutzleiter durchgängig</th><th>R<sub>iso</sub> MΩ</th><th>Z<sub>s</sub> Ω</th><th>I<sub>k</sub> A</th><th>RCD I<sub>Δ</sub> mA</th><th>RCD t<sub>a</sub> ms</th><th>Funktion</th></tr></thead><tbody>${part.join('')}</tbody></table>
+${i === Math.ceil(meas.length / 18) - 1 ? `<p class="small">Besichtigen ☐ · Erproben ☐ · Messen ☐ · Drehfeld ☐ · Überspannungsschutz ☐ · Stromkreisliste in der Verteilung ☐ · Dokumentation übergeben ☐</p>
+<div style="display:flex;gap:10mm">${sig('Planung / Bauherr')}${sig('Elektrofachkraft (Errichter)')}</div>
+<p class="small">Dieses Blatt ersetzt nicht das Prüfprotokoll der Elektrofachkraft (z. B. ZVEH-Vordruck); es fasst die Planungsprüfung zusammen und dient als Vorlage.</p>` : ''}</div>`,
+    });
+  }
 }

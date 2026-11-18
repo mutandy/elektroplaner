@@ -9,6 +9,8 @@ import type { Rule, RuleFinding, Severity } from './types';
 import { outletKindLabel } from '../model/labels';
 import { computeRoomRoutes } from '../planning/routes';
 import { computeLengths } from '../planning/circuits';
+import { NORM_RULES } from './norms';
+import { ROOM_TYPE_INFO } from '../model/roomTypes';
 
 const isWallOutlet = (o: Outlet) => o.mount === 'wand' && o.wallIndex != null && o.s != null && o.z != null;
 const overlaps = (a1: number, a2: number, b1: number, b2: number) => a1 < b2 && b1 < a2;
@@ -305,7 +307,8 @@ export const RULES: Rule[] = [
     check: (_ctx, room) => {
       if (!room || !room.inScope) return [];
       const text = `${room.name} ${room.usage} ${room.futureUsage}`;
-      if (!/schlaf|kind|gäst|gaest|flur|diele/i.test(text)) return [];
+      const byType = room.roomType ? ROOM_TYPE_INFO[room.roomType].smokeDetector : undefined;
+      if (byType === false || (byType == null && !/schlaf|kind|gäst|gaest|flur|diele/i.test(text))) return [];
       if (room.outlets.some((o) => o.kind === 'rauchwarnmelder')) return [];
       return [{ severity: 'warnung', message: `${room.name}: Rauchwarnmelder fehlt (Pflicht in Schlafräumen, Kinderzimmern und Fluren, die zu Aufenthaltsräumen führen – genaue Regel der Landesbauordnung prüfen).` }];
     },
@@ -419,6 +422,8 @@ export const RULES: Rule[] = [
     },
   },
 ];
+
+RULES.push(...NORM_RULES);
 
 export interface RuleReport {
   findings: RuleFinding[];

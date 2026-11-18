@@ -8,6 +8,8 @@
 import { createProject, createRectRoom, createPolygonRoom } from '../src/core/model/factory';
 import type { Project, Room } from '../src/core/model/schema';
 import { Project as ProjectSchema } from '../src/core/model/schema';
+import { loadsForType } from '../src/core/planning/loads';
+import type { RoomTypeId } from '../src/core/model/roomTypes';
 
 const REF = 1.5; // künftiger Bodenaufbau über Bezug (Ausgleich 0,5 + Belag 1,0)
 const SD = 30 + REF; // Steckdose über Bezug
@@ -181,7 +183,7 @@ export function buildKellerProject(): Project {
       { id: 'b3', label: 'B3', kind: 'licht_wand', mount: 'wand', wallIndex: 1, s: 250, z: 185, boxType: 'up_tief', inserts: ['geraeteanschluss'], circuitId: 'c1', note: 'Spiegelleuchte – über der Vorwand im Mauerwerk' },
       { id: 'b4', label: 'B4', kind: 'licht_decke', mount: 'decke', x: 91, y: 160, status: 'bestand_bleibt', boxType: 'bestand', circuitId: 'c1', note: 'Bestand, Zugtest; ggf. Leuchte Schutzklasse II' },
       { id: 'b5', label: 'B5', kind: 'anschlussdose', mount: 'wand', wallIndex: 3, s: 60, z: 205, boxType: 'up_tief', inserts: ['geraeteanschluss'], circuitId: 'c1', note: 'Lüfter mit Nachlauf, Dauerstrom + geschaltete Phase (5×1,5)' },
-      { id: 'b6', label: 'B6', kind: 'steckdose', mount: 'wand', wallIndex: 1, s: 150, z: 40, boxType: 'vorwand', inserts: ['steckdose'], circuitId: 'c2', note: 'Dusch-WC, hinter Vorwand' },
+      { id: 'b6', label: 'B6', kind: 'anschlussdose', mount: 'wand', wallIndex: 1, s: 150, z: 40, boxType: 'vorwand', inserts: ['geraeteanschluss'], circuitId: 'c2', note: 'Dusch-WC fest angeschlossen (Schutzbereich 2: keine Steckdose), hinter Vorwand' },
     ],
   }));
 
@@ -361,5 +363,17 @@ export function buildKellerProject(): Project {
       { id: 'ga7', label: 'GA7', kind: 'licht_decke', mount: 'decke', x: 80, y: 320, boxType: 'aufputz', circuitId: 'g2', note: 'Wannenleuchte vor dem Torbereich' },
     ],
   }));
+  // Raumtypen und Verbraucher; Verbraucher werden mit passenden Auslässen verknüpft
+  const types: Record<string, RoomTypeId> = { flur: 'flur', bad: 'bad', kueche: 'kueche', heimkino: 'heimkino', partyraum: 'hobby', buero: 'gaeste', technik: 'technik', kellerraum: 'werkstatt', garage: 'garage' };
+  const manual: Record<string, string> = { 'AV-Receiver / Verstärker': 'h15' };
+  for (const r of rooms) {
+    r.roomType = types[r.id];
+    if (!r.roomType) continue;
+    r.loads = loadsForType(r.roomType).map((l, i) => {
+      const words = l.label.toLowerCase().split(/[\s/()]+/).filter((w) => w.length >= 4);
+      const hit = manual[l.label] ?? r.outlets.find((o) => words.some((w) => o.note.toLowerCase().includes(w)))?.id;
+      return { ...l, id: `${r.id}_last${i + 1}`, outletId: hit };
+    });
+  }
   return ProjectSchema.parse({ ...p, rooms });
 }

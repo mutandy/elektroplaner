@@ -39,10 +39,10 @@ Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beis
 
 Ein neues Projekt beginnt immer im Assistenten. Er fragt Schritt für Schritt und macht erst danach Empfehlungen:
 
-1. **Projekt:** Art des Vorhabens, Gebäude und Geschosse, Höhenbezug und üblicher Bodenaufbau, Installationsart und Schalterprogramm, Zähler und Verteilung (freie Sicherungen, FI/RCD, Unterverteilungen), was unverändert bleibt, Smart Home, Netzwerk.
-2. **Grundriss (optional):** Bild hochladen, Maßstab über ein bekanntes Maß festlegen (zwei Punkte anklicken, Länge eingeben).
-3. **Räume anlegen:** Bezeichnung im Bestandsplan und künftiger Name, Nutzung, Geschoss. Mit Grundriss lässt sich jeder Raum darauf aufziehen; Lage und ungefähre Größe werden übernommen.
-4. **Je Raum:** Maße und Höhe (auch Kamin/Vorsprung in einer Ecke), Wände, Türen (Bänder, Aufschlag, Brandschutz), Fenster, Vorwand/Tabuzonen/Hindernisse, Boden (Aufbau, Bodenschlitze, Folientiefe), Decke, Nutzung und Möbel, Bestandsleitungen (nur im Bestand), Zusammenfassung zum Bestätigen.
+1. **Projekt:** Art des Vorhabens, Gebäude und **alle Geschosse mit Geschosshöhe** (Schnellanlage KG/EG/OG/DG), Höhenbezug und üblicher Bodenaufbau, Installationsart und Schalterprogramm, Zähler und Verteilung (freie Sicherungen, FI/RCD, Unterverteilungen), was unverändert bleibt, Smart Home, Netzwerk.
+2. **Grundrisse je Geschoss (optional):** Bild hochladen, Maßstab über ein bekanntes Maß festlegen (zwei Punkte anklicken, Länge eingeben).
+3. **Räume je Geschoss anlegen:** Bezeichnung im Bestandsplan, künftiger Name, **Nutzung (Raumtyp)**. Mit Grundriss lässt sich jeder Raum darauf aufziehen; Lage und ungefähre Größe werden übernommen.
+4. **Je Raum:** zuerst **Nutzung und Verbraucher** (Raumtyp wählen → typische Geräte mit Leistung, z. B. Kochfeld 11 kW Drehstrom, Waschmaschine 2,2 kW mit eigenem Kreis; anpassbar), dann Maße und Höhe (auch Kamin/Vorsprung in einer Ecke), Wände, Türen (Bänder, Aufschlag, Brandschutz), Fenster, Vorwand/Tabuzonen/Hindernisse, Boden (Aufbau, Bodenschlitze, Folientiefe), Decke, Möbel und Geräte, Bestandsleitungen (nur im Bestand), Zusammenfassung zum Bestätigen.
 5. **Abschluss:** Liste aller offenen Punkte mit Sprung zum jeweiligen Schritt.
 
 Jeder Schritt erklärt unter „Warum wird das gefragt?“, wozu die Angabe dient. „Weiß ich noch nicht – später“ überspringt einen Schritt; der Punkt bleibt als offen markiert. Der Fortschritt wird im Projekt gespeichert. Der Assistent schreibt in dieselben Daten wie die Expertenansicht.
@@ -64,6 +64,20 @@ Nach der Erfassung schlägt das Programm vor – nichts davon wird ohne Zustimmu
 * **Material- und Bestellliste**, gruppiert: Kabel und Leitungen, Dosen, Schalterprogramm (Rahmen nach Fachzahl), Klemmen und Kleinmaterial, Verteiler und Schutzgeräte, Netzwerk/Multimedia/Smart Home, Leuchten und Geräte, Werkzeug und Miete. Bedarf aus Plan, Leitungswegen (Schlitzvolumen → Mörtel/Gips, Aufputzrohr, Schellen, Durchbrüche) und Leitungslängen; Bestellmenge auf Gebinde aufgerundet; Richtpreise (änderbar), Summen je Gruppe, Abhaken, eigene Positionen. Export als **XLSX** (drei Blätter, Summenformeln), **CSV** (Semikolon, für Excel) und **PDF**.
 * **Kostenschätzung** nach Gewerken mit Spanne: Material, Schlitzen/Bohren, Dosen/Aufputz, Kabel, Schließen, Elektrofachkraft (Verteiler, Anschluss, Erstprüfung), Brandschutz, Ausbessern, Entsorgung, Unvorhergesehenes. Umschaltbar: Vorarbeiten in Eigenleistung oder durch Handwerker; Stundensätze änderbar. Ausdrücklich ein Richtwert.
 * **Aufgaben- und Prüfliste** in zehn Bauphasen (Vorbereitung bis Abnahme) mit Haltepunkten (z. B. Fotos und Isolationsmessung vor dem Verschließen), Zuständigkeit (Eigenleistung/Elektrofachkraft/Fachbetrieb), Abhaken und Notizen; Prüfaufgaben für jede Bestandsleitung.
+
+### Leistungsbedarf und Normprüfung (Etappe 4)
+
+* **Leistungsbedarf:** Verbraucher je Raum mit Leistung und Phasen; Summe je Raum, Last je Stromkreis (gegen den LS), installierte und geschätzt gleichzeitige Leistung gegen die Hauptsicherung. Großverbraucher bekommen einen Anschlussvorschlag und im Stromkreisvorschlag einen eigenen, passend dimensionierten Kreis (z. B. Durchlauferhitzer 21 kW → B32, 5×6 mm²).
+* **Normmodule** (alle Werte konfigurierbar, ⚠ = vom Elektriker zu bestätigen):
+  * DIN VDE 0100-701 Bad: Schutzbereiche 1 und 2 aus Dusche/Wanne (keine Steckdosen/Schalter, IPX4-Hinweise), RCD für alle Badstromkreise.
+  * DIN VDE 0100-520 / 0298-4: Strombelastbarkeit nach Verlegeart (C im Mauerwerk, B2 im Rohr/Hohlraum) und Häufung im gemeinsamen Schlitz/Rohr; Spannungsfall.
+  * DIN VDE 0100-420: AFDD-Hinweis für Schlafräume.
+  * DIN VDE 0100-443/534: Überspannungsschutz.
+  * DIN VDE 0100-722: Wallbox mit eigenem Kreis, RCD-Typ, Anmeldung/Genehmigung beim Netzbetreiber.
+  * Erdverlegung: kein NYM in der Erde, Tiefe/Warnband/Sandbett.
+  * DIN 18015-2 / RAL-RG 678: Mindestausstattung (Steckdosen, Licht) nach Raumtyp, Fläche und Ausstattungswert.
+  * Landesbauordnung: Rauchwarnmelder nach Raumtyp.
+* **Regelübersicht** (Status je Regel) und **Prüfprotokoll** als Druckdokument: Anlagendaten und Leistungsbilanz, Planungsprüfung zum Abzeichnen, Leitungsdimensionierung, leeres Messprotokoll je Stromkreis für die Erstprüfung nach DIN VDE 0100-600, Unterschriften. Normwerte lassen sich unter Projekt → Norm- und Praxiswerte von der Elektrofachkraft als bestätigt eintragen.
 
 ### Expertenansicht
 
@@ -101,6 +115,9 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   planning/bom.ts      Material- und Bestellliste
   planning/costs.ts    Kostenschätzung
   planning/tasks.ts    Aufgaben- und Prüfliste
+  planning/loads.ts    Leistungsbedarf, Last je Stromkreis, Hauptsicherung
+  model/roomTypes.ts   Raumtypen: typische Verbraucher, Mindestausstattung, Lux, Besonderheiten
+  rules/norms.ts       Normmodule (Bad, Belastbarkeit, AFDD, SPD, E-Mobilität, Erde, Leistung, Ausstattung)
   export/material.ts   CSV- und XLSX-Export
   rules/normValues.ts  Norm- und Praxiswerte mit Quelle und Kennzeichen „vom Elektriker zu bestätigen“
   rules/rules.ts       Regelbasis (reine Funktionen) + runRules()
@@ -162,7 +179,7 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 **Noch nicht umgesetzt:**
 
 * Etappe 2 (Rest): Leerrohre als eigene Trasse mit Stecker-Prüfung in der Oberfläche (die Prüffunktion gibt es schon), Leitungswege zwischen Räumen (heute Schätzung über die Lage im Geschoss), Schaltdrähte Schalter → Leuchte bei Bestands-Deckenauslässen.
-* Etappe 4: vollständige Regelmodule (VDE 0100-701 Bad-Schutzbereiche, -520 Strombelastbarkeit, -420 AFDD, -443/-534 SPD, -722 E-Mobilität, Erdverlegung, Abstände/Bewegungsflächen, Beleuchtungsstärke) und ein Prüfprotokoll zum Abzeichnen.
+* Etappe 4 (Rest): Abstände/Bewegungsflächen (Möbel, Türaufschlag), Beleuchtungsstärke-Abschätzung je Raum (Lux-Ziele sind je Raumtyp hinterlegt), Selektivität.
 * Etappe 5: Fotos je Wand/Raum, **KI-Auswertung (Claude-API)** – z. B. Raumnamen und Maße aus dem hochgeladenen Grundriss vorschlagen – von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
 
 **Vereinfachungen:**
@@ -171,7 +188,10 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 
 * Türen werden je Raum erfasst. Eine Tür zwischen zwei Räumen steht in beiden Räumen getrennt; die beiden Einträge werden noch nicht verknüpft.
 * Die Wanddicke ist im Plan nur symbolisch gezeichnet. Die Lage der Räume im Geschoss dient nur der Orientierung.
-* Die Rauchwarnmelder-Regel erkennt Schlaf-, Kinder- und Flurräume am Namen und an der Nutzung, nicht an einer genauen Auswertung der jeweiligen Landesbauordnung.
+* Die Rauchwarnmelder-Regel nutzt den Raumtyp (Schlafen, Kinder, Gäste, Flur), nicht eine genaue Auswertung der jeweiligen Landesbauordnung.
+* Schutzbereiche im Bad werden aus der Dusch-/Wannenfläche im Grundriss bestimmt; bei bodengleichen Duschen reicht Bereich 1 bis 120 cm um den Brausekopf – vor Ort prüfen.
+* Gleichzeitige Leistung ist eine einfache Schätzung (größter Verbraucher voll, weitere anteilig), keine Bemessung nach DIN 18015-1.
+* Leitungen zwischen Geschossen werden über die Geschosshöhen und die Lage im Grundriss geschätzt; die Grundrisse verschiedener Geschosse müssen dafür übereinander ausgerichtet sein (gleicher Nullpunkt).
 * Leitungswege werden je Raum berechnet; zwischen Räumen und zur Verteilung schätzt das Programm die Länge rechtwinklig über die Lage im Geschoss (in Listen als „Schätzung“ markiert).
 * Innerhalb eines Stromkreises wird eine Kette Auslass → Auslass angenommen (Reihenfolge nach Entfernung von der Einspeisung).
 * Kabeldurchmesser und Gebinde sind typische Herstellerwerte; maßgeblich ist das Datenblatt.

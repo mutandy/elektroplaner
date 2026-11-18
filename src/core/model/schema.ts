@@ -19,8 +19,9 @@
  *    anzuzeigen.
  */
 import { z } from 'zod';
+import { ROOM_TYPES } from './roomTypes';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -120,6 +121,8 @@ export const Settings = z.object({
   defaultFutureBuildup: cm.nonnegative().default(0),
   /** Überschreibt Normwerte aus der Regelbasis (Schlüssel siehe rules/normValues.ts). */
   normOverrides: z.record(z.string(), z.number()).default({}),
+  /** Normwerte, die die Elektrofachkraft bestätigt hat (Schlüssel → „Name, Datum“). */
+  confirmedNorms: z.record(z.string(), z.string()).default({}),
   /** Regeln, die bewusst deaktiviert wurden (mit Begründung). */
   disabledRules: z.record(z.string(), z.string()).default({}),
 });
@@ -414,6 +417,24 @@ export const ExistingCable = z.object({
   note: z.string().default(''),
 });
 
+export const RoomType = z.enum(ROOM_TYPES);
+
+/** Verbraucher im Raum (Leistungsbedarf). */
+export const Load = z.object({
+  id,
+  label: z.string(),
+  /** Leistung in W */
+  power: z.number().nonnegative(),
+  phases: z.union([z.literal(1), z.literal(3)]).default(1),
+  /** eigener Stromkreis */
+  dedicated: z.boolean().default(false),
+  connection: z.enum(['steckdose', 'anschlussdose', 'herd', 'starkstrom']).default('steckdose'),
+  /** Auslass, an dem der Verbraucher hängt (falls zugeordnet) */
+  outletId: z.string().optional(),
+  /** Montagehöhe über FFB für den Anschlussvorschlag */
+  height: z.number().optional(),
+});
+
 /** Wie Leitungen im Raum geführt werden. */
 export const RoutingStrategy = z.enum([
   /** Programm wählt: Aufputz → Bodenschlitz → Decke → waagerechte Wandschlitze. */
@@ -447,6 +468,10 @@ export const Room = z.object({
   formerName: z.string().default(''),
   usage: z.string().default(''),
   futureUsage: z.string().default(''),
+  /** Raumtyp (bestimmt typische Verbraucher, Mindestausstattung, Regeln). */
+  roomType: RoomType.optional(),
+  /** Verbraucher mit Leistung. */
+  loads: z.array(Load).default([]),
   /** Lage des Raum-Nullpunkts im Geschoss (für die Gesamtansicht). */
   originOnFloor: z.object({ x: cm, y: cm }).default({ x: 0, y: 0 }),
   /** Raumpolygon (Rohbaumaße), im Uhrzeigersinn, erste Ecke = Nullpunkt. */
@@ -491,6 +516,8 @@ export const FloorLevel = z.object({
   /** Maßstab des Hintergrunds: Zentimeter je Bildpixel (aus Kalibrierung). */
   backgroundScale: z.number().positive().optional(),
   backgroundOpacity: z.number().min(0).max(1).default(0.6),
+  /** Geschosshöhe (OK Rohboden bis OK Rohboden darüber) – für Leitungswege zwischen Geschossen. */
+  height: z.number().positive().default(275),
 });
 
 // ---------------------------------------------------------------------------
@@ -638,3 +665,4 @@ export type WizardState = z.infer<typeof WizardState>;
 export type RoutingStrategy = z.infer<typeof RoutingStrategy>;
 export type FloorLevel = z.infer<typeof FloorLevel>;
 export type CostSettings = z.infer<typeof CostSettings>;
+export type Load = z.infer<typeof Load>;

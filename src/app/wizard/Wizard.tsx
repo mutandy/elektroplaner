@@ -19,7 +19,9 @@ import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
 import { runRules } from '../../core/rules/rules';
-import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions } from '../components/Planning';
+import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions, RoomTypeCards, LoadsEditor, DemandSummary } from '../components/Planning';
+import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
+import { setRoomType } from '../components/Planning';
 import { suggestOutlets } from '../../core/planning/suggest';
 import { computeAllRoutes, routeTotals } from '../../core/planning/routes';
 
@@ -85,7 +87,7 @@ export function Wizard({ project }: { project: Project }) {
             <h2>{step.title}</h2>
           </div>
           <div className="wiz-body">
-            {room && step.sub && step.sub !== 'zusammenfassung' && step.sub !== 'nutzung' ? (
+            {room && step.sub && !['zusammenfassung', 'nutzung', 'einrichtung'].includes(step.sub) ? (
               <div className="wiz-split">
                 <div><RoomStep project={project} room={room} step={step} /></div>
                 <div className="wiz-preview"><RoomPlan project={project} room={room} layers={['moebel', '230v', 'daten', 'licht', 'beschriftung', 'masse']} /></div>
@@ -114,7 +116,9 @@ function StepList({ project, steps, current }: { project: Project; steps: Step[]
     let gr = groups.find((x) => x.key === key);
     if (!gr) {
       const r = s.roomId ? project.rooms.find((x) => x.id === s.roomId) : undefined;
-      gr = { key, label: r ? r.name : s.group, items: [] };
+      const fl = r && project.floors.length > 1 ? project.floors.find((f) => f.id === r.floorId) : undefined;
+      const short = (n: string) => ({ kellergeschoss: 'KG', erdgeschoss: 'EG', obergeschoss: 'OG', dachgeschoss: 'DG', spitzboden: 'SB' } as Record<string, string>)[n.toLowerCase()] ?? n;
+      gr = { key, label: r ? `${fl ? short(fl.name) + ' · ' : ''}${r.name}` : s.group, items: [] };
       groups.push(gr);
     }
     gr.items.push(s);
@@ -189,12 +193,18 @@ function BuildingStep({ project }: { project: Project }) {
         <Field label="Gebäudeart"><Select value={project.buildingType} options={opts({ efh: 'Einfamilienhaus', dhh: 'Doppelhaushälfte', rh: 'Reihenhaus', mfh: 'Mehrfamilienhaus', einliegerwohnung: 'Einliegerwohnung', sonstiges: 'Sonstiges' })} onChange={(v) => v && up('Gebäudeart', (p) => { p.buildingType = v as any; })} /></Field>
         <Field label="Bundesland"><Select value={project.bundesland} allowEmpty="– bitte wählen –" options={opts({ BW: 'Baden-Württemberg', BY: 'Bayern', BE: 'Berlin', BB: 'Brandenburg', HB: 'Bremen', HH: 'Hamburg', HE: 'Hessen', MV: 'Mecklenburg-Vorpommern', NI: 'Niedersachsen', NW: 'Nordrhein-Westfalen', RP: 'Rheinland-Pfalz', SL: 'Saarland', SN: 'Sachsen', ST: 'Sachsen-Anhalt', SH: 'Schleswig-Holstein', TH: 'Thüringen' })} onChange={(v) => up('Bundesland', (p) => { p.bundesland = v as any; })} /></Field>
       </div>
-      <h3>Welche Geschosse betrifft die Planung?</h3>
+      <h3>Welche Geschosse hat das Gebäude, und welche betrifft die Planung?</h3>
+      <p className="muted small">Lege alle Geschosse an, durch die Leitungen laufen (auch das mit der Verteilung). Die Geschosshöhe (Rohboden bis Rohboden darüber) braucht das Programm für Leitungen zwischen den Geschossen.</p>
+      <div className="inline">
+        {([['Kellergeschoss', -1], ['Erdgeschoss', 0], ['Obergeschoss', 1], ['Dachgeschoss', 2], ['Spitzboden', 3]] as [string, number][]).filter(([, lv]) => !project.floors.some((f) => f.level === lv)).map(([name, lv]) => (
+          <button key={name} className="small" onClick={() => up(`${name} angelegt`, (p) => { p.floors.push({ id: newId('geschoss'), name, level: lv, backgroundOpacity: 0.6, height: lv < 0 ? 250 : 275 }); p.floors.sort((a, b) => a.level - b.level); })}>＋ {name}</button>
+        ))}
+      </div>
       <EditTable rows={project.floors} rowKey={(r) => r.id}
-        cols={[{ key: 'name', label: 'Geschoss', type: 'text' }, { key: 'level', label: 'Ebene (0 = EG, −1 = Keller)', type: 'number' }]}
+        cols={[{ key: 'name', label: 'Geschoss', type: 'text' }, { key: 'level', label: 'Ebene (0 = EG, −1 = Keller)', type: 'number' }, { key: 'height', label: 'Geschosshöhe cm', type: 'number' }, { key: 'id', label: 'Räume', type: 'readonly', render: (f: any) => <span>{project.rooms.filter((r) => r.floorId === f.id).length}</span> }] as Col<any>[]}
         onChange={(i, k, v) => up('Geschoss', (p) => { (p.floors[i] as any)[k] = v; })}
         onRemove={project.floors.length > 1 ? (i) => up('Geschoss entfernt', (p) => { if (p.rooms.some((r) => r.floorId === p.floors[i].id)) { alert('Das Geschoss enthält noch Räume.'); return; } p.floors.splice(i, 1); }) : undefined}
-        onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Kellergeschoss', level: -1, backgroundOpacity: 0.6 }); })} addLabel="Geschoss" />
+        onAdd={() => up('Geschoss ergänzt', (p) => { p.floors.push({ id: newId('geschoss'), name: 'Neues Geschoss', level: Math.max(...p.floors.map((f) => f.level)) + 1, backgroundOpacity: 0.6, height: 275 }); })} addLabel="anderes Geschoss" />
       <Why>Das Bundesland bestimmt die Landesbauordnung, und die regelt z. B., in welchen Räumen Rauchwarnmelder Pflicht sind.</Why>
     </>
   );
@@ -349,17 +359,17 @@ function NetworkStep({ project }: { project: Project }) {
 
 // ---------------------------------------------------------------------------
 
-function PlanStep({ project }: { project: Project }) {
-  const [floorId, setFloorId] = useState(project.floors[0].id);
-  const [mode, setMode] = useState<TracerMode>('ansehen');
-  const fi = Math.max(0, project.floors.findIndex((f) => f.id === floorId));
+function FloorPlanCard({ project, fi }: { project: Project; fi: number }) {
   const floor = project.floors[fi];
+  const [mode, setMode] = useState<TracerMode>(floor.backgroundPlan && !floor.backgroundScale ? 'kalibrieren' : 'ansehen');
+  const [open, setOpen] = useState(!floor.backgroundPlan || !floor.backgroundScale);
   return (
-    <>
-      <p>Hast du einen Grundriss (Bauplan, Skizze, Foto)? Dann lade ihn hoch. Er liegt im Hintergrund, und du ziehst die Räume darauf nach. Ohne Plan geht es auch: Dann fragt das Programm die Maße einzeln ab.</p>
+    <div className="floorcard">
       <div className="inline">
-        {project.floors.length > 1 && <Select value={floorId} options={project.floors.map((f) => ({ value: f.id, label: f.name }))} onChange={(v) => v && setFloorId(v)} />}
-        <label className="filebtn">Grundriss hochladen (JPG/PNG)
+        <b>{floor.name}</b>
+        <span className={floor.backgroundScale ? 'ok small' : 'muted small'}>{!floor.backgroundPlan ? 'kein Grundriss' : floor.backgroundScale ? `✔ Grundriss, Maßstab 1 px = ${fmt(floor.backgroundScale, 2)} cm` : 'Grundriss ohne Maßstab'}</span>
+        <span className="spacer" />
+        <label className="filebtn small">{floor.backgroundPlan ? 'Anderen Grundriss laden' : 'Grundriss hochladen (JPG/PNG)'}
           <input type="file" accept="image/*" hidden onChange={async (e) => {
             const f = e.target.files?.[0];
             e.target.value = '';
@@ -367,79 +377,88 @@ function PlanStep({ project }: { project: Project }) {
             try {
               const img = await loadImage(f);
               up(`Grundriss für ${floor.name} hochgeladen`, (p) => { const fl = p.floors[fi]; fl.backgroundPlan = img.dataUrl; fl.backgroundSize = { w: img.w, h: img.h }; fl.backgroundScale = undefined; });
-              setMode('kalibrieren');
+              setMode('kalibrieren'); setOpen(true);
             } catch (err) { alert((err as Error).message); }
           }} />
         </label>
         {floor.backgroundPlan && <>
-          <button className={mode === 'kalibrieren' ? 'active' : ''} onClick={() => setMode('kalibrieren')}>Maßstab festlegen</button>
-          <span className="muted small">Deckkraft</span>
-          <input type="range" min={0.15} max={1} step={0.05} value={floor.backgroundOpacity} onChange={(e) => store.silent((p) => { p.floors[fi].backgroundOpacity = Number(e.target.value); })} />
-          <button className="danger" onClick={() => confirm('Grundriss entfernen?') && up('Grundriss entfernt', (p) => { const fl = p.floors[fi]; fl.backgroundPlan = undefined; fl.backgroundSize = undefined; fl.backgroundScale = undefined; })}>Entfernen</button>
+          <button className="small" onClick={() => setOpen(!open)}>{open ? 'Zuklappen' : 'Anzeigen'}</button>
+          <button className={`small ${mode === 'kalibrieren' ? 'active' : ''}`} onClick={() => { setMode('kalibrieren'); setOpen(true); }}>Maßstab festlegen</button>
+          <input type="range" title="Deckkraft" min={0.15} max={1} step={0.05} value={floor.backgroundOpacity} onChange={(e) => store.silent((p) => { p.floors[fi].backgroundOpacity = Number(e.target.value); })} />
+          <button className="small danger" onClick={() => confirm('Grundriss entfernen?') && up('Grundriss entfernt', (p) => { const fl = p.floors[fi]; fl.backgroundPlan = undefined; fl.backgroundSize = undefined; fl.backgroundScale = undefined; })}>Entfernen</button>
         </>}
       </div>
-      {floor.backgroundPlan && (
-        <>
-          <p className={floor.backgroundScale ? 'ok' : 'muted'}>{floor.backgroundScale ? `✔ Maßstab: 1 Bildpunkt = ${fmt(floor.backgroundScale, 2)} cm` : 'Noch kein Maßstab: klicke Anfang und Ende eines bekannten Maßes und gib die Länge ein.'}</p>
-          <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode={mode}
-            onCalibrate={(s) => { up(`Maßstab ${floor.name}`, (p) => { p.floors[fi].backgroundScale = s; }); setMode('ansehen'); }} />
-        </>
+      {floor.backgroundPlan && open && (
+        <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode={mode}
+          onCalibrate={(sc) => { up(`Maßstab ${floor.name}`, (p) => { p.floors[fi].backgroundScale = sc; }); setMode('ansehen'); }} />
       )}
-      <Why>Pläne sind oft verzerrt (Foto schräg) oder enthalten alte Raumnamen. Das Programm nutzt den Plan nur als Vorlage: Lage und ungefähre Größe. Verbindlich sind die Maße, die du vor Ort misst. Die alten Bezeichnungen bleiben als „Bestandsplan“ erhalten, auch wenn der Raum künftig anders heißt.</Why>
+    </div>
+  );
+}
+
+function PlanStep({ project }: { project: Project }) {
+  return (
+    <>
+      <p>Hast du Grundrisse (Bauplan, Skizze, Foto)? Lade je Geschoss einen hoch und lege den Maßstab über ein bekanntes Maß fest. Danach ziehst du die Räume darauf auf. Ohne Plan geht es auch: Dann fragt das Programm die Maße einzeln ab.</p>
+      {project.floors.map((f, fi) => <FloorPlanCard key={f.id} project={project} fi={fi} />)}
+      <Why>Pläne sind oft verzerrt (Foto schräg) oder enthalten alte Raumnamen. Das Programm nutzt den Plan nur als Vorlage: Lage und ungefähre Größe. Verbindlich sind die Maße, die du vor Ort misst. Die alten Bezeichnungen bleiben als „Bestandsplan“ erhalten.</Why>
     </>
   );
 }
 
 function RoomsStep({ project }: { project: Project }) {
   const [tracing, setTracing] = useState<string | null>(null);
-  const tracingRoom = project.rooms.find((r) => r.id === tracing);
-  const floor = project.floors.find((f) => f.id === (tracingRoom?.floorId ?? project.floors[0].id))!;
-  const addRoom = () => {
+  const addRoom = (floorId: string) => {
     const fb = project.settings.defaultFutureBuildup;
+    const fl = project.floors.find((f) => f.id === floorId);
     const room = createRectRoom({
-      id: newId('raum'), floorId: project.floors[0].id, name: `Raum ${project.rooms.length + 1}`, width: 400, depth: 300, height: 250, provenance: 'annahme',
+      id: newId('raum'), floorId, name: `Raum ${project.rooms.length + 1}`, width: 400, depth: 300, height: Math.max(200, (fl?.height ?? 275) - 25), provenance: 'annahme',
       installationType: project.settings.defaultInstallationType,
       floor: fb ? { futureAboveRef: [{ name: 'Bodenaufbau (Vorgabe)', thickness: fb }] } : {},
     });
     up('Raum angelegt', (p) => { p.rooms.push(room as any); });
   };
+  const typeOpts = ROOM_TYPES.map((t) => ({ value: t, label: ROOM_TYPE_INFO[t].label }));
   return (
     <>
-      <p>Lege alle Räume an, die geplant werden. Steht im Plan ein alter Name (z. B. „HEIZUNG“), trag ihn als <b>Bezeichnung im Bestandsplan</b> ein und den künftigen Namen daneben.</p>
-      <EditTable rows={project.rooms} rowKey={(r) => r.id} selectedKey={tracing ?? undefined}
-        cols={[
-          { key: 'formerName', label: 'Im Bestandsplan', type: 'text' },
-          { key: 'name', label: 'Künftiger Name', type: 'text' },
-          { key: 'usage', label: 'Nutzung', type: 'text' },
-          { key: 'floorId', label: 'Geschoss', type: 'select', options: project.floors.map((f) => ({ value: f.id, label: f.name })) },
-          { key: 'inScope', label: 'wird geplant', type: 'check' },
-          { key: 'id', label: 'Größe', type: 'readonly', render: (r: Room) => <span className="small">{isRectRoom(r) ? `${fmt(r.polygon[1].x)} × ${fmt(r.polygon[2].y)}` : `${fmt(roomArea(r), 1)} m²`}{r.provenance === 'annahme' ? ' (vorläufig)' : ''}</span> },
-          { key: 'id', label: '', type: 'readonly', render: (r: Room) => {
-            const fl = project.floors.find((f) => f.id === r.floorId);
-            return fl?.backgroundScale ? <button className="small" onClick={(e) => { e.stopPropagation(); setTracing(tracing === r.id ? null : r.id); }}>{tracing === r.id ? 'Abbrechen' : 'Im Plan aufziehen'}</button> : null;
-          } },
-        ] as Col<any>[]}
-        onChange={(i, k, v) => up(`Raum ${k}`, (p) => { (p.rooms[i] as any)[k] = v; })}
-        onRemove={(i) => up(`Raum ${project.rooms[i].name} entfernt`, (p) => { p.rooms.splice(i, 1); })}
-        onAdd={addRoom} addLabel="Raum" empty="Noch keine Räume." />
-      {tracingRoom && floor.backgroundScale && (
-        <>
-          <h3>„{tracingRoom.name}“ im Plan aufziehen</h3>
-          <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode="raum" highlightRoomId={tracingRoom.id}
-            onRect={(rc) => {
-              upRoom(tracingRoom.id, `${tracingRoom.name}: Lage aus Grundriss`, (r) => {
-                r.originOnFloor = { x: rc.x, y: rc.y };
-                if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }];
-                r.provenance = 'aus_plan';
-              });
-              setTracing(null);
-            }} />
-        </>
-      )}
-      {!tracingRoom && project.floors.some((f) => f.backgroundScale) && (
-        <PlanTracer floor={project.floors.find((f) => f.backgroundScale)!} rooms={project.rooms} mode="ansehen" />
-      )}
-      <Why>Die Raumliste bestimmt die weiteren Schritte: Für jeden Raum, der geplant wird, fragt der Assistent danach Maße, Wände, Türen, Fenster, Boden, Decke und Nutzung ab.</Why>
+      <p>Lege je Geschoss alle Räume an. Steht im Plan ein alter Name (z. B. „HEIZUNG“), trag ihn als <b>Bezeichnung im Bestandsplan</b> ein und den künftigen Namen daneben. Die <b>Nutzung</b> bestimmt Verbraucher, Leistungsbedarf und Mindestausstattung.</p>
+      {project.floors.map((floor) => {
+        const rooms = project.rooms.filter((r) => r.floorId === floor.id);
+        const tracingRoom = rooms.find((r) => r.id === tracing);
+        return (
+          <div key={floor.id} className="floorcard">
+            <div className="inline"><b>{floor.name}</b><span className="muted small">{rooms.length} Räume · Geschosshöhe {fmt(floor.height)} cm</span><span className="spacer" /><button className="small" onClick={() => addRoom(floor.id)}>＋ Raum im {floor.name}</button></div>
+            <EditTable rows={rooms} rowKey={(r) => r.id} selectedKey={tracing ?? undefined}
+              cols={[
+                { key: 'formerName', label: 'Im Bestandsplan', type: 'text' },
+                { key: 'name', label: 'Künftiger Name', type: 'text' },
+                { key: 'roomType', label: 'Nutzung', type: 'readonly', render: (r: Room) => <Select value={r.roomType} allowEmpty="– wählen –" options={typeOpts} onChange={(v) => v && setRoomType(project, r, v as RoomTypeId)} /> },
+                { key: 'inScope', label: 'wird geplant', type: 'check' },
+                { key: 'id', label: 'Größe', type: 'readonly', render: (r: Room) => <span className="small">{isRectRoom(r) ? `${fmt(r.polygon[1].x)} × ${fmt(r.polygon[2].y)}` : `${fmt(roomArea(r), 1)} m²`}{r.provenance === 'annahme' ? ' (vorläufig)' : ''}</span> },
+                { key: 'id', label: '', type: 'readonly', render: (r: Room) => floor.backgroundScale ? <button className="small" onClick={(e) => { e.stopPropagation(); setTracing(tracing === r.id ? null : r.id); }}>{tracing === r.id ? 'Abbrechen' : 'Im Plan aufziehen'}</button> : null },
+              ] as Col<any>[]}
+              onChange={(i, k, v) => up(`Raum ${k}`, (p) => { const id = rooms[i].id; (p.rooms.find((x) => x.id === id) as any)[k] = v; })}
+              onRemove={(i) => up(`Raum ${rooms[i].name} entfernt`, (p) => { p.rooms = p.rooms.filter((x) => x.id !== rooms[i].id); })}
+              empty={`Noch keine Räume im ${floor.name}.`} />
+            {tracingRoom && floor.backgroundScale && (
+              <>
+                <p className="small"><b>„{tracingRoom.name}“ aufziehen:</b> zwei gegenüberliegende Ecken anklicken.</p>
+                <PlanTracer floor={floor} rooms={rooms} mode="raum" highlightRoomId={tracingRoom.id}
+                  onRect={(rc) => {
+                    upRoom(tracingRoom.id, `${tracingRoom.name}: Lage aus Grundriss`, (r) => {
+                      r.originOnFloor = { x: rc.x, y: rc.y };
+                      if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }];
+                      r.provenance = 'aus_plan';
+                    });
+                    setTracing(null);
+                  }} />
+              </>
+            )}
+            {!tracingRoom && floor.backgroundScale && rooms.length > 0 && <details className="why"><summary>Räume im Grundriss anzeigen</summary><PlanTracer floor={floor} rooms={rooms} mode="ansehen" /></details>}
+          </div>
+        );
+      })}
+      <Why>Für jeden Raum, der geplant wird, fragt der Assistent danach Nutzung, Maße, Wände, Türen, Fenster, Boden, Decke und Einrichtung ab – Geschoss für Geschoss.</Why>
     </>
   );
 }
@@ -526,6 +545,7 @@ function RoomStep({ project, room, step }: { project: Project; room: Room; step:
     case 'boden': return <FloorStep project={project} room={room} />;
     case 'decke': return <CeilingStep room={room} />;
     case 'nutzung': return <UsageStep project={project} room={room} />;
+    case 'einrichtung': return <FurnitureStep project={project} room={room} />;
     case 'bestand': return <ExistingStep room={room} />;
     case 'zusammenfassung': return <SummaryTab project={project} room={room} findings={runRules(project, { roomId: room.id }).findings} />;
   }
@@ -772,15 +792,31 @@ function CeilingStep({ room }: { room: Room }) {
 function UsageStep({ project, room }: { project: Project; room: Room }) {
   return (
     <>
+      <h3>Wofür wird „{room.name}“ genutzt?</h3>
+      <p className="muted small">Die Nutzung bestimmt typische Verbraucher (Leistungsbedarf), eigene Stromkreise, Mindestausstattung, Rauchwarnmelder und Schutzbereiche.</p>
+      <RoomTypeCards project={project} room={room} />
+      {room.roomType && (
+        <>
+          <h3>Welche Geräte kommen hier hin?</h3>
+          <LoadsEditor room={room} />
+        </>
+      )}
       <div className="grid2">
-        <Field label="Wofür wird der Raum genutzt?"><TextInput value={room.usage} placeholder="z. B. Schlafen, Küche, Büro, Heimkino" onChange={(v) => upRoom(room.id, `${room.name}: Nutzung`, (r) => { r.usage = v; })} /></Field>
+        <Field label="Nutzung (frei)"><TextInput value={room.usage} placeholder="z. B. Schlafen, Home-Office" onChange={(v) => upRoom(room.id, `${room.name}: Nutzung`, (r) => { r.usage = v; })} /></Field>
         <Field label="Und vielleicht später einmal?"><TextInput value={room.futureUsage} placeholder="z. B. Kinderzimmer, Fitnessraum" onChange={(v) => upRoom(room.id, `${room.name}: künftige Nutzung`, (r) => { r.futureUsage = v; })} /></Field>
         <Field label="Installationsart in diesem Raum"><Select value={room.installationType} options={opts(installationTypeLabel)} onChange={(v) => v && upRoom(room.id, `${room.name}: Installationsart`, (r) => { r.installationType = v as any; })} /></Field>
         <Field label="Smart Home in diesem Raum"><Select value={room.smartHome} allowEmpty={`wie Projekt (${smartHomeLabel[project.smartHome.enabled ? project.smartHome.system : 'keines']})`} options={opts(smartHomeLabel)} onChange={(v) => upRoom(room.id, `${room.name}: Smart Home`, (r) => { r.smartHome = v as any; })} /></Field>
       </div>
       <Check checked={room.wetRoom} onChange={(v) => upRoom(room.id, `${room.name}: Feuchtraum`, (r) => { r.wetRoom = v; })} label="Bad / Feuchtraum (Schutzbereiche, Feuchtraum-Programm)" />
-      <h3>Möbel und Geräte</h3>
-      <p className="muted small">Aus Möbeln und Geräten leitet das Programm später Auslässe ab (Nachttisch → Steckdose 70 cm, Schreibtisch → Steckdosen + LAN, Kühlschrank → eigene Dose …).</p>
+      {room.futureUsage && <p className="muted small">Tipp: Für die künftige Nutzung lieber jetzt Leerdosen/Leerrohre und eine Reserve-Steckdose mehr vorsehen.</p>}
+    </>
+  );
+}
+
+function FurnitureStep({ project, room }: { project: Project; room: Room }) {
+  return (
+    <>
+      <p className="muted small">Aus Möbeln und Geräten leitet das Programm Auslässe ab (Nachttisch → Steckdose 70 cm, Schreibtisch → Steckdosen + LAN, Kühlschrank → eigene Dose …). Lage x/y ab Nullpunkt.</p>
       <div className="wiz-split">
         <div><EinrichtungTab room={room} wallOpts={room.walls.map((w) => ({ value: String(w.index), label: wallName(room, w.index) }))} /></div>
         <div className="wiz-preview"><RoomPlan project={project} room={room} layers={['moebel', 'beschriftung', 'masse']} /></div>

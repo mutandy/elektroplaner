@@ -11,7 +11,8 @@ import { normValue } from '../../core/rules/normValues';
 import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts, type Col } from '../components/ui';
 import { RoomPlan, WallElevation } from '../components/PlanCanvas';
-import { SuggestionsPanel, RoutingPanel } from '../components/Planning';
+import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType } from '../components/Planning';
+import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 
 type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
 
@@ -110,7 +111,7 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
           <div className="muted small">{fmt(roomArea(room), 2)} m² · Höhe {fmt(room.height)} cm · {installationTypeLabel[room.installationType]} · {room.outlets.length} Auslässe {room.confirmed ? '· ✔ bestätigt' : ''}</div>
         </div>
         <div className="tabs">
-          {([['bau', '1 Bauliches'], ['einrichtung', '2 Einrichtung'], ['auslaesse', '3 Auslässe'], ['leitungen', '4 Leitungswege'], ['zusammenfassung', '5 Zusammenfassung']] as [Tab, string][]).map(([k, l]) => (
+          {([['bau', '1 Bauliches'], ['einrichtung', '2 Nutzung & Einrichtung'], ['auslaesse', '3 Auslässe'], ['leitungen', '4 Leitungswege'], ['zusammenfassung', '5 Zusammenfassung']] as [Tab, string][]).map(([k, l]) => (
             <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}{k === 'zusammenfassung' && findings.some((f) => f.severity === 'fehler') ? ' ⛔' : ''}</button>
           ))}
         </div>
@@ -118,7 +119,13 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
       <div className="split">
         <div className="editor">
           {tab === 'bau' && <BauTab project={project} room={room} wallOpts={wallOpts} />}
-          {tab === 'einrichtung' && <EinrichtungTab room={room} wallOpts={wallOpts} />}
+          {tab === 'einrichtung' && <>
+            <Section title="Nutzung und Verbraucher">
+              <Field label="Raumtyp"><Select value={room.roomType} allowEmpty="– wählen –" options={ROOM_TYPES.map((t) => ({ value: t, label: ROOM_TYPE_INFO[t].label }))} onChange={(v) => v && setRoomType(project, room, v as RoomTypeId)} /></Field>
+              <LoadsEditor room={room} />
+            </Section>
+            <EinrichtungTab room={room} wallOpts={wallOpts} />
+          </>}
           {tab === 'auslaesse' && <AuslassTab project={project} room={room} wallOpts={wallOpts} wallIndex={wi} selected={sel} />}
           {tab === 'leitungen' && <Section title="Leitungsweg in diesem Raum"><RoutingPanel project={project} room={room} /></Section>}
           {tab === 'zusammenfassung' && <SummaryTab project={project} room={room} findings={findings} />}

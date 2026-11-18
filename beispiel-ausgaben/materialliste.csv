@@ -21,14 +21,14 @@ Schalterprogramm;CEE-Steckdose 16 A 5-polig AP;1;Stk;1 Stk;1;25;25;;
 Schalterprogramm;Datendose Cat.6A 2-fach + Abdeckung;3;Stk;3 Stk;3;30;90;;
 Schalterprogramm;Feuchtraum-AP: Schalter-/Tastereinsatz;3;Stk;3 Stk;3;8;24;;
 Schalterprogramm;Feuchtraum-AP: Steckdoseneinsatz mit Klappdeckel;6;Stk;6 Stk;6;9;54;;
-Schalterprogramm;Geräteanschlussdose / Auslass mit Abdeckung;6;Stk;6 Stk;6;6;36;;
+Schalterprogramm;Geräteanschlussdose / Auslass mit Abdeckung;7;Stk;7 Stk;7;6;42;;
 Schalterprogramm;Lautsprecher-Anschlussdose (Klemmen);7;Stk;7 Stk;7;15;105;;
 Schalterprogramm;Rahmen 1-fach;26;Stk;26 Stk;26;3,5;91;;
 Schalterprogramm;Rahmen 2-fach;9;Stk;9 Stk;9;6,5;58,5;;
 Schalterprogramm;Rahmen 3-fach;4;Stk;4 Stk;4;9,5;38;;
 Schalterprogramm;Rahmen 4-fach;1;Stk;1 Stk;1;13;13;;
 Schalterprogramm;SCHUKO-Steckdose mit USB A/C;1;Stk;1 Stk;1;38;38;;
-Schalterprogramm;SCHUKO-Steckdoseneinsatz mit Zentralplatte;36;Stk;36 Stk;36;8;288;;
+Schalterprogramm;SCHUKO-Steckdoseneinsatz mit Zentralplatte;35;Stk;35 Stk;35;8;280;;
 Schalterprogramm;Smart-/Funk-Taster (System nach Wahl);1;Stk;1 Stk;1;45;45;;
 Schalterprogramm;Taster-Einsatz (Schließer) + Wippe;3;Stk;3 Stk;3;13;39;;
 Schalterprogramm;UP-Aktor (z. B. Shelly Plus 1PM);2;Stk;2 Stk;2;22;44;;je Smart-Schaltstelle geschätzt
@@ -70,4 +70,4 @@ Werkzeug und Miete;FFP2-Masken, Gehör- und Augenschutz;1;Set;1 Set;1;20;20;;
 Werkzeug und Miete;Leitungssucher / Ortungsgerät;1;Stk;1 Stk;1;35;35;;
 Werkzeug und Miete;Miete Bau-Staubsauger Klasse M;4;Tag;4 Tag;4;25;100;;
 Werkzeug und Miete;Miete Mauernutfräse mit Absaugung;4;Tag;4 Tag;4;45;180;;ca. 25 m Schlitz je Tag (84 m)
-;Summe (Richtwert);;;;;;4655,1;;
+;Summe (Richtwert);;;;;;4653,1;;

@@ -19,7 +19,7 @@ describe('Rendering', () => {
     const svg = renderRoomPlan(p, bad);
     expect(svg).toContain('Nullpunkt des Raums');
     for (const o of bad.outlets) expect(svg).toContain(`data-outlet="${o.id}"`);
-    expect(svg).toContain('<title>B6: Steckdose');
+    expect(svg).toContain('<title>B6: Geräteanschlussdose');
   });
   it('Ebenen lassen sich ausblenden', () => {
     const svg = renderRoomPlan(p, bad, { layers: ['230v'] });

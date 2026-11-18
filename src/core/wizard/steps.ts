@@ -11,7 +11,7 @@ import { wallGeoms } from '../geometry/room';
 
 export type StepGroup = 'Projekt' | 'Grundriss' | 'Räume' | 'Empfehlungen' | 'Abschluss';
 
-export const ROOM_SUBSTEPS = ['masse', 'waende', 'tueren', 'fenster', 'besonderheiten', 'boden', 'decke', 'nutzung', 'bestand', 'zusammenfassung'] as const;
+export const ROOM_SUBSTEPS = ['nutzung', 'masse', 'waende', 'tueren', 'fenster', 'besonderheiten', 'boden', 'decke', 'einrichtung', 'bestand', 'zusammenfassung'] as const;
 export type RoomSubstep = (typeof ROOM_SUBSTEPS)[number];
 
 export const roomSubstepLabel: Record<RoomSubstep, string> = {
@@ -22,7 +22,8 @@ export const roomSubstepLabel: Record<RoomSubstep, string> = {
   besonderheiten: 'Vorwand, Kamin, Hindernisse',
   boden: 'Boden',
   decke: 'Decke',
-  nutzung: 'Nutzung und Einrichtung',
+  nutzung: 'Nutzung und Verbraucher',
+  einrichtung: 'Möbel und Geräte',
   bestand: 'Bestandsleitungen',
   zusammenfassung: 'Zusammenfassung',
 };
@@ -44,8 +45,8 @@ const PROJECT_STEPS: Step[] = [
   { id: 'projekt.bestand', group: 'Projekt', title: 'Was bleibt, wie es ist?' },
   { id: 'projekt.smarthome', group: 'Projekt', title: 'Smart Home' },
   { id: 'projekt.netzwerk', group: 'Projekt', title: 'Netzwerk' },
-  { id: 'grundriss', group: 'Grundriss', title: 'Grundriss (optional)' },
-  { id: 'raeume', group: 'Räume', title: 'Räume anlegen' },
+  { id: 'grundriss', group: 'Grundriss', title: 'Grundrisse je Geschoss (optional)' },
+  { id: 'raeume', group: 'Räume', title: 'Räume je Geschoss anlegen' },
 ];
 
 /** Bestandsleitungen gibt es nur im Bestand. */
@@ -92,6 +93,10 @@ export function missingFor(project: Project, step: Step): string[] {
       break;
     case 'raeume':
       if (!project.rooms.some((r) => r.inScope)) m.push('mindestens ein Raum, der geplant wird');
+      for (const f of project.floors) if (!project.rooms.some((r) => r.floorId === f.id)) m.push(`Räume im ${f.name}`);
+      break;
+    case 'grundriss':
+      for (const f of project.floors) if (f.backgroundPlan && !f.backgroundScale) m.push(`Maßstab für den Grundriss ${f.name}`);
       break;
   }
   if (room && step.sub) m.push(...missingForRoom(project, room, step.sub));
@@ -117,7 +122,7 @@ export function missingForRoom(project: Project, room: Room, sub: RoomSubstep): 
       if (room.ceiling.construction === 'unbekannt') m.push('Deckenbauart');
       break;
     case 'nutzung':
-      if (!room.usage.trim()) m.push('Nutzung des Raums');
+      if (!room.roomType) m.push('Raumtyp (Nutzung)');
       break;
     case 'zusammenfassung':
       if (!room.confirmed) m.push('Zusammenfassung bestätigen');

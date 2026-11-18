@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -52,6 +52,7 @@
     "defaultInstallationType": "unterputz",
     "defaultFutureBuildup": 0,
     "normOverrides": {},
+    "confirmedNorms": {},
     "disabledRules": {}
   },
   "floors": [
@@ -59,7 +60,8 @@
       "id": "geschoss_kg",
       "name": "Kellergeschoss",
       "level": -1,
-      "backgroundOpacity": 0.6
+      "backgroundOpacity": 0.6,
+      "height": 275
     }
   ],
   "rooms": [
@@ -70,6 +72,18 @@
       "formerName": "FLUR",
       "usage": "Flur (führt zu Gästezimmer)",
       "futureUsage": "",
+      "roomType": "flur",
+      "loads": [
+        {
+          "id": "flur_last1",
+          "label": "Staubsauger",
+          "power": 1200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "f4"
+        }
+      ],
       "originOnFloor": {
         "x": 975,
         "y": 380
@@ -430,6 +444,27 @@
       "formerName": "KELLER ④",
       "usage": "Duschbad",
       "futureUsage": "",
+      "roomType": "bad",
+      "loads": [
+        {
+          "id": "bad_last1",
+          "label": "Föhn",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        },
+        {
+          "id": "bad_last2",
+          "label": "Lüfter mit Nachlauf",
+          "power": 30,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "anschlussdose",
+          "outletId": "b5"
+        }
+      ],
       "originOnFloor": {
         "x": 981,
         "y": 30
@@ -705,7 +740,7 @@
         {
           "id": "b6",
           "label": "B6",
-          "kind": "steckdose",
+          "kind": "anschlussdose",
           "mount": "wand",
           "wallIndex": 1,
           "s": 150,
@@ -715,13 +750,13 @@
           "growth": "rechts",
           "boxType": "vorwand",
           "inserts": [
-            "steckdose"
+            "geraeteanschluss"
           ],
           "circuitId": "c2",
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Dusch-WC, hinter Vorwand"
+          "note": "Dusch-WC fest angeschlossen (Schutzbereich 2: keine Steckdose), hinter Vorwand"
         }
       ],
       "existingCables": [],
@@ -785,6 +820,59 @@
       "formerName": "WASCH.+TROCKNEN ③",
       "usage": "Küche",
       "futureUsage": "",
+      "roomType": "kueche",
+      "loads": [
+        {
+          "id": "kueche_last1",
+          "label": "Kochfeld / Herd",
+          "power": 11000,
+          "phases": 3,
+          "dedicated": true,
+          "connection": "herd",
+          "outletId": "k5",
+          "height": 40
+        },
+        {
+          "id": "kueche_last2",
+          "label": "Spülmaschine",
+          "power": 2200,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "k4",
+          "height": 40
+        },
+        {
+          "id": "kueche_last3",
+          "label": "Kühlschrank",
+          "power": 150,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "k6",
+          "height": 200
+        },
+        {
+          "id": "kueche_last4",
+          "label": "Wasserkocher / Kaffeemaschine (Arbeitsfläche)",
+          "power": 2200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "k2",
+          "height": 115
+        },
+        {
+          "id": "kueche_last5",
+          "label": "Dunstabzug",
+          "power": 250,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "k7",
+          "height": 205
+        }
+      ],
       "originOnFloor": {
         "x": 1175,
         "y": 30
@@ -1223,6 +1311,44 @@
       "formerName": "KELLER ③ (oben rechts)",
       "usage": "Heimkino 7.1.4",
       "futureUsage": "",
+      "roomType": "heimkino",
+      "loads": [
+        {
+          "id": "heimkino_last1",
+          "label": "AV-Receiver / Verstärker",
+          "power": 800,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "h15"
+        },
+        {
+          "id": "heimkino_last2",
+          "label": "Beamer",
+          "power": 350,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "h14"
+        },
+        {
+          "id": "heimkino_last3",
+          "label": "Subwoofer",
+          "power": 500,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "h2"
+        },
+        {
+          "id": "heimkino_last4",
+          "label": "Spielekonsole / Streaming",
+          "power": 200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
       "originOnFloor": {
         "x": 1422.3,
         "y": 30
@@ -1781,6 +1907,25 @@
       "formerName": "KELLER ③ (unten rechts)",
       "usage": "Partyraum, Spielzimmer",
       "futureUsage": "vielleicht Büro",
+      "roomType": "hobby",
+      "loads": [
+        {
+          "id": "partyraum_last1",
+          "label": "Musikanlage",
+          "power": 500,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        },
+        {
+          "id": "partyraum_last2",
+          "label": "Kühlschrank / Getränke",
+          "power": 150,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
       "originOnFloor": {
         "x": 1429,
         "y": 547.5
@@ -2105,6 +2250,17 @@
       "formerName": "KELLER ①",
       "usage": "Büro, Gästezimmer (Schlafen)",
       "futureUsage": "",
+      "roomType": "gaeste",
+      "loads": [
+        {
+          "id": "buero_last1",
+          "label": "Laden, Leselampe",
+          "power": 100,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
       "originOnFloor": {
         "x": 1133.3,
         "y": 548
@@ -2436,6 +2592,25 @@
       "formerName": "HEIZUNG",
       "usage": "Heizung, Hauptverteilung (Standort angenommen)",
       "futureUsage": "",
+      "roomType": "technik",
+      "loads": [
+        {
+          "id": "technik_last1",
+          "label": "Heizung / Wärmepumpe (Steuerung)",
+          "power": 300,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "anschlussdose"
+        },
+        {
+          "id": "technik_last2",
+          "label": "Netzwerk / Server",
+          "power": 150,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
       "originOnFloor": {
         "x": 537,
         "y": 30
@@ -2564,6 +2739,18 @@
       "formerName": "KELLER (1,80 × 3,38)",
       "usage": "Werkstatt, Lager",
       "futureUsage": "",
+      "roomType": "werkstatt",
+      "loads": [
+        {
+          "id": "kellerraum_last1",
+          "label": "Elektrowerkzeuge",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        }
+      ],
       "originOnFloor": {
         "x": 789,
         "y": 30
@@ -2813,6 +3000,37 @@
       "formerName": "GARAGE ②",
       "usage": "Garage mit Wallbox",
       "futureUsage": "",
+      "roomType": "garage",
+      "loads": [
+        {
+          "id": "garage_last1",
+          "label": "Wallbox 11 kW",
+          "power": 11000,
+          "phases": 3,
+          "dedicated": true,
+          "connection": "anschlussdose",
+          "outletId": "ga3",
+          "height": 125
+        },
+        {
+          "id": "garage_last2",
+          "label": "Torantrieb",
+          "power": 300,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "ga2"
+        },
+        {
+          "id": "garage_last3",
+          "label": "Werkzeuge, Staubsauger",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        }
+      ],
       "originOnFloor": {
         "x": 419,
         "y": 392
