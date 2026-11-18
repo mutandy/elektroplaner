@@ -1,0 +1,73 @@
+﻿Gruppe;Position;Bedarf;Einheit;Bestellung;Bestellmenge;Einzelpreis €;Summe €;erledigt;Hinweis
+Kabel und Leitungen;Lautsprecherkabel 2×2,5 mm²;83;m;1× 100 m;100;0,9;90;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYM-J 3×1,5 mm²;132,5;m;1× 100 m + 1× 50 m;150;0,75;112,5;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYM-J 3×2,5 mm²;225;m;2× 100 m + 1× 50 m;250;1,1;275;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYM-J 5×10 mm²;11;m;1× 25 m;25;6,5;162,5;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYM-J 5×2,5 mm²;33;m;1× 50 m;50;1,8;90;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYM-J 5×6 mm²;23,5;m;1× 25 m;25;4;100;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;NYY-J 5×4 mm² (Erdkabel);13;m;1× 25 m;25;3,5;87,5;;inkl. Reserven und Zuschlag
+Kabel und Leitungen;Verlegekabel Cat.7 S/FTP;79;m;1× 100 m;100;0,8;80;;inkl. Reserven und Zuschlag
+Dosen;AP-Abzweigdose IP65 (Aufputz/Decke);4;Stk;4 Stk;4;2,5;10;;
+Dosen;AP-Dose für Holzwand (Baffle) bzw. Montageplatte;6;Stk;6 Stk;6;2;12;;
+Dosen;AP-Feuchtraumgehäuse 1-fach (IP44);4;Stk;4 Stk;4;4,5;18;;
+Dosen;AP-Feuchtraumgehäuse 2-fach (IP44);2;Stk;2 Stk;2;7;14;;
+Dosen;AP-Feuchtraumgehäuse 3-fach (IP44);1;Stk;1 Stk;1;10;10;;
+Dosen;Hohlwand-Deckendose / Geräteeinbaudose;6;Stk;6 Stk;6;2,5;15;;
+Dosen;Hohlwanddose Ø 68 (luftdicht);4;Stk;1× 25 Stk;25;0,9;22,5;;
+Dosen;UP-Geräte-/Elektronikdose tief Ø 68, 61 mm;50;Stk;2× 25 Stk;50;1,1;55;;Platz für Klemmen/UP-Aktoren
+Schalterprogramm;Aus-/Wechselschalter-Einsatz + Wippe;5;Stk;5 Stk;5;12;60;;
+Schalterprogramm;Blindabdeckung mit Tragring;1;Stk;1 Stk;1;5;5;;
+Schalterprogramm;CEE-Steckdose 16 A 5-polig AP;1;Stk;1 Stk;1;25;25;;
+Schalterprogramm;Datendose Cat.6A 2-fach + Abdeckung;3;Stk;3 Stk;3;30;90;;
+Schalterprogramm;Feuchtraum-AP: Schalter-/Tastereinsatz;3;Stk;3 Stk;3;8;24;;
+Schalterprogramm;Feuchtraum-AP: Steckdoseneinsatz mit Klappdeckel;6;Stk;6 Stk;6;9;54;;
+Schalterprogramm;Geräteanschlussdose / Auslass mit Abdeckung;6;Stk;6 Stk;6;6;36;;
+Schalterprogramm;Lautsprecher-Anschlussdose (Klemmen);7;Stk;7 Stk;7;15;105;;
+Schalterprogramm;Rahmen 1-fach;26;Stk;26 Stk;26;3,5;91;;
+Schalterprogramm;Rahmen 2-fach;9;Stk;9 Stk;9;6,5;58,5;;
+Schalterprogramm;Rahmen 3-fach;4;Stk;4 Stk;4;9,5;38;;
+Schalterprogramm;Rahmen 4-fach;1;Stk;1 Stk;1;13;13;;
+Schalterprogramm;SCHUKO-Steckdose mit USB A/C;1;Stk;1 Stk;1;38;38;;
+Schalterprogramm;SCHUKO-Steckdoseneinsatz mit Zentralplatte;36;Stk;36 Stk;36;8;288;;
+Schalterprogramm;Smart-/Funk-Taster (System nach Wahl);1;Stk;1 Stk;1;45;45;;
+Schalterprogramm;Taster-Einsatz (Schließer) + Wippe;3;Stk;3 Stk;3;13;39;;
+Schalterprogramm;UP-Aktor (z. B. Shelly Plus 1PM);2;Stk;2 Stk;2;22;44;;je Smart-Schaltstelle geschätzt
+Klemmen und Kleinmaterial;Brandschutz-Abschottung (zugelassen, je Durchbruch);1;Stk;1 Stk;1;35;35;;Einbau durch Fachbetrieb
+Klemmen und Kleinmaterial;Gips/Dosenmörtel zum Einsetzen der Dosen;20;kg;4× 5 kg;20;1,2;24;;
+Klemmen und Kleinmaterial;Gips/Haftputz zum Schließen der Wandschlitze;22,8;kg;5× 5 kg;25;1,2;30;;
+Klemmen und Kleinmaterial;Hauseinführung / Abdichtung Erdkabel;1;Stk;1 Stk;1;45;45;;
+Klemmen und Kleinmaterial;Installationsrohr starr M20 (Aufputz);33,8;m;12× 3 m;36;0,7;25,2;;
+Klemmen und Kleinmaterial;Kabelbinder, Nagelschellen, Beschriftungsband;2;Set;2 Set;2;15;30;;
+Klemmen und Kleinmaterial;Kabelschutzrohr DN50 (Erde) + Reserve-Leerrohr;13;m;1× 25 m;25;1,5;37,5;;plus Reserve-Leerrohr
+Klemmen und Kleinmaterial;Rohrbogen/Muffe;27;Stk;3× 10 Stk;30;0,5;15;;
+Klemmen und Kleinmaterial;Rohrschelle (alle 50 cm) inkl. Dübel;81;Stk;2× 50 Stk;100;0,25;25;;
+Klemmen und Kleinmaterial;Schnellzement (Fixieren im Boden);26,4;kg;6× 5 kg;30;1,6;48;;
+Klemmen und Kleinmaterial;Schutzrohr für Übergang unter Türschwelle (Flexrohr M25);12,1;m;13 m;13;0,8;10,4;;
+Klemmen und Kleinmaterial;Stahlrohr/Schutzkanal (mechanischer Schutz bis 1,5 m);6;m;2× 3 m;6;6;36;;mechanischer Schutz Garage
+Klemmen und Kleinmaterial;Trassenwarnband „Achtung Kabel“;13;m;1× 50 m;50;0,2;10;;
+Klemmen und Kleinmaterial;Verbindungsklemme 3-Leiter (z. B. WAGO 221-413);162;Stk;4× 50 Stk;200;0,35;70;;
+Klemmen und Kleinmaterial;Verbindungsklemme 5-Leiter (z. B. WAGO 221-415);25;Stk;1× 25 Stk;25;0,5;12,5;;
+Klemmen und Kleinmaterial;Wanddurchführung / Mörtel zum Verschließen;7;Stk;7 Stk;7;3;21;;
+Klemmen und Kleinmaterial;Zementärer Reparaturmörtel (Bodenschlitze);90,2;kg;4× 25 kg;100;1;100;;
+Verteiler und Schutzgeräte;FI/RCD 40 A / 30 mA, 4-polig, Typ A;3;Stk;3 Stk;3;45;135;;
+Verteiler und Schutzgeräte;Hauptschalter / Lasttrennschalter für UV;2;Stk;2 Stk;2;25;50;;
+Verteiler und Schutzgeräte;Kleinverteiler AP 2-reihig (24 TE) inkl. Klemmen;2;Stk;2 Stk;2;75;150;;
+Verteiler und Schutzgeräte;Leitungsschutzschalter 1-polig (B/C);2;Stk;2 Stk;2;8;16;;
+Verteiler und Schutzgeräte;Leitungsschutzschalter 3-polig (B/C);6;Stk;6 Stk;6;26;156;;
+Verteiler und Schutzgeräte;Phasenschiene, N-/PE-Klemmen, Beschriftung;3;Set;3 Set;3;30;90;;
+Verteiler und Schutzgeräte;Überspannungsschutz (SPD) Typ 2 bzw. 1+2;2;Stk;2 Stk;2;120;240;;
+Netzwerk, Multimedia, Smart Home;Patchpanel-Ports / Keystone Cat.6A;6;Stk;6 Stk;6;7;42;;
+Netzwerk, Multimedia, Smart Home;Smart-Home-Zentrale (z. B. Home Assistant Green + Funkstick);1;Stk;1 Stk;1;150;150;;falls noch nicht vorhanden
+Netzwerk, Multimedia, Smart Home;WLAN-Access-Point PoE;1;Stk;1 Stk;1;120;120;;
+Leuchten und Geräte;Badlüfter mit Nachlauf;1;Stk;1 Stk;1;60;60;;
+Leuchten und Geräte;Feuchtraum-Wannenleuchte LED IP65;3;Stk;3 Stk;3;30;90;;Platzhalter – Leuchte nach Wahl
+Leuchten und Geräte;LED-Spots / Paneele (je Auslass, grob);1;Stk;1 Stk;1;80;80;;Platzhalter – Leuchte nach Wahl
+Leuchten und Geräte;Rauchwarnmelder (10-Jahres-Batterie, Q-Label);2;Stk;2 Stk;2;22;44;;
+Leuchten und Geräte;Wand-/Spiegelleuchte;1;Stk;1 Stk;1;45;45;;Platzhalter
+Werkzeug und Miete;Diamant-Trennscheiben (Satz);1;Set;1 Set;1;30;30;;
+Werkzeug und Miete;Dosensenker Ø 68 (Hartmetall/Diamant);1;Stk;1 Stk;1;40;40;;
+Werkzeug und Miete;FFP2-Masken, Gehör- und Augenschutz;1;Set;1 Set;1;20;20;;
+Werkzeug und Miete;Leitungssucher / Ortungsgerät;1;Stk;1 Stk;1;35;35;;
+Werkzeug und Miete;Miete Bau-Staubsauger Klasse M;4;Tag;4 Tag;4;25;100;;
+Werkzeug und Miete;Miete Mauernutfräse mit Absaugung;4;Tag;4 Tag;4;45;180;;ca. 25 m Schlitz je Tag (84 m)
+;Summe (Richtwert);;;;;;4655,1;;

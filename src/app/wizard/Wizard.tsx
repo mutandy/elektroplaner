@@ -503,7 +503,7 @@ function FinishStep({ project }: { project: Project }) {
         </>)}
       <p>Regelprüfung der Erfassung: {report.counts.fehler} Fehler, {report.counts.warnung} Warnungen, {report.counts.hinweis} Hinweise.</p>
       <div className="impact">
-        <b>Wie es weitergeht:</b> Unter „Ausgaben“ stehen Raumlayouts, Ausführungsplan (mit Stromkreis- und Leitungsliste) und Schlitzplan zum Drucken. Jede Änderung in der Expertenansicht zieht sich durch alle Pläne. Materialliste und Kostenschätzung folgen in Etappe 3.
+        <b>Wie es weitergeht:</b> Unter „Ausgaben“ stehen Raumlayouts, Ausführungsplan (mit Stromkreis- und Leitungsliste) und Schlitzplan zum Drucken. Jede Änderung in der Expertenansicht zieht sich durch alle Pläne. Materialliste mit Bestellmengen, Kostenschätzung und Aufgabenliste für die Bauphase stehen unter „Material, Kosten, Aufgaben“.
       </div>
       <div className="inline">
         <button className="primary" onClick={() => { up('Assistent abgeschlossen', (p) => { p.wizard.finished = true; if (!p.wizard.done.includes('abschluss')) p.wizard.done.push('abschluss'); }); store.setUi({ view: 'projekt' }); }}>Assistent abschließen</button>

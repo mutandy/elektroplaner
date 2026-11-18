@@ -16,12 +16,18 @@ import { computeLengths, cableTotals, describeDrop } from '../planning/circuits'
 import { routeTotals, type RoomRoutes } from '../planning/routes';
 import { boxTypeLabel } from '../model/labels';
 import { wallName, zToFfb } from '../geometry/room';
+import { computeMaterial, euro } from '../planning/bom';
+import { estimateCosts } from '../planning/costs';
+import { buildTasks, PHASES } from '../planning/tasks';
 
-export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan';
+export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan' | 'material' | 'kosten' | 'aufgaben';
 
 export const documentLabel: Record<DocumentKind, string> = {
   raumlayout: 'Raumlayouts (Kontrolle Bauherr)',
   schlitzplan: 'Schlitzplan (Fräsen und Bohren)',
+  material: 'Material- und Bestellliste',
+  kosten: 'Kostenschätzung (Richtwert)',
+  aufgaben: 'Aufgaben- und Prüfliste Bauphase',
   ausfuehrung: 'Ausführungsplan (Elektrofachkraft)',
 };
 
@@ -242,6 +248,14 @@ ${i === Math.ceil(lengths.runs.length / 26) - 1 ? `<h3>Summe je Kabeltyp (inkl. 
     });
   }
 
+  if (kind === 'material' || kind === 'kosten' || kind === 'aufgaben') {
+    const lengths = computeLengths(project);
+    if (kind === 'material') buildMaterialPages(project, computeMaterial(project, lengths), pages);
+    if (kind === 'kosten') buildCostPages(project, estimateCosts(project, lengths), pages);
+    if (kind === 'aufgaben') buildTaskPages(buildTasks(project, lengths.routes), pages);
+    return wrapPages(project, kind, pages);
+  }
+
   if (kind === 'schlitzplan') {
     buildSlotPlanPages(project, pages);
     return wrapPages(project, kind, pages);
@@ -390,3 +404,58 @@ ${tot.s ? `<p>Aufputz-Trassen gesamt: ${fmt(tot.s, 1)} m</p>` : ''}
 }
 
 export { boxTypeLabel };
+
+// ===========================================================================
+// Material, Kosten, Aufgaben
+// ===========================================================================
+
+function buildMaterialPages(project: Project, list: ReturnType<typeof computeMaterial>, pages: Page[]) {
+  type Row = { kind: 'head'; text: string } | { kind: 'line'; l: (typeof list.lines)[number] } | { kind: 'sum'; text: string; total: number };
+  const rows: Row[] = [];
+  for (const g of list.groups) {
+    rows.push({ kind: 'head', text: g.group });
+    g.lines.forEach((l) => rows.push({ kind: 'line', l }));
+    rows.push({ kind: 'sum', text: `Summe ${g.group}`, total: g.total });
+  }
+  const parts = chunk(rows, 30);
+  parts.forEach((part, i) => {
+    const body = part.map((r) => r.kind === 'head' ? `<tr><th colspan="8" style="background:#e5e7eb">${esc(r.text)}</th></tr>`
+      : r.kind === 'sum' ? `<tr><td></td><td colspan="5"><b>${esc(r.text)}</b></td><td class="num"><b>${euro(r.total)}</b></td><td></td></tr>`
+      : `<tr><td style="font-size:11pt">${r.l.checked ? '☑' : '☐'}</td><td>${esc(r.l.label)}${r.l.note ? `<div class="small">${esc(r.l.note)}</div>` : ''}</td><td class="num">${fmt(r.l.need)}</td><td>${esc(r.l.unit)}</td><td>${esc(r.l.orderText)}</td><td class="num">${euro(r.l.unitPrice)}</td><td class="num">${euro(r.l.total)}</td><td style="width:22mm"></td></tr>`).join('');
+    pages.push({
+      title: 'Material- und Bestellliste',
+      subtitle: i ? '(Fortsetzung)' : `Richtpreise, Stand ${new Date().getFullYear()} – ohne Gewähr`,
+      body: `<div class="col" style="flex:1"><table><thead><tr><th>✓</th><th>Position</th><th class="num">Bedarf</th><th>Einh.</th><th>Bestellung (Gebinde)</th><th class="num">Einzelpreis</th><th class="num">Summe</th><th>Notiz</th></tr></thead><tbody>${body}</tbody></table>
+${i === parts.length - 1 ? `<p><b>Gesamt (Richtwert): ${euro(list.total)}</b> · davon noch offen: ${euro(list.openTotal)}</p><p class="small">Mengen aus Plan, Leitungswegen und Leitungslängen berechnet (inkl. Reserven); Bestellmenge auf handelsübliche Gebinde aufgerundet. Schalterprogramm: ${esc(project.settings.switchProgram.manufacturer)} ${esc(project.settings.switchProgram.series)} – je nach Serie werden Einsatz und Abdeckung getrennt bestellt.</p>` : ''}</div>`,
+    });
+  });
+}
+
+function buildCostPages(project: Project, c: ReturnType<typeof estimateCosts>, pages: Page[]) {
+  pages.push({
+    title: 'Kostenschätzung',
+    subtitle: `Vorarbeiten: ${c.mode === 'eigenleistung' ? 'Eigenleistung' : 'durch Handwerker'}`,
+    body: `<div class="col" style="flex:1"><table><thead><tr><th>Gewerk</th><th>Umfang</th><th>Wer</th><th class="num">Stunden</th><th class="num">von</th><th class="num">bis</th></tr></thead><tbody>
+${c.rows.map((r) => `<tr><td><b>${esc(r.title)}</b></td><td class="small">${esc(r.detail)}</td><td>${esc(r.who)}</td><td class="num">${r.hours ? fmt(r.hours) : '–'}</td><td class="num">${euro(r.min)}</td><td class="num">${euro(r.max)}</td></tr>`).join('')}
+<tr><td colspan="4"><b>Summe (Richtwert)</b></td><td class="num"><b>${euro(c.min)}</b></td><td class="num"><b>${euro(c.max)}</b></td></tr></tbody></table>
+<p>Eigene Arbeitszeit: ca. <b>${fmt(c.hoursOwn)} h</b> · Fachkraft/Handwerker: ca. <b>${fmt(c.hoursPro)} h</b></p>
+<p class="small">Stundensätze: Handwerker ${euro(project.costs.rateHelperMin)}–${euro(project.costs.rateHelperMax)}/h, Elektrofachkraft ${euro(project.costs.rateElectricianMin)}–${euro(project.costs.rateElectricianMax)}/h; Unvorhergesehenes ${project.costs.contingencyMin}–${project.costs.contingencyMax} %. Aufwände sind Erfahrungswerte (Schlitzen je Meter nach Wandmaterial, Dosen, Kabelmeter, Verteilerarbeiten, Erstprüfung). Grobe Schätzung – ersetzt kein Angebot. Anschluss, Prüfung und Abnahme sind immer Sache der Elektrofachkraft.</p></div>`,
+  });
+}
+
+function buildTaskPages(tasks: ReturnType<typeof buildTasks>, pages: Page[]) {
+  type Row = { head?: string; t?: (typeof tasks)[number] };
+  const rows: Row[] = [];
+  for (const ph of PHASES) {
+    const ts = tasks.filter((t) => t.phase === ph);
+    if (!ts.length) continue;
+    rows.push({ head: ph });
+    ts.forEach((t) => rows.push({ t }));
+  }
+  const parts = chunk(rows, 24);
+  parts.forEach((part, i) => pages.push({
+    title: 'Aufgaben- und Prüfliste',
+    subtitle: i ? '(Fortsetzung)' : 'Reihenfolge der Arbeiten · ⛔ = Haltepunkt (erst erledigen, dann weiter)',
+    body: `<div class="col" style="flex:1"><table><thead><tr><th>✓</th><th>Aufgabe</th><th>Wer</th><th>Datum / Kürzel</th></tr></thead><tbody>${part.map((r) => r.head ? `<tr><th colspan="4" style="background:#e5e7eb">${esc(r.head)}</th></tr>` : `<tr><td style="font-size:11pt">${r.t!.done ? '☑' : '☐'}</td><td>${r.t!.hold ? '⛔ ' : ''}${esc(r.t!.text)}</td><td class="small">${esc(r.t!.who)}</td><td style="width:30mm"></td></tr>`).join('')}</tbody></table></div>`,
+  }));
+}

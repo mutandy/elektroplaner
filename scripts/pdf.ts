@@ -2,6 +2,8 @@
  * PDF-Export über Chromium (Playwright).
  *   npm run pdf -- [projekt.json] [ausgabeordner]
  * Ohne Argumente: Beispielprojekt → out/
+ * Erzeugt alle Dokumente als PDF sowie Materialliste als CSV und XLSX.
+ * Wird mit esbuild gebündelt und mit Node ausgeführt (siehe package.json).
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -36,4 +38,19 @@ try {
   }
 } finally {
   await browser.close();
+}
+
+// Material-Exporte (CSV, XLSX) neben die PDFs legen
+{
+  const { computeMaterial } = await import('../src/core/planning/bom');
+  const { estimateCosts } = await import('../src/core/planning/costs');
+  const { buildTasks } = await import('../src/core/planning/tasks');
+  const { computeLengths } = await import('../src/core/planning/circuits');
+  const { materialCsv, materialXlsx } = await import('../src/core/export/material');
+  const lengths = computeLengths(project);
+  const list = computeMaterial(project, lengths);
+  writeFileSync(join(outDir, 'materialliste.csv'), materialCsv(list));
+  const ExcelJS = require('exceljs');
+  writeFileSync(join(outDir, 'material-kosten-aufgaben.xlsx'), Buffer.from(await materialXlsx(project, list, estimateCosts(project, lengths), buildTasks(project, lengths.routes), ExcelJS)));
+  console.log(`Materialliste → ${join(outDir, 'materialliste.csv')} und .xlsx`);
 }

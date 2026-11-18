@@ -29,7 +29,7 @@ Weitere Befehle:
 | `npm run build` | statische App nach `dist/` (läuft ohne Server, z. B. von USB-Stick oder Webspace) |
 | `npm run example` | `examples/kellerwohnung.json` aus `examples/keller.ts` neu erzeugen |
 | `npm run schema` | Datenmodell als JSON Schema nach `schema/` exportieren |
-| `npm run pdf -- projekt.json ausgabeordner` | PDFs (A4 quer) über Chromium erzeugen; braucht einmalig `npm i -D playwright && npx playwright install chromium` |
+| `npm run pdf -- projekt.json ausgabeordner` | alle Dokumente als PDF (A4 quer) über Chromium plus Materialliste als CSV/XLSX; braucht einmalig `npm i -D playwright && npx playwright install chromium` |
 
 Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beispiel-ausgaben/).
 
@@ -59,13 +59,19 @@ Nach der Erfassung schlägt das Programm vor – nichts davon wird ohne Zustimmu
 * **Schlitzmaße** aus den Kabeldurchmessern (Breite = Summe + Abstände, Tiefe = dickstes Kabel + Überdeckung), geprüft gegen die erlaubte Bodenschlitztiefe und die Schlitztiefen ohne statischen Nachweis.
 * **Leitungslängen** je Verbindung (Kette Verteilung → Raum → Auslass → Auslass, LAN sternförmig zum Netzwerkschrank) inkl. Reserven und Zuschlag; **Spannungsfall** je Stromkreis (konservativ mit Nennstrom am Kreisende).
 
+### Material, Kosten, Aufgaben (Etappe 3)
+
+* **Material- und Bestellliste**, gruppiert: Kabel und Leitungen, Dosen, Schalterprogramm (Rahmen nach Fachzahl), Klemmen und Kleinmaterial, Verteiler und Schutzgeräte, Netzwerk/Multimedia/Smart Home, Leuchten und Geräte, Werkzeug und Miete. Bedarf aus Plan, Leitungswegen (Schlitzvolumen → Mörtel/Gips, Aufputzrohr, Schellen, Durchbrüche) und Leitungslängen; Bestellmenge auf Gebinde aufgerundet; Richtpreise (änderbar), Summen je Gruppe, Abhaken, eigene Positionen. Export als **XLSX** (drei Blätter, Summenformeln), **CSV** (Semikolon, für Excel) und **PDF**.
+* **Kostenschätzung** nach Gewerken mit Spanne: Material, Schlitzen/Bohren, Dosen/Aufputz, Kabel, Schließen, Elektrofachkraft (Verteiler, Anschluss, Erstprüfung), Brandschutz, Ausbessern, Entsorgung, Unvorhergesehenes. Umschaltbar: Vorarbeiten in Eigenleistung oder durch Handwerker; Stundensätze änderbar. Ausdrücklich ein Richtwert.
+* **Aufgaben- und Prüfliste** in zehn Bauphasen (Vorbereitung bis Abnahme) mit Haltepunkten (z. B. Fotos und Isolationsmessung vor dem Verschließen), Zuständigkeit (Eigenleistung/Elektrofachkraft/Fachbetrieb), Abhaken und Notizen; Prüfaufgaben für jede Bestandsleitung.
+
 ### Expertenansicht
 
 1. **Projekt**: Projektart, Bundesland, Höhenbezug, Standardhöhen, Schalterprogramm (Standard: Merten System M, frei änderbar), **Smart Home** (aus/ein, System: KNX, Home Assistant, Shelly, Zigbee, Matter/Thread, Homematic IP, gemischt; mit Erklärung, was das für die Leitungsplanung bedeutet), Geschosse und Räume.
 2. **Verteilung & Stromkreise**: Hauptverteilung und Unterverteilungen mit freien LS und RCDs, Stromkreise mit Zuordnung.
 3. **Räume**, Raum für Raum in vier Schritten: *Bauliches* (Grundriss, Wände, Vorwand-Abschnitte mit eigener Höhe, Kaminwange/Tabuzonen, Türen, Fenster, Boden- und Deckenaufbau, Hindernisse, Bestandsleitungen), *Einrichtung* (Möbel/Geräte), *Auslässe* (Schnellanlage, Detailformular, Verschieben per Maus in Draufsicht und Wandabwicklung), *Zusammenfassung* (offene Fragen, Regelprüfung, „Raum bestätigen“).
 4. **Prüfung**: alle Regelmeldungen (Fehler/Warnung/Hinweis) mit Quelle, Klick springt zum Raum.
-5. **Ausgaben**: Raumlayouts (Bauherr), Ausführungsplan (Elektriker, mit Stromkreisliste inkl. Länge/ΔU und Leitungsliste) und Schlitzplan (Regeln, Werkzeug, Summen, je Raum Bodenschlitze, Wandschlitze, Bohrungen, Durchbrüche, Wandabwicklungen mit Schlitzen) als Druckvorschau → „Drucken / als PDF speichern“.
+5. **Material, Kosten, Aufgaben** (siehe oben). **Ausgaben**: Raumlayouts (Bauherr), Ausführungsplan (Elektriker, mit Stromkreisliste inkl. Länge/ΔU und Leitungsliste) und Schlitzplan (Regeln, Werkzeug, Summen, je Raum Bodenschlitze, Wandschlitze, Bohrungen, Durchbrüche, Wandabwicklungen mit Schlitzen) als Druckvorschau → „Drucken / als PDF speichern“.
 6. **Versionen & Protokoll**: benannte Stände („Stand 28.10.“) sichern und wiederherstellen, Änderungsprotokoll. Rückgängig/Wiederholen mit Strg+Z / Strg+Y.
 
 ### Bezugssystem (wichtig gegen Verwechslungen)
@@ -91,6 +97,11 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   planning/suggest.ts  Auslass-Vorschläge
   planning/routes.ts   Leitungswege je Raum: Schlitze, Stiche, Bohrungen, Durchbrüche
   planning/circuits.ts Leitungslängen, Spannungsfall, Stromkreisvorschlag
+  planning/prices.ts   Richtpreise (änderbar)
+  planning/bom.ts      Material- und Bestellliste
+  planning/costs.ts    Kostenschätzung
+  planning/tasks.ts    Aufgaben- und Prüfliste
+  export/material.ts   CSV- und XLSX-Export
   rules/normValues.ts  Norm- und Praxiswerte mit Quelle und Kennzeichen „vom Elektriker zu bestätigen“
   rules/rules.ts       Regelbasis (reine Funktionen) + runRules()
   render/plan.ts       Draufsicht und Geschossübersicht als SVG-String
@@ -151,7 +162,6 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 **Noch nicht umgesetzt:**
 
 * Etappe 2 (Rest): Leerrohre als eigene Trasse mit Stecker-Prüfung in der Oberfläche (die Prüffunktion gibt es schon), Leitungswege zwischen Räumen (heute Schätzung über die Lage im Geschoss), Schaltdrähte Schalter → Leuchte bei Bestands-Deckenauslässen.
-* Etappe 3: Material- und Bestellliste mit Gebinden und Preisen (XLSX/CSV/PDF), Kostenschätzung, Aufgaben- und Prüfliste für die Bauphase.
 * Etappe 4: vollständige Regelmodule (VDE 0100-701 Bad-Schutzbereiche, -520 Strombelastbarkeit, -420 AFDD, -443/-534 SPD, -722 E-Mobilität, Erdverlegung, Abstände/Bewegungsflächen, Beleuchtungsstärke) und ein Prüfprotokoll zum Abzeichnen.
 * Etappe 5: Fotos je Wand/Raum, **KI-Auswertung (Claude-API)** – z. B. Raumnamen und Maße aus dem hochgeladenen Grundriss vorschlagen – von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
 
@@ -165,5 +175,7 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 * Leitungswege werden je Raum berechnet; zwischen Räumen und zur Verteilung schätzt das Programm die Länge rechtwinklig über die Lage im Geschoss (in Listen als „Schätzung“ markiert).
 * Innerhalb eines Stromkreises wird eine Kette Auslass → Auslass angenommen (Reihenfolge nach Entfernung von der Einspeisung).
 * Kabeldurchmesser und Gebinde sind typische Herstellerwerte; maßgeblich ist das Datenblatt.
+* Preise sind Richtwerte (Ende 2026) ohne Händleranbindung; Stundenaufwände sind Erfahrungswerte. Leuchten erscheinen als Platzhalter.
+* Schalterprogramm: Einsätze werden als „Einsatz mit Abdeckung“ gezählt; bei Serien mit getrennter Wippe/Zentralplatte vor der Bestellung zuordnen.
 * Die Normwerte stammen aus allgemein zugänglichen Darstellungen. Die Normtexte sind nicht hinterlegt. Alle mit ⚠ gekennzeichneten Werte muss die Elektrofachkraft bestätigen.
 * Der Browser-Druck setzt Seitenzahlen fest pro Seite. Wird eine Tabelle zu lang, wird sie auf Folgeseiten verteilt (feste Zeilenanzahl).

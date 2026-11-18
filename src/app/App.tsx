@@ -7,6 +7,7 @@ import { RoomView } from './views/RoomView';
 import { DistributionView, OutputView, RulesView, VersionsView } from './views/OtherViews';
 import { DISCLAIMER } from '../core/docs/documents';
 import { Wizard } from './wizard/Wizard';
+import { MaterialView } from './views/MaterialView';
 import { progress } from '../core/wizard/steps';
 
 export function App() {
@@ -96,6 +97,7 @@ export function App() {
           ))}
           <div className="navhead">Auswertung</div>
           <button className={ui.view === 'pruefung' ? 'active' : ''} onClick={() => nav('pruefung')}><span>Prüfung</span><span>{report.counts.fehler > 0 && <span className="pill sev-fehler">{report.counts.fehler}</span>} {report.counts.warnung > 0 && <span className="pill sev-warnung">{report.counts.warnung}</span>}</span></button>
+          <button className={ui.view === 'material' ? 'active' : ''} onClick={() => nav('material')}>Material, Kosten, Aufgaben</button>
           <button className={ui.view === 'ausgaben' ? 'active' : ''} onClick={() => nav('ausgaben')}>Ausgaben / Druck</button>
           <button className={ui.view === 'versionen' ? 'active' : ''} onClick={() => nav('versionen')}>Versionen & Protokoll</button>
           <div className="saved muted small">{savedAt ? `Im Browser gesichert ${savedAt}` : 'Noch nicht gesichert'}</div>
@@ -108,6 +110,7 @@ export function App() {
           {ui.view === 'raum' && room && <RoomView key={room.id} project={project} room={room} outletId={ui.outletId} wallIndex={ui.wallIndex} />}
           {ui.view === 'raum' && !room && <p>Raum nicht gefunden.</p>}
           {ui.view === 'pruefung' && <RulesView project={project} />}
+          {ui.view === 'material' && <MaterialView project={project} />}
           {ui.view === 'ausgaben' && <OutputView project={project} />}
           {ui.view === 'versionen' && <VersionsView project={project} />}
         </main>

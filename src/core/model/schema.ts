@@ -20,7 +20,7 @@
  */
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -534,6 +534,41 @@ export const ChangeLogEntry = z.object({
   text: z.string(),
 });
 
+/** Material: Anpassungen des Nutzers an der berechneten Liste. */
+export const MaterialState = z.object({
+  /** Abgehakt (gekauft/vorhanden) je Positions-ID. */
+  checked: z.record(z.string(), z.boolean()).default({}),
+  /** Abweichende Bestellmenge je Positions-ID. */
+  qtyOverrides: z.record(z.string(), z.number().nonnegative()).default({}),
+  /** Abweichender Stückpreis (€) je Positions-ID. */
+  priceOverrides: z.record(z.string(), z.number().nonnegative()).default({}),
+  /** Eigene Positionen. */
+  extras: z.array(z.object({
+    id,
+    group: z.string(),
+    label: z.string(),
+    unit: z.string().default('Stk'),
+    qty: z.number().nonnegative().default(1),
+    price: z.number().nonnegative().default(0),
+    note: z.string().default(''),
+  })).default([]),
+});
+
+export const CostSettings = z.object({
+  /** Wer macht die Vorarbeiten (Schlitzen, Dosen, Kabel einziehen)? */
+  mode: z.enum(['eigenleistung', 'handwerker']).default('eigenleistung'),
+  /** Stundensätze (€/h, netto+MwSt. je nach Angebot) als Spanne. */
+  rateHelperMin: z.number().nonnegative().default(50),
+  rateHelperMax: z.number().nonnegative().default(70),
+  rateElectricianMin: z.number().nonnegative().default(65),
+  rateElectricianMax: z.number().nonnegative().default(95),
+  /** Zuschlag für Unvorhergesehenes (%). */
+  contingencyMin: z.number().nonnegative().default(10),
+  contingencyMax: z.number().nonnegative().default(20),
+});
+
+export const TaskState = z.object({ done: z.boolean().default(false), note: z.string().default('') });
+
 export const ProjectCore = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   id,
@@ -560,6 +595,9 @@ export const ProjectCore = z.object({
   circuits: z.array(Circuit).default([]),
   changeLog: z.array(ChangeLogEntry).default([]),
   wizard: WizardState.default({}),
+  material: MaterialState.default({}),
+  costs: CostSettings.default({}),
+  tasks: z.record(z.string(), TaskState).default({}),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -599,3 +637,4 @@ export type InstallationType = z.infer<typeof InstallationType>;
 export type WizardState = z.infer<typeof WizardState>;
 export type RoutingStrategy = z.infer<typeof RoutingStrategy>;
 export type FloorLevel = z.infer<typeof FloorLevel>;
+export type CostSettings = z.infer<typeof CostSettings>;

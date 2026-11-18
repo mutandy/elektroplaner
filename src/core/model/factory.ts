@@ -73,6 +73,11 @@ const migrations: Record<number, (p: any) => any> = {
     const up = (core: any) => ({ ...core, schemaVersion: 3 });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
+  // v3 → v4: Material, Kosten, Aufgaben (alles mit Standardwerten).
+  3: (p) => {
+    const up = (core: any) => ({ ...core, schemaVersion: 4 });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

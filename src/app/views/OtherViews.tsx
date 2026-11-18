@@ -140,7 +140,7 @@ export function OutputView({ project }: { project: Project }) {
         <button className="primary" onClick={() => frame.current?.contentWindow?.print()}>Drucken / als PDF speichern</button>
         <button onClick={() => downloadFile(`${project.name} – ${documentLabel[kind]}.html`, html, 'text/html')}>HTML herunterladen</button>
       </div>
-      <p className="muted small">Im Druckdialog „A4 quer“, Ränder „keine“ und „Hintergrundgrafiken“ wählen. Serverseitiges PDF: <code>npm run pdf -- projekt.json</code>. Material-/Bestellliste, Kostenschätzung und Aufgabenliste folgen in Etappe 3.</p>
+      <p className="muted small">Im Druckdialog „A4 quer“, Ränder „keine“ und „Hintergrundgrafiken“ wählen. Serverseitiges PDF: <code>npm run pdf -- projekt.json</code>. Material als Excel/CSV unter „Material, Kosten, Aufgaben“.</p>
       <iframe ref={frame} title="Druckvorschau" className="preview" srcDoc={html} />
     </div>
   );

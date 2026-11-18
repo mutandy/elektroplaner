@@ -15,7 +15,7 @@ const HISTORY_LIMIT = 200;
 const STORAGE_KEY = 'elektroplaner.projekt';
 
 export interface UiState {
-  view: 'willkommen' | 'assistent' | 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'ausgaben' | 'versionen';
+  view: 'willkommen' | 'assistent' | 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'material' | 'ausgaben' | 'versionen';
   roomId?: string;
   outletId?: string;
   wallIndex: number;
@@ -162,11 +162,13 @@ export function useStore<T>(sel: (s: State) => T): T {
   return useSyncExternalStore(store.subscribe, () => sel(store.getState()));
 }
 
-export function downloadFile(name: string, content: string, type = 'application/json') {
+export function downloadFile(name: string, content: string | ArrayBuffer, type = 'application/json') {
   const blob = new Blob([content], { type });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
 }

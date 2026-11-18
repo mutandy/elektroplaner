@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -3508,6 +3508,22 @@
     "done": [],
     "skipped": []
   },
+  "material": {
+    "checked": {},
+    "qtyOverrides": {},
+    "priceOverrides": {},
+    "extras": []
+  },
+  "costs": {
+    "mode": "eigenleistung",
+    "rateHelperMin": 50,
+    "rateHelperMax": 70,
+    "rateElectricianMin": 65,
+    "rateElectricianMax": 95,
+    "contingencyMin": 10,
+    "contingencyMax": 20
+  },
+  "tasks": {},
   "createdAt": "2026-11-18T12:00:00.000Z",
   "updatedAt": "2026-11-18T12:00:00.000Z",
   "versions": []
