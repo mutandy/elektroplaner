@@ -83,6 +83,17 @@ Nach der Erfassung schlägt das Programm vor – nichts davon wird ohne Zustimmu
   * Landesbauordnung: Rauchwarnmelder nach Raumtyp.
 * **Regelübersicht** (Status je Regel) und **Prüfprotokoll** als Druckdokument: Anlagendaten und Leistungsbilanz, Planungsprüfung zum Abzeichnen, Leitungsdimensionierung, leeres Messprotokoll je Stromkreis für die Erstprüfung nach DIN VDE 0100-600, Unterschriften. Normwerte lassen sich unter Projekt → Norm- und Praxiswerte von der Elektrofachkraft als bestätigt eintragen.
 
+### Etappe 5: KI, Fotos, Heimkino, Licht, Abstände
+
+* **KI-Unterstützung (optional, Claude-API):** unter Projekt → „KI-Unterstützung“ einen eigenen API-Schlüssel eintragen. Er wird nur im Browser gespeichert (nicht in der Projektdatei); Bilder und Texte gehen für die Auswertung an die Claude-API (Modell `claude-opus-5-5`, strukturierte JSON-Antwort, bei Ablehnung serverseitige Ausweichlösung `fallbacks: "default"`). Funktionen – jeweils mit Prüftabelle vor der Übernahme:
+  * **Räume aus dem Grundriss lesen:** Bezeichnungen wie im Plan, Maße laut Bemaßung, Lage im Bild → mit Maßstab direkt Lage und Größe; künftigen Namen eintragen, auswählen, anlegen (als „aus Plan“ markiert).
+  * **Foto der Verteilung auslesen:** LS (Charakteristik, Nennstrom, Polzahl), FI/RCD, SPD, freie Teilungseinheiten → in die Verteilung übernehmen (von der Elektrofachkraft zu bestätigen).
+  * **Raum in eigenen Worten beschreiben:** → Raumtyp, Geräte mit Leistung, Möbel an der genannten Wand, Wünsche und offene Fragen.
+* **Fotos** je Raum (einer Wand zugeordnet, beschriftet) und je Verteilung; im Ausführungsplan als Anhang je Raum.
+* **Heimkino-Baustein:** Layout (5.1 bis 9.1.4), Leinwandwand, Hörabstand, Ohrhöhe, Bildbreite, Projektionsverhältnis → Lautsprecherpositionen nach gängigen Dolby-Winkeln (Front ±27°, Surround ±100°/110°, Rear ±142°, Front Wide ±60°, Höhen in Linie mit Front L/R bei 30–55° Elevation), Prüfung der Winkel, Beamer-Abstand und Bildhöhe; fehlende Kanäle erscheinen als Auslass-Vorschläge.
+* **Beleuchtung:** Lichtstrom je Raum aus Lux-Ziel (Raumtyp) × Fläche / Nutzungsfaktor 0,5 → empfohlene Anzahl Leuchten (Lichtstrom je Leuchte einstellbar), Hinweis bei zu wenigen Lichtauslässen.
+* **Abstände:** Möbel und Einbauten im Türaufschlag werden gemeldet.
+
 ### Expertenansicht
 
 1. **Projekt**: Projektart, Bundesland, Höhenbezug, Standardhöhen, Schalterprogramm (Standard: Merten System M, frei änderbar), **Smart Home** (aus/ein, System: KNX, Home Assistant, Shelly, Zigbee, Matter/Thread, Homematic IP, gemischt; mit Erklärung, was das für die Leitungsplanung bedeutet), Geschosse und Räume.
@@ -124,6 +135,11 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   model/roomTypes.ts   Raumtypen: typische Verbraucher, Mindestausstattung, Lux, Besonderheiten
   rules/norms.ts       Normmodule (Bad, Belastbarkeit, AFDD, SPD, E-Mobilität, Erde, Leistung, Ausstattung)
   export/material.ts   CSV- und XLSX-Export
+  ai/tasks.ts          KI-Aufgaben: Antwort-Schemas, Anweisungen, Übernahme ins Projekt (ohne API testbar)
+  planning/theater.ts  Heimkino: Lautsprecherwinkel, Beamer-Abstand
+  planning/lighting.ts Beleuchtungsabschätzung
+src/app/ai/claude.ts   Claude-API-Aufruf aus dem Browser (SDK, strukturierte Ausgabe, Fehlerbehandlung)
+src/app/ai/AiPanels.tsx KI- und Foto-Bausteine der Oberfläche
   rules/normValues.ts  Norm- und Praxiswerte mit Quelle und Kennzeichen „vom Elektriker zu bestätigen“
   rules/rules.ts       Regelbasis (reine Funktionen) + runRules()
   render/plan.ts       Draufsicht und Geschossübersicht als SVG-String
@@ -185,7 +201,7 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 
 * Etappe 2 (Rest): Leerrohre als eigene Trasse mit Stecker-Prüfung in der Oberfläche (die Prüffunktion gibt es schon), Leitungswege zwischen Räumen (heute Schätzung über die Lage im Geschoss), Schaltdrähte Schalter → Leuchte bei Bestands-Deckenauslässen.
 * Etappe 4 (Rest): Abstände/Bewegungsflächen (Möbel, Türaufschlag), Beleuchtungsstärke-Abschätzung je Raum (Lux-Ziele sind je Raumtyp hinterlegt), Selektivität.
-* Etappe 5: Fotos je Wand/Raum, **KI-Auswertung (Claude-API)** – z. B. Raumnamen und Maße aus dem hochgeladenen Grundriss vorschlagen – von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
+* Etappe 5 (Rest): von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
 
 **Vereinfachungen:**
 
@@ -202,5 +218,8 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 * Kabeldurchmesser und Gebinde sind typische Herstellerwerte; maßgeblich ist das Datenblatt.
 * Preise sind Richtwerte (Ende 2026) ohne Händleranbindung; Stundenaufwände sind Erfahrungswerte. Leuchten erscheinen als Platzhalter.
 * Schalterprogramm: Einsätze werden als „Einsatz mit Abdeckung“ gezählt; bei Serien mit getrennter Wippe/Zentralplatte vor der Bestellung zuordnen.
+* KI: Die Claude-API wird direkt aus dem Browser aufgerufen (für die lokale Nutzung mit eigenem Schlüssel gedacht – die App so nicht öffentlich mit einem fremden Schlüssel betreiben). Ergebnisse sind Vorschläge; Pläne sind oft verzerrt, Maße aus dem Plan immer mit dem Aufmaß prüfen.
+* Heimkino: Positionen nach Faustformeln; Raumakustik, Sitzreihen und Lautsprecher-Abstrahlung werden nicht simuliert.
+* Beleuchtung: Wirkungsgrad stark vereinfacht (fester Nutzungsfaktor), keine Lichtberechnung nach Normverfahren.
 * Die Normwerte stammen aus allgemein zugänglichen Darstellungen. Die Normtexte sind nicht hinterlegt. Alle mit ⚠ gekennzeichneten Werte muss die Elektrofachkraft bestätigen.
 * Der Browser-Druck setzt Seitenzahlen fest pro Seite. Wird eine Tabelle zu lang, wird sie auf Folgeseiten verteilt (feste Zeilenanzahl).

@@ -1,0 +1,3811 @@
+{
+  "schemaVersion": 6,
+  "id": "beispiel_kellerwohnung",
+  "name": "Beispiel: Kellerwohnung mit Garage",
+  "projectType": "teilsanierung",
+  "buildingType": "efh",
+  "bundesland": "NW",
+  "address": "",
+  "description": "Sanierung der Kellerwohnung (UP), Garage und Kellerraum in Aufputz, Unterverteilungen für Garage und Garten.",
+  "keepAsIs": [
+    "Heizung (eigener Stromkreis, bleibt)",
+    "Treppenhausbeleuchtung (Allgemeinstrom)"
+  ],
+  "smartHome": {
+    "enabled": true,
+    "system": "home_assistant",
+    "central": "Home Assistant auf Mini-PC im Netzwerkschrank",
+    "neutralInSwitchBoxes": true,
+    "deepBoxesForActuators": true,
+    "busCableToSwitches": false,
+    "dimInLuminaire": true,
+    "notes": "Smart nur im Heimkino und Partyraum; Rest konventionell, aber vorbereitet (N in jeder Schalterdose)."
+  },
+  "network": {
+    "rackLocation": "Heimkino, AV-Rack",
+    "poeAccessPoints": 1,
+    "note": ""
+  },
+  "equipmentLevel": 2,
+  "settings": {
+    "heightReference": {
+      "label": "OK Estrich (Bestand)",
+      "description": "Alle Höhen ab heutiger Oberkante Estrich. Künftiger Aufbau (1,5 cm) ist je Raum eingerechnet."
+    },
+    "defaultHeights": {
+      "steckdose": 30,
+      "schalter": 105,
+      "kuecheArbeitsflaeche": 115,
+      "nachttisch": 70,
+      "aufputzKeller": 105,
+      "lan": 30
+    },
+    "boxConvention": "erste_an_position",
+    "boxPitch": 7.1,
+    "boxDrill": 6.8,
+    "switchProgram": {
+      "manufacturer": "Merten (Schneider Electric)",
+      "series": "System M",
+      "color": "polarweiß glänzend",
+      "wetRoomSeries": "Merten Aquastar (AP, IP44)"
+    },
+    "defaultInstallationType": "unterputz",
+    "defaultFutureBuildup": 0,
+    "normOverrides": {},
+    "confirmedNorms": {},
+    "disabledRules": {}
+  },
+  "floors": [
+    {
+      "id": "geschoss_kg",
+      "name": "Kellergeschoss",
+      "level": -1,
+      "backgroundOpacity": 0.6,
+      "height": 275
+    }
+  ],
+  "rooms": [
+    {
+      "id": "flur",
+      "floorId": "geschoss_kg",
+      "name": "Flur",
+      "formerName": "FLUR",
+      "usage": "Flur (führt zu Gästezimmer)",
+      "futureUsage": "",
+      "roomType": "flur",
+      "loads": [
+        {
+          "id": "flur_last1",
+          "label": "Staubsauger",
+          "power": 1200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "f4"
+        }
+      ],
+      "originOnFloor": {
+        "x": 975,
+        "y": 380
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 438,
+          "y": 0
+        },
+        {
+          "x": 438,
+          "y": 125
+        },
+        {
+          "x": 0,
+          "y": 125
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "zu Bad/Küche",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zu Heimkino",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "zu Treppenhaus/Büro",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "flur_t_treppe",
+          "wallIndex": 2,
+          "s": 330,
+          "width": 88,
+          "height": 201,
+          "hinge": "rechts",
+          "swing": "aussen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsTo": "Treppenhaus",
+          "isMainEntrance": true,
+          "provenance": "annahme"
+        },
+        {
+          "id": "flur_t_bad",
+          "wallIndex": 0,
+          "s": 102,
+          "width": 76,
+          "height": 201,
+          "hinge": "rechts",
+          "swing": "aussen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "bad",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "flur_t_kueche",
+          "wallIndex": 0,
+          "s": 309,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "aussen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "kueche",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "flur_t_kino",
+          "wallIndex": 1,
+          "s": 20,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "aussen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "heimkino",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "flur_t_buero",
+          "wallIndex": 2,
+          "s": 120,
+          "width": 86,
+          "height": 201,
+          "hinge": "rechts",
+          "swing": "aussen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "buero",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "annahme"
+        }
+      ],
+      "windows": [],
+      "obstacles": [],
+      "furniture": [],
+      "outlets": [
+        {
+          "id": "f1",
+          "label": "F1",
+          "kind": "taster",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 315,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "taster"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Taster + Stromstoßschalter (3 Schaltstellen)"
+        },
+        {
+          "id": "f2",
+          "label": "F2",
+          "kind": "taster",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 420,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "taster"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "am Flurende (Heimkino)"
+        },
+        {
+          "id": "f3",
+          "label": "F3",
+          "kind": "taster",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 105,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "taster"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "an der Tür Büro/Gäste"
+        },
+        {
+          "id": "f4",
+          "label": "F4",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 240,
+          "z": 31.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "c2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Staubsauger"
+        },
+        {
+          "id": "f5",
+          "label": "F5",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 110,
+          "y": 62.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": ""
+        },
+        {
+          "id": "f6",
+          "label": "F6",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 330,
+          "y": 62.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": ""
+        },
+        {
+          "id": "f7",
+          "label": "F7",
+          "kind": "rauchwarnmelder",
+          "mount": "decke",
+          "x": 219,
+          "y": 62.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Batteriegerät, keine Leitung"
+        }
+      ],
+      "existingCables": [
+        {
+          "id": "flur_bc1",
+          "label": "Bestand Decke F5",
+          "description": "",
+          "cableType": "NYM 3×1,5 (vermutet)",
+          "fromOutletId": "f5",
+          "goesTo": "Schalterdose Treppenhaus (alt)",
+          "condition": "unbekannt",
+          "reuse": "pruefen",
+          "note": ""
+        }
+      ],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 0,
+        "note": "Hohlkörperdecke – nicht schlitzen, nicht bohren. Bestands-Deckenauslässe weiterverwenden."
+      },
+      "installationType": "unterputz",
+      "wetRoom": false,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "bad",
+      "floorId": "geschoss_kg",
+      "name": "Bad",
+      "formerName": "KELLER ④",
+      "usage": "Duschbad",
+      "futureUsage": "",
+      "roomType": "bad",
+      "loads": [
+        {
+          "id": "bad_last1",
+          "label": "Föhn",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        },
+        {
+          "id": "bad_last2",
+          "label": "Lüfter mit Nachlauf",
+          "power": 30,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "anschlussdose",
+          "outletId": "b5"
+        }
+      ],
+      "originOnFloor": {
+        "x": 981,
+        "y": 30
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 182,
+          "y": 0
+        },
+        {
+          "x": 182,
+          "y": 317
+        },
+        {
+          "x": 0,
+          "y": 317
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "Außenwand (Lichtschacht)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zur Küche",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [
+            {
+              "id": "bad_vw_dusche",
+              "from": 0,
+              "to": 95,
+              "height": null,
+              "depth": 20,
+              "construction": "trockenbau",
+              "label": "Dusche (raumhoch)"
+            },
+            {
+              "id": "bad_vw_wc",
+              "from": 95,
+              "to": 200,
+              "height": 120,
+              "depth": 20,
+              "construction": "trockenbau",
+              "label": "WC"
+            },
+            {
+              "id": "bad_vw_wt",
+              "from": 200,
+              "to": 300,
+              "height": 120,
+              "depth": 20,
+              "construction": "trockenbau",
+              "label": "Waschtisch"
+            }
+          ],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Flurwand",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "zu Keller (Nachbar)",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "bad_t",
+          "wallIndex": 2,
+          "s": 6,
+          "width": 76,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "flur",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [
+        {
+          "id": "bad_f",
+          "wallIndex": 0,
+          "s": 41,
+          "width": 100,
+          "sill": 160,
+          "height": 45,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [
+        {
+          "id": "bad_dusche",
+          "kind": "dusche",
+          "label": "Dusche",
+          "x": 92,
+          "y": 0,
+          "w": 90,
+          "d": 95,
+          "height": 0,
+          "wallIndex": 1,
+          "note": ""
+        },
+        {
+          "id": "bad_wc",
+          "kind": "wc",
+          "label": "WC",
+          "x": 106,
+          "y": 125,
+          "w": 56,
+          "d": 40,
+          "height": 0,
+          "wallIndex": 1,
+          "note": ""
+        },
+        {
+          "id": "bad_wt",
+          "kind": "waschtisch",
+          "label": "Waschtisch",
+          "x": 132,
+          "y": 215,
+          "w": 50,
+          "d": 70,
+          "height": 85,
+          "wallIndex": 1,
+          "note": ""
+        }
+      ],
+      "outlets": [
+        {
+          "id": "b1",
+          "label": "B1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 97,
+          "z": 106.5,
+          "gangs": 2,
+          "orientation": "senkrecht",
+          "growth": "unten",
+          "boxType": "up_tief",
+          "inserts": [
+            "ausschalter",
+            "ausschalter"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "oben Licht, unten Spiegel"
+        },
+        {
+          "id": "b2",
+          "label": "B2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 250,
+          "z": 106.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "links",
+          "convention": "mittig",
+          "boxType": "vorwand",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "neben Waschtisch, in Vorwand (120 hoch)"
+        },
+        {
+          "id": "b3",
+          "label": "B3",
+          "kind": "licht_wand",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 250,
+          "z": 185,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Spiegelleuchte – über der Vorwand im Mauerwerk"
+        },
+        {
+          "id": "b4",
+          "label": "B4",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 91,
+          "y": 160,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": "Bestand, Zugtest; ggf. Leuchte Schutzklasse II"
+        },
+        {
+          "id": "b5",
+          "label": "B5",
+          "kind": "anschlussdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 60,
+          "z": 205,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Lüfter mit Nachlauf, Dauerstrom + geschaltete Phase (5×1,5)"
+        },
+        {
+          "id": "b6",
+          "label": "B6",
+          "kind": "anschlussdose",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 150,
+          "z": 40,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "vorwand",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "c2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Dusch-WC fest angeschlossen (Schutzbereich 2: keine Steckdose), hinter Vorwand"
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 0,
+        "note": "Hohlkörperdecke – nicht schlitzen, nicht bohren. Bestands-Deckenauslässe weiterverwenden."
+      },
+      "installationType": "unterputz",
+      "wetRoom": true,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "kueche",
+      "floorId": "geschoss_kg",
+      "name": "Küche",
+      "formerName": "WASCH.+TROCKNEN ③",
+      "usage": "Küche",
+      "futureUsage": "",
+      "roomType": "kueche",
+      "loads": [
+        {
+          "id": "kueche_last1",
+          "label": "Kochfeld / Herd",
+          "power": 11000,
+          "phases": 3,
+          "dedicated": true,
+          "connection": "herd",
+          "outletId": "k5",
+          "height": 40
+        },
+        {
+          "id": "kueche_last2",
+          "label": "Spülmaschine",
+          "power": 2200,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "k4",
+          "height": 40
+        },
+        {
+          "id": "kueche_last3",
+          "label": "Kühlschrank",
+          "power": 150,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "k6",
+          "height": 200
+        },
+        {
+          "id": "kueche_last4",
+          "label": "Wasserkocher / Kaffeemaschine (Arbeitsfläche)",
+          "power": 2200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "k2",
+          "height": 115
+        },
+        {
+          "id": "kueche_last5",
+          "label": "Dunstabzug",
+          "power": 250,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "k7",
+          "height": 205
+        }
+      ],
+      "originOnFloor": {
+        "x": 1175,
+        "y": 30
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 235,
+          "y": 0
+        },
+        {
+          "x": 235,
+          "y": 331
+        },
+        {
+          "x": 54,
+          "y": 331
+        },
+        {
+          "x": 54,
+          "y": 293
+        },
+        {
+          "x": 0,
+          "y": 293
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "Außenwand (Lichtschacht)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zum Heimkino",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Flurwand",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "Kaminwange vorn",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [
+            {
+              "id": "k_kw1",
+              "kind": "kaminwange",
+              "from": 0,
+              "to": 38,
+              "zFrom": 0,
+              "depth": 0,
+              "note": "Kamin nicht im Bestandsplan eingezeichnet"
+            }
+          ],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 4,
+          "label": "Kaminwange oben",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [
+            {
+              "id": "k_kw2",
+              "kind": "kaminwange",
+              "from": 0,
+              "to": 54,
+              "zFrom": 0,
+              "depth": 0,
+              "note": ""
+            }
+          ],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 5,
+          "label": "Küchenzeile (zum Bad)",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [
+            {
+              "id": "k_vw",
+              "from": 140,
+              "to": 230,
+              "height": 82,
+              "depth": 15,
+              "construction": "trockenbau",
+              "label": "Installationsvorwand Spüle"
+            }
+          ],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "kue_t",
+          "wallIndex": 2,
+          "s": 40,
+          "width": 86,
+          "height": 201,
+          "hinge": "rechts",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "flur",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [
+        {
+          "id": "kue_f",
+          "wallIndex": 0,
+          "s": 67,
+          "width": 100,
+          "sill": 160,
+          "height": 50,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [
+        {
+          "id": "kue_zeile",
+          "kind": "kuechenzeile",
+          "label": "Küchenzeile (Unterschränke, AF 90)",
+          "x": 0,
+          "y": 5,
+          "w": 60,
+          "d": 280,
+          "height": 90,
+          "wallIndex": 5,
+          "note": ""
+        },
+        {
+          "id": "kue_ks",
+          "kind": "kuehlschrank",
+          "label": "Kühlschrank hoch",
+          "x": 175,
+          "y": 0,
+          "w": 60,
+          "d": 60,
+          "height": 200,
+          "wallIndex": 1,
+          "note": ""
+        }
+      ],
+      "outlets": [
+        {
+          "id": "k1",
+          "label": "K1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 25,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "ausschalter"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "k2",
+          "label": "K2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 100,
+          "z": 116.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c3",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Arbeitsfläche"
+        },
+        {
+          "id": "k3",
+          "label": "K3",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 250,
+          "z": 116.5,
+          "gangs": 3,
+          "orientation": "waagerecht",
+          "growth": "links",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c3",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Arbeitsfläche, weg von der Ecke"
+        },
+        {
+          "id": "k4",
+          "label": "K4",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 160,
+          "z": 40,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "vorwand",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "c4",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Spülmaschine, hinter Unterschrank"
+        },
+        {
+          "id": "k5",
+          "label": "K5",
+          "kind": "herd",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 60,
+          "z": 45,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "c6",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Herdanschlussdose 5×2,5"
+        },
+        {
+          "id": "k6",
+          "label": "K6",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 30,
+          "z": 200,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "c5",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Kühlschrank, über dem Gerät"
+        },
+        {
+          "id": "k7",
+          "label": "K7",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 60,
+          "z": 205,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "c5",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Dunstabzug"
+        },
+        {
+          "id": "k8",
+          "label": "K8",
+          "kind": "licht_wand",
+          "mount": "wand",
+          "wallIndex": 5,
+          "s": 180,
+          "z": 150,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Unterbauleuchte, Auslass hinter Oberschrank"
+        },
+        {
+          "id": "k9",
+          "label": "K9",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 140,
+          "y": 170,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c1",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": ""
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 0,
+        "note": "Hohlkörperdecke – nicht schlitzen, nicht bohren. Bestands-Deckenauslässe weiterverwenden."
+      },
+      "installationType": "unterputz",
+      "wetRoom": false,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "heimkino",
+      "floorId": "geschoss_kg",
+      "name": "Heimkino",
+      "formerName": "KELLER ③ (oben rechts)",
+      "usage": "Heimkino 7.1.4",
+      "futureUsage": "",
+      "roomType": "heimkino",
+      "loads": [
+        {
+          "id": "heimkino_last1",
+          "label": "AV-Receiver / Verstärker",
+          "power": 800,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "steckdose",
+          "outletId": "h15"
+        },
+        {
+          "id": "heimkino_last2",
+          "label": "Beamer",
+          "power": 350,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "h14"
+        },
+        {
+          "id": "heimkino_last3",
+          "label": "Subwoofer",
+          "power": 500,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "h2"
+        },
+        {
+          "id": "heimkino_last4",
+          "label": "Spielekonsole / Streaming",
+          "power": 200,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
+      "originOnFloor": {
+        "x": 1422.3,
+        "y": 30
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 347.7,
+          "y": 0
+        },
+        {
+          "x": 347.7,
+          "y": 486.2
+        },
+        {
+          "x": 0,
+          "y": 486.2
+        }
+      ],
+      "height": 223.4,
+      "walls": [
+        {
+          "index": 0,
+          "label": "Rückwand außen (Lichtschacht)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": "Außenwand: keine Dämmung direkt an der Wand, Feuchte beachten."
+        },
+        {
+          "index": 1,
+          "label": "Seite rechts (außen)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Leinwand/Baffle (zum Partyraum)",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [
+            {
+              "id": "kino_baffle",
+              "from": 0,
+              "to": 347.7,
+              "height": null,
+              "depth": 60,
+              "construction": "holz",
+              "label": "Baffle-Wall 60 cm"
+            }
+          ],
+          "note": "Luftspalt hinter der Baffle-Wall."
+        },
+        {
+          "index": 3,
+          "label": "Seite links (Küche/Flur)",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "kino_t",
+          "wallIndex": 3,
+          "s": 20,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "flur",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [
+        {
+          "id": "kino_f",
+          "wallIndex": 0,
+          "s": 124,
+          "width": 100,
+          "sill": 160,
+          "height": 45,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [
+        {
+          "id": "kino_sofa",
+          "kind": "sofa",
+          "label": "Sofa (Hörplatz)",
+          "x": 74,
+          "y": 150,
+          "w": 200,
+          "d": 95,
+          "height": 85,
+          "note": ""
+        },
+        {
+          "id": "kino_rack",
+          "kind": "rack",
+          "label": "AV-Rack",
+          "x": 0,
+          "y": 270,
+          "w": 60,
+          "d": 60,
+          "height": 120,
+          "wallIndex": 3,
+          "note": ""
+        }
+      ],
+      "outlets": [
+        {
+          "id": "h1",
+          "label": "H1",
+          "kind": "taster",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 121,
+          "z": 106.5,
+          "gangs": 2,
+          "orientation": "senkrecht",
+          "growth": "unten",
+          "boxType": "up_tief",
+          "inserts": [
+            "smart_taster",
+            "blind"
+          ],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": true,
+          "status": "neu",
+          "note": "Smart-Taster, Szenen"
+        },
+        {
+          "id": "h2",
+          "label": "H2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 173.85,
+          "z": 25,
+          "gangs": 3,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "convention": "mittig",
+          "boxType": "aufputz_holz",
+          "inserts": [
+            "steckdose",
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c7",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Subwoofer/Center in Baffle"
+        },
+        {
+          "id": "h3",
+          "label": "H3",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 60,
+          "z": 110,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz_holz",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Front L (Baffle)"
+        },
+        {
+          "id": "h4",
+          "label": "H4",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 173.85,
+          "z": 60,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz_holz",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Center (Baffle)"
+        },
+        {
+          "id": "h5",
+          "label": "H5",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 287.7,
+          "z": 110,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz_holz",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Front R (Baffle)"
+        },
+        {
+          "id": "h6",
+          "label": "H6",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 165,
+          "z": 121.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Surround (rechts), leicht hinter Hörplatz"
+        },
+        {
+          "id": "h7",
+          "label": "H7",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 321.2,
+          "z": 121.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Surround (links), leicht hinter Hörplatz"
+        },
+        {
+          "id": "h8",
+          "label": "H8",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 103.85,
+          "z": 150,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Rear Surround"
+        },
+        {
+          "id": "h9",
+          "label": "H9",
+          "kind": "lautsprecher",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 243.85,
+          "z": 150,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lautsprecher_klemme"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Rear Surround"
+        },
+        {
+          "id": "h10",
+          "label": "H10",
+          "kind": "lautsprecher",
+          "mount": "decke",
+          "x": 287.7,
+          "y": 280,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Atmos Top Front (in Linie mit Front L)"
+        },
+        {
+          "id": "h11",
+          "label": "H11",
+          "kind": "lautsprecher",
+          "mount": "decke",
+          "x": 60,
+          "y": 280,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Atmos Top Front (in Linie mit Front R)"
+        },
+        {
+          "id": "h12",
+          "label": "H12",
+          "kind": "lautsprecher",
+          "mount": "decke",
+          "x": 287.7,
+          "y": 100,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Atmos Top Rear"
+        },
+        {
+          "id": "h13",
+          "label": "H13",
+          "kind": "lautsprecher",
+          "mount": "decke",
+          "x": 60,
+          "y": 100,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Atmos Top Rear"
+        },
+        {
+          "id": "h14",
+          "label": "H14",
+          "kind": "steckdose",
+          "mount": "decke",
+          "x": 173.85,
+          "y": 120,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "c7",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser"
+        },
+        {
+          "id": "h15",
+          "label": "H15",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 186.2,
+          "z": 31.5,
+          "gangs": 4,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "convention": "mittig",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose",
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c7",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "AV-Rack"
+        },
+        {
+          "id": "h16",
+          "label": "H16",
+          "kind": "lan",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 186.2,
+          "z": 46.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lan_2fach"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "AV-Rack Uplink"
+        },
+        {
+          "id": "h17",
+          "label": "H17",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 40,
+          "z": 31.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c11",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "h18",
+          "label": "H18",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 173.85,
+          "y": 240,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "decke_hohl",
+          "inserts": [],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": true,
+          "status": "neu",
+          "note": "LED-Spots in Paneelen, Dimmen im Treiber (Dauerstrom)"
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 6,
+        "note": "Hourdis; Akustikpaneele auf Lattung (6 cm Hohlraum) als Kabelweg für Atmos und Beamer."
+      },
+      "installationType": "unterputz",
+      "wetRoom": false,
+      "inScope": true,
+      "smartHome": "home_assistant",
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "partyraum",
+      "floorId": "geschoss_kg",
+      "name": "Partyraum / Spielzimmer",
+      "formerName": "KELLER ③ (unten rechts)",
+      "usage": "Partyraum, Spielzimmer",
+      "futureUsage": "vielleicht Büro",
+      "roomType": "hobby",
+      "loads": [
+        {
+          "id": "partyraum_last1",
+          "label": "Musikanlage",
+          "power": 500,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        },
+        {
+          "id": "partyraum_last2",
+          "label": "Kühlschrank / Getränke",
+          "power": 150,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
+      "originOnFloor": {
+        "x": 1429,
+        "y": 547.5
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 341,
+          "y": 0
+        },
+        {
+          "x": 341,
+          "y": 472.5
+        },
+        {
+          "x": 0,
+          "y": 472.5
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "zum Heimkino",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "Außenwand rechts",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Außenwand unten",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "zum Büro/Gäste",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "party_t",
+          "wallIndex": 0,
+          "s": 10,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsTo": "Flur/Vorraum",
+          "isMainEntrance": false,
+          "provenance": "annahme"
+        }
+      ],
+      "windows": [
+        {
+          "id": "party_f1",
+          "wallIndex": 1,
+          "s": 180,
+          "width": 100,
+          "sill": 155,
+          "height": 55,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "party_f2",
+          "wallIndex": 2,
+          "s": 60,
+          "width": 100,
+          "sill": 155,
+          "height": 55,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [],
+      "outlets": [
+        {
+          "id": "p1",
+          "label": "P1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 111,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "ausschalter"
+          ],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "p2",
+          "label": "P2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 200,
+          "z": 31.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c9",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "p3",
+          "label": "P3",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 80,
+          "z": 31.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c9",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "p4",
+          "label": "P4",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 230,
+          "z": 31.5,
+          "gangs": 3,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "convention": "mittig",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c9",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "später Schreibtisch"
+        },
+        {
+          "id": "p5",
+          "label": "P5",
+          "kind": "lan",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 260,
+          "z": 31.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lan_2fach"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "p6",
+          "label": "P6",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 240,
+          "z": 31.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c9",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "p7",
+          "label": "P7",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 170,
+          "y": 236,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": ""
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 0,
+        "note": "Hohlkörperdecke – nicht schlitzen, nicht bohren. Bestands-Deckenauslässe weiterverwenden."
+      },
+      "installationType": "unterputz",
+      "wetRoom": false,
+      "inScope": true,
+      "smartHome": "home_assistant",
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "buero",
+      "floorId": "geschoss_kg",
+      "name": "Büro / Gäste",
+      "formerName": "KELLER ①",
+      "usage": "Büro, Gästezimmer (Schlafen)",
+      "futureUsage": "",
+      "roomType": "gaeste",
+      "loads": [
+        {
+          "id": "buero_last1",
+          "label": "Laden, Leselampe",
+          "power": 100,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
+      "originOnFloor": {
+        "x": 1133.3,
+        "y": 548
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 283.7,
+          "y": 0
+        },
+        {
+          "x": 283.7,
+          "y": 471.9
+        },
+        {
+          "x": 0,
+          "y": 471.9
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "Flurseite",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zum Partyraum",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Außenwand (Fenster)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "zum Treppenhaus",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "buero_t",
+          "wallIndex": 0,
+          "s": 74,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsToRoomId": "flur",
+          "leadsTo": "",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [
+        {
+          "id": "buero_f",
+          "wallIndex": 2,
+          "s": 90,
+          "width": 100,
+          "sill": 155,
+          "height": 55,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [
+        {
+          "id": "buero_tisch",
+          "kind": "schreibtisch",
+          "label": "Schreibtisch (elektrisch, 2 Monitore)",
+          "x": 60,
+          "y": 391.9,
+          "w": 160,
+          "d": 80,
+          "height": 75,
+          "wallIndex": 2,
+          "note": ""
+        },
+        {
+          "id": "buero_bett",
+          "kind": "bett",
+          "label": "Gästebett / Schlafsofa",
+          "x": 183.7,
+          "y": 120,
+          "w": 100,
+          "d": 200,
+          "height": 45,
+          "wallIndex": 1,
+          "note": ""
+        }
+      ],
+      "outlets": [
+        {
+          "id": "g1",
+          "label": "G1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 175,
+          "z": 106.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "ausschalter"
+          ],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "g2",
+          "label": "G2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 70,
+          "z": 31.5,
+          "gangs": 3,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c10",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Schreibtisch"
+        },
+        {
+          "id": "g3",
+          "label": "G3",
+          "kind": "lan",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 210,
+          "z": 31.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "lan_2fach"
+          ],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Schreibtisch"
+        },
+        {
+          "id": "g4",
+          "label": "G4",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 1,
+          "s": 100,
+          "z": 71.5,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose_usb"
+          ],
+          "circuitId": "c10",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Nachttisch"
+        },
+        {
+          "id": "g5",
+          "label": "G5",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 140,
+          "z": 31.5,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "up_tief",
+          "inserts": [
+            "steckdose",
+            "steckdose"
+          ],
+          "circuitId": "c10",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "g6",
+          "label": "G6",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 141.85,
+          "y": 236,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "bestand",
+          "inserts": [],
+          "circuitId": "c8",
+          "controls": [],
+          "smart": false,
+          "status": "bestand_bleibt",
+          "note": ""
+        },
+        {
+          "id": "g7",
+          "label": "G7",
+          "kind": "rauchwarnmelder",
+          "mount": "decke",
+          "x": 141.85,
+          "y": 160,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [],
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Pflicht (Schlafraum)"
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [
+          {
+            "name": "Zementestrich (Bestand)",
+            "thickness": 5.5
+          },
+          {
+            "name": "PE-Folie / Trennlage",
+            "thickness": 0.2
+          },
+          {
+            "name": "Rohbetonsohle",
+            "thickness": 15
+          }
+        ],
+        "futureAboveRef": [
+          {
+            "name": "Ausgleichsmasse",
+            "thickness": 0.5
+          },
+          {
+            "name": "Vinyl-Klick inkl. Trittschall",
+            "thickness": 1
+          }
+        ],
+        "protectedLayerDepth": 5,
+        "maxSlotDepth": 2.5,
+        "underfloorHeating": false,
+        "slotsAllowed": true,
+        "note": "Folie liegt in 5–6 cm Tiefe; Bodenschlitze max. 2,5 cm. Keine Dübel im Boden."
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": false,
+        "cavityDepth": 0,
+        "note": "Hohlkörperdecke – nicht schlitzen, nicht bohren. Bestands-Deckenauslässe weiterverwenden."
+      },
+      "installationType": "unterputz",
+      "wetRoom": false,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "nein",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "gemessen",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "technik",
+      "floorId": "geschoss_kg",
+      "name": "Heizung / HV",
+      "formerName": "HEIZUNG",
+      "usage": "Heizung, Hauptverteilung (Standort angenommen)",
+      "futureUsage": "",
+      "roomType": "technik",
+      "loads": [
+        {
+          "id": "technik_last1",
+          "label": "Heizung / Wärmepumpe (Steuerung)",
+          "power": 300,
+          "phases": 1,
+          "dedicated": true,
+          "connection": "anschlussdose"
+        },
+        {
+          "id": "technik_last2",
+          "label": "Netzwerk / Server",
+          "power": 150,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose"
+        }
+      ],
+      "originOnFloor": {
+        "x": 537,
+        "y": 30
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 240,
+          "y": 0
+        },
+        {
+          "x": 240,
+          "y": 338
+        },
+        {
+          "x": 0,
+          "y": 338
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "tech_t",
+          "wallIndex": 3,
+          "s": 30,
+          "width": 88.5,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "T30",
+          "leadsTo": "Flur",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [],
+      "obstacles": [],
+      "furniture": [],
+      "outlets": [],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [],
+        "futureAboveRef": [],
+        "protectedLayerDepth": null,
+        "maxSlotDepth": 0,
+        "underfloorHeating": false,
+        "slotsAllowed": false,
+        "note": ""
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": true,
+        "cavityDepth": 0,
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
+      },
+      "installationType": "aufputz_rohr",
+      "wetRoom": false,
+      "inScope": false,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "aus_plan",
+      "photos": [],
+      "note": "Bestand, nicht Teil der Planung. Tür im Plan als FHT eingezeichnet."
+    },
+    {
+      "id": "kellerraum",
+      "floorId": "geschoss_kg",
+      "name": "Kellerraum / Werkstatt",
+      "formerName": "KELLER (1,80 × 3,38)",
+      "usage": "Werkstatt, Lager",
+      "futureUsage": "",
+      "roomType": "werkstatt",
+      "loads": [
+        {
+          "id": "kellerraum_last1",
+          "label": "Elektrowerkzeuge",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        }
+      ],
+      "originOnFloor": {
+        "x": 789,
+        "y": 30
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 180,
+          "y": 0
+        },
+        {
+          "x": 180,
+          "y": 338
+        },
+        {
+          "x": 0,
+          "y": 338
+        }
+      ],
+      "height": 225,
+      "walls": [
+        {
+          "index": 0,
+          "label": "Außenwand (Lichtschacht, Garten)",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Tür",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "kr_t",
+          "wallIndex": 2,
+          "s": 20,
+          "width": 86,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "keine",
+          "leadsTo": "Flur",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        }
+      ],
+      "windows": [
+        {
+          "id": "kr_f",
+          "wallIndex": 0,
+          "s": 40,
+          "width": 100,
+          "sill": 160,
+          "height": 45,
+          "status": "bleibt",
+          "lightWell": true,
+          "provenance": "aus_plan"
+        }
+      ],
+      "obstacles": [],
+      "furniture": [
+        {
+          "id": "kr_werkbank",
+          "kind": "werkbank",
+          "label": "Werkbank",
+          "x": 0,
+          "y": 0,
+          "w": 70,
+          "d": 160,
+          "height": 90,
+          "wallIndex": 3,
+          "note": ""
+        },
+        {
+          "id": "kr_regal",
+          "kind": "regal",
+          "label": "Regal",
+          "x": 140,
+          "y": 40,
+          "w": 40,
+          "d": 200,
+          "height": 200,
+          "wallIndex": 1,
+          "note": ""
+        }
+      ],
+      "outlets": [
+        {
+          "id": "kr1",
+          "label": "KR1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 2,
+          "s": 124,
+          "z": 105,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "ausschalter"
+          ],
+          "circuitId": "k1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "kr2",
+          "label": "KR2",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 260,
+          "z": 105,
+          "gangs": 3,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "steckdose_klappdeckel",
+            "steckdose_klappdeckel",
+            "steckdose_klappdeckel"
+          ],
+          "circuitId": "k1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "über Werkbank"
+        },
+        {
+          "id": "kr3",
+          "label": "KR3",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 90,
+          "y": 169,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [],
+          "circuitId": "k1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Feuchtraum-Wannenleuchte IP65"
+        },
+        {
+          "id": "kr4",
+          "label": "KR4",
+          "kind": "anschlussdose",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 160,
+          "z": 150,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "k2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Durchführung Erdkabel zum Garten (Außenverteiler), Abdichtung gegen Wasser"
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [],
+        "futureAboveRef": [],
+        "protectedLayerDepth": null,
+        "maxSlotDepth": 0,
+        "underfloorHeating": false,
+        "slotsAllowed": false,
+        "note": "kein künftiger Aufbau"
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": true,
+        "cavityDepth": 0,
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
+      },
+      "installationType": "aufputz_rohr",
+      "wetRoom": false,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "annahme",
+      "photos": [],
+      "note": ""
+    },
+    {
+      "id": "garage",
+      "floorId": "geschoss_kg",
+      "name": "Garage",
+      "formerName": "GARAGE ②",
+      "usage": "Garage mit Wallbox",
+      "futureUsage": "",
+      "roomType": "garage",
+      "loads": [
+        {
+          "id": "garage_last1",
+          "label": "Wallbox 11 kW",
+          "power": 11000,
+          "phases": 3,
+          "dedicated": true,
+          "connection": "anschlussdose",
+          "outletId": "ga3",
+          "height": 125
+        },
+        {
+          "id": "garage_last2",
+          "label": "Torantrieb",
+          "power": 300,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "outletId": "ga2"
+        },
+        {
+          "id": "garage_last3",
+          "label": "Werkzeuge, Staubsauger",
+          "power": 2000,
+          "phases": 1,
+          "dedicated": false,
+          "connection": "steckdose",
+          "height": 105
+        }
+      ],
+      "originOnFloor": {
+        "x": 419,
+        "y": 392
+      },
+      "polygon": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 368,
+          "y": 0
+        },
+        {
+          "x": 368,
+          "y": 628
+        },
+        {
+          "x": 0,
+          "y": 628
+        }
+      ],
+      "height": 250,
+      "walls": [
+        {
+          "index": 0,
+          "label": "zum Keller ②",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 1,
+          "label": "zu Waschen+Trocknen ②",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 2,
+          "label": "Torwand",
+          "material": "bims",
+          "exterior": true,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        },
+        {
+          "index": 3,
+          "label": "zur Doppelgarage",
+          "material": "bims",
+          "exterior": false,
+          "loadBearing": false,
+          "horizontalSlotsAllowed": false,
+          "zones": [],
+          "preWall": [],
+          "note": ""
+        }
+      ],
+      "doors": [
+        {
+          "id": "ga_t_haus",
+          "wallIndex": 0,
+          "s": 60,
+          "width": 88.5,
+          "height": 201,
+          "hinge": "links",
+          "swing": "innen",
+          "hasFrame": true,
+          "fireRating": "T30",
+          "leadsTo": "KELLER ② (FHT)",
+          "isMainEntrance": false,
+          "provenance": "aus_plan"
+        },
+        {
+          "id": "ga_tor",
+          "wallIndex": 2,
+          "s": 59,
+          "width": 250,
+          "height": 212,
+          "hinge": "links",
+          "swing": "aussen",
+          "hasFrame": false,
+          "fireRating": "keine",
+          "leadsTo": "Sektionaltor",
+          "isMainEntrance": false,
+          "provenance": "annahme"
+        }
+      ],
+      "windows": [],
+      "obstacles": [
+        {
+          "id": "ga_tor_offen",
+          "kind": "tor",
+          "label": "Sektionaltor geöffnet",
+          "x": 59,
+          "y": 358,
+          "w": 250,
+          "d": 270,
+          "zFrom": 212,
+          "zTo": 250,
+          "note": ""
+        },
+        {
+          "id": "ga_schiene",
+          "kind": "torlaufschiene",
+          "label": "Laufschiene Antrieb",
+          "x": 179,
+          "y": 300,
+          "w": 10,
+          "d": 328,
+          "zFrom": 235,
+          "zTo": 250,
+          "note": ""
+        }
+      ],
+      "furniture": [],
+      "outlets": [
+        {
+          "id": "ga1",
+          "label": "GA1",
+          "kind": "schalter",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 163.5,
+          "z": 105,
+          "gangs": 2,
+          "orientation": "senkrecht",
+          "growth": "unten",
+          "boxType": "aufputz",
+          "inserts": [
+            "ausschalter",
+            "taster"
+          ],
+          "circuitId": "g2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "oben Licht, unten Tortaster"
+        },
+        {
+          "id": "ga2",
+          "label": "GA2",
+          "kind": "steckdose",
+          "mount": "decke",
+          "x": 184,
+          "y": 285,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "steckdose"
+          ],
+          "circuitId": "g2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Deckensteckdose Torantrieb, hinter Schienenende"
+        },
+        {
+          "id": "ga3",
+          "label": "GA3",
+          "kind": "anschlussdose",
+          "mount": "wand",
+          "wallIndex": 3,
+          "s": 200,
+          "z": 125,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "geraeteanschluss"
+          ],
+          "circuitId": "g1",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Wallbox 11 kW (NYM-J 5×6), Anfahrschutz"
+        },
+        {
+          "id": "ga4",
+          "label": "GA4",
+          "kind": "starkstrom",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 260,
+          "z": 105,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "sonstiges"
+          ],
+          "circuitId": "g3",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "CEE 16 A"
+        },
+        {
+          "id": "ga5",
+          "label": "GA5",
+          "kind": "steckdose",
+          "mount": "wand",
+          "wallIndex": 0,
+          "s": 300,
+          "z": 105,
+          "gangs": 2,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [
+            "steckdose_klappdeckel",
+            "steckdose_klappdeckel"
+          ],
+          "circuitId": "g3",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": ""
+        },
+        {
+          "id": "ga6",
+          "label": "GA6",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 184,
+          "y": 120,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [],
+          "circuitId": "g2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Feuchtraum-Wannenleuchte"
+        },
+        {
+          "id": "ga7",
+          "label": "GA7",
+          "kind": "licht_decke",
+          "mount": "decke",
+          "x": 80,
+          "y": 320,
+          "gangs": 1,
+          "orientation": "waagerecht",
+          "growth": "rechts",
+          "boxType": "aufputz",
+          "inserts": [],
+          "circuitId": "g2",
+          "controls": [],
+          "smart": false,
+          "status": "neu",
+          "note": "Wannenleuchte vor dem Torbereich"
+        }
+      ],
+      "existingCables": [],
+      "floor": {
+        "existingBelowRef": [],
+        "futureAboveRef": [],
+        "protectedLayerDepth": null,
+        "maxSlotDepth": 0,
+        "underfloorHeating": false,
+        "slotsAllowed": false,
+        "note": ""
+      },
+      "ceiling": {
+        "construction": "hourdis",
+        "slotsAllowed": false,
+        "drillingAllowed": true,
+        "cavityDepth": 0,
+        "note": "Annahme: Hourdis wie im ganzen Keller – nicht schlitzen, Befestigung nur mit Hohlraumdübeln."
+      },
+      "installationType": "aufputz_rohr",
+      "wetRoom": true,
+      "inScope": true,
+      "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "routingOptions": {
+        "ceilingSuspend": "nein",
+        "suspendDepth": 8,
+        "surfaceAccepted": "ja",
+        "skirtingAccepted": "nein",
+        "answered": true
+      },
+      "dismissedSuggestions": [],
+      "confirmed": false,
+      "provenance": "annahme",
+      "photos": [],
+      "note": ""
+    }
+  ],
+  "distributions": [
+    {
+      "id": "hv",
+      "name": "Hauptverteilung (HV)",
+      "kind": "HV",
+      "roomId": "technik",
+      "feedCable": "",
+      "feedFuse": "",
+      "mainFuse": "3× 63 A NH (Annahme)",
+      "netForm": "TN-C-S",
+      "meter": "Eigener Zähler Wohnung",
+      "freeModules": 12,
+      "breakers": [
+        {
+          "id": "hv_b16",
+          "characteristic": "B",
+          "ratedCurrent": 16,
+          "poles": 1,
+          "count": 9,
+          "free": 9,
+          "note": "frei laut Bestand"
+        },
+        {
+          "id": "hv_b10",
+          "characteristic": "B",
+          "ratedCurrent": 10,
+          "poles": 1,
+          "count": 3,
+          "free": 3,
+          "note": "frei laut Bestand"
+        }
+      ],
+      "rcds": [
+        {
+          "id": "fi1",
+          "label": "FI 1 (40 A / 30 mA, Typ A)",
+          "ratedCurrent": 40,
+          "residualCurrent": 30,
+          "type": "A",
+          "poles": 4,
+          "existing": true
+        },
+        {
+          "id": "fi2",
+          "label": "FI 2 (40 A / 30 mA, Typ A)",
+          "ratedCurrent": 40,
+          "residualCurrent": 30,
+          "type": "A",
+          "poles": 4,
+          "existing": true
+        },
+        {
+          "id": "fi3",
+          "label": "FI 3 neu (40 A / 30 mA, Typ A)",
+          "ratedCurrent": 40,
+          "residualCurrent": 30,
+          "type": "A",
+          "poles": 4,
+          "existing": false
+        }
+      ],
+      "hasSpd": false,
+      "photos": [],
+      "note": "Belegung der FI und freie Plätze vor Ort bestätigen (Foto der Verteilung)."
+    },
+    {
+      "id": "uv_garage",
+      "name": "UV Garage",
+      "kind": "UV",
+      "roomId": "garage",
+      "feedFromId": "hv",
+      "feedCable": "NYM-J 5×10",
+      "feedFuse": "3× B32 (Selektivität prüfen)",
+      "mainFuse": "",
+      "netForm": "unbekannt",
+      "meter": "",
+      "freeModules": 12,
+      "breakers": [],
+      "rcds": [
+        {
+          "id": "uv_ga_fi",
+          "label": "FI Garage (40 A / 30 mA, Typ A)",
+          "ratedCurrent": 40,
+          "residualCurrent": 30,
+          "type": "A",
+          "poles": 4,
+          "existing": false
+        }
+      ],
+      "hasSpd": true,
+      "photos": [],
+      "note": "Wallbox 11 kW, Torantrieb, CEE 16 A, Licht."
+    },
+    {
+      "id": "uv_keller",
+      "name": "UV Kellerraum / Garten",
+      "kind": "UV",
+      "roomId": "kellerraum",
+      "feedFromId": "hv",
+      "feedCable": "NYM-J 5×6",
+      "feedFuse": "3× B25",
+      "mainFuse": "",
+      "netForm": "unbekannt",
+      "meter": "",
+      "freeModules": 24,
+      "breakers": [],
+      "rcds": [
+        {
+          "id": "uv_kr_fi",
+          "label": "FI Keller/Garten (40 A / 30 mA, Typ A)",
+          "ratedCurrent": 40,
+          "residualCurrent": 30,
+          "type": "A",
+          "poles": 4,
+          "existing": false
+        }
+      ],
+      "hasSpd": true,
+      "photos": [],
+      "note": "Werkstatt und Außenbereich; großzügige Reserve für Garten."
+    }
+  ],
+  "circuits": [
+    {
+      "id": "c1",
+      "label": "F1",
+      "name": "Licht Flur, Bad, Küche",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b10",
+      "characteristic": "B",
+      "ratedCurrent": 10,
+      "poles": 1,
+      "rcdId": "fi1",
+      "cable": "NYM-J 3×1,5",
+      "afdd": false,
+      "reason": "Licht getrennt von Steckdosen",
+      "note": ""
+    },
+    {
+      "id": "c2",
+      "label": "F2",
+      "name": "Steckdosen Flur + Bad",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi1",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "Bad mit eigenem Kreis inkl. Flur",
+      "note": ""
+    },
+    {
+      "id": "c3",
+      "label": "F3",
+      "name": "Küche Arbeitsfläche",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi2",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "Küche aufgeteilt",
+      "note": ""
+    },
+    {
+      "id": "c4",
+      "label": "F4",
+      "name": "Küche Spülmaschine",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi2",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "Großgerät eigener Kreis",
+      "note": ""
+    },
+    {
+      "id": "c5",
+      "label": "F5",
+      "name": "Küche Kühlschrank + Dunstabzug",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi3",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "Kühlgerät auf anderem FI als Küche",
+      "note": ""
+    },
+    {
+      "id": "c6",
+      "label": "F6",
+      "name": "Küche Herd/Backofen",
+      "distributionId": "hv",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 3,
+      "rcdId": "fi2",
+      "cable": "NYM-J 5×2,5",
+      "afdd": false,
+      "reason": "Drehstrom, eigener Kreis – neuer 3-poliger LS nötig",
+      "note": ""
+    },
+    {
+      "id": "c7",
+      "label": "F7",
+      "name": "Heimkino AV/Technik",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi3",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "Technik/AV getrennt",
+      "note": ""
+    },
+    {
+      "id": "c8",
+      "label": "F8",
+      "name": "Licht Heimkino, Partyraum, Büro",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b10",
+      "characteristic": "B",
+      "ratedCurrent": 10,
+      "poles": 1,
+      "rcdId": "fi1",
+      "cable": "NYM-J 3×1,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "c9",
+      "label": "F9",
+      "name": "Steckdosen Partyraum",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi1",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "c10",
+      "label": "F10",
+      "name": "Steckdosen Büro/Gäste",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi3",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "c11",
+      "label": "F11",
+      "name": "Steckdosen Heimkino (Raum)",
+      "distributionId": "hv",
+      "breakerGroupId": "hv_b16",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "fi2",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "c12",
+      "label": "F12",
+      "name": "Zuleitung UV Garage",
+      "distributionId": "hv",
+      "characteristic": "B",
+      "ratedCurrent": 32,
+      "poles": 3,
+      "cable": "NYM-J 5×10",
+      "afdd": false,
+      "reason": "Zuleitung, RCD in der UV",
+      "note": ""
+    },
+    {
+      "id": "c13",
+      "label": "F13",
+      "name": "Zuleitung UV Keller/Garten",
+      "distributionId": "hv",
+      "characteristic": "B",
+      "ratedCurrent": 25,
+      "poles": 3,
+      "cable": "NYM-J 5×6",
+      "afdd": false,
+      "reason": "Zuleitung, RCD in der UV",
+      "note": ""
+    },
+    {
+      "id": "g1",
+      "label": "G1",
+      "name": "Wallbox 11 kW",
+      "distributionId": "uv_garage",
+      "characteristic": "C",
+      "ratedCurrent": 16,
+      "poles": 3,
+      "rcdId": "uv_ga_fi",
+      "cable": "NYM-J 5×6",
+      "afdd": false,
+      "reason": "E-Mobilität, VDE 0100-722; RCD-Typ je Wallbox (DC-Fehlerstromerkennung)",
+      "note": ""
+    },
+    {
+      "id": "g2",
+      "label": "G2",
+      "name": "Garage Licht + Torantrieb",
+      "distributionId": "uv_garage",
+      "characteristic": "B",
+      "ratedCurrent": 10,
+      "poles": 1,
+      "rcdId": "uv_ga_fi",
+      "cable": "NYM-J 3×1,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "g3",
+      "label": "G3",
+      "name": "Garage Steckdosen + CEE",
+      "distributionId": "uv_garage",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 3,
+      "rcdId": "uv_ga_fi",
+      "cable": "NYM-J 5×2,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "k1",
+      "label": "K1",
+      "name": "Kellerraum Steckdosen + Licht",
+      "distributionId": "uv_keller",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 1,
+      "rcdId": "uv_kr_fi",
+      "cable": "NYM-J 3×2,5",
+      "afdd": false,
+      "reason": "",
+      "note": ""
+    },
+    {
+      "id": "k2",
+      "label": "K2",
+      "name": "Garten Zuleitung Außenverteiler",
+      "distributionId": "uv_keller",
+      "characteristic": "B",
+      "ratedCurrent": 16,
+      "poles": 3,
+      "rcdId": "uv_kr_fi",
+      "cable": "NYY-J 5×4",
+      "afdd": false,
+      "reason": "Erdkabel, Reserve-Leerrohr DN50 mitlegen",
+      "note": ""
+    }
+  ],
+  "changeLog": [],
+  "wizard": {
+    "finished": true,
+    "step": "start",
+    "done": [],
+    "skipped": []
+  },
+  "material": {
+    "checked": {},
+    "qtyOverrides": {},
+    "priceOverrides": {},
+    "extras": []
+  },
+  "costs": {
+    "mode": "eigenleistung",
+    "rateHelperMin": 50,
+    "rateHelperMax": 70,
+    "rateElectricianMin": 65,
+    "rateElectricianMax": 95,
+    "contingencyMin": 10,
+    "contingencyMax": 20
+  },
+  "tasks": {},
+  "createdAt": "2026-11-18T12:00:00.000Z",
+  "updatedAt": "2026-11-18T12:00:00.000Z",
+  "versions": []
+}

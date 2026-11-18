@@ -81,6 +81,10 @@ h3{font-size:9pt;margin:2mm 0 1mm}
 .cover h1{font-size:22pt;margin:10mm 0 2mm}
 .badge{display:inline-block;border:.3mm solid #991b1b;color:#991b1b;padding:1mm 2mm;border-radius:1mm;font-weight:600}
 .confirm{color:#b45309}
+.photos{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4mm;flex:1;min-height:0;width:100%}
+.photos figure{margin:0;display:flex;flex-direction:column;min-height:0}
+.photos img{flex:1;min-height:0;object-fit:contain;border:.2mm solid #d1d5db}
+.photos figcaption{font-size:7.5pt;padding-top:1mm}
 `;
 
 interface Page { title: string; subtitle?: string; body: string }
@@ -300,6 +304,15 @@ ${i === Math.ceil(lengths.runs.length / 26) - 1 ? `<h3>Summe je Kabeltyp (inkl. 
         title: `${roomTitle(room)} – Dosentabelle`,
         subtitle: i ? '(Fortsetzung)' : roomSubtitle(room),
         body: `<div class="col" style="flex:1">${boxTableHtml(project, room, part, true)}<p class="small">${esc(elevationLegendText())} „Pl.“ = Dosenplätze (↔ waagerecht, ↕ senkrecht, Achsabstand ${fmt(project.settings.boxPitch * 10, 0)} mm). Bohrung Ø ${fmt(project.settings.boxDrill * 10, 0)} mm.</p></div>`,
+      });
+    }
+    // Fotos (4 je Seite)
+    for (const [i, part] of chunk(room.photos, 4).entries()) {
+      if (!part.length) break;
+      pages.push({
+        title: `${roomTitle(room)} – Fotos`,
+        subtitle: i ? '(Fortsetzung)' : roomSubtitle(room),
+        body: `<div class="photos">${part.map((ph) => `<figure><img src="${ph.dataUrl}"><figcaption>${ph.wallIndex != null ? `<b>W${ph.wallIndex + 1}</b> ` : ''}${esc(ph.caption)}</figcaption></figure>`).join('')}</div>`,
       });
     }
     // Wandabwicklungen: bevorzugt M 1:25; zwei kurze/niedrige Wände je Seite, sonst eine

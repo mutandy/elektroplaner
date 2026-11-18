@@ -8,6 +8,7 @@ import { createRectRoom } from '../../core/model/factory';
 import { roomArea, fmt } from '../../core/geometry/room';
 import { renderFloorOverview } from '../../core/render/plan';
 import { store } from '../store';
+import { AiKeySettings } from '../ai/AiPanels';
 import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts, type Col } from '../components/ui';
 
 const up = (text: string, fn: (p: Draft<Project>) => void) => store.update(text, fn);
@@ -154,6 +155,8 @@ export function ProjectView({ project }: { project: Project }) {
           </div>
         ))}
       </Section>
+
+      <Section title="KI-Unterstützung (Claude, optional)" open={false}><AiKeySettings /></Section>
 
       <Section title="Norm- und Praxiswerte" open={false}>
         <p className="muted small">Werte mit ⚠ sind aus allgemein zugänglichen Darstellungen der Normen übernommen und vom Elektriker zu bestätigen. Ein abweichender Wert gilt für dieses Projekt.</p>

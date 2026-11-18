@@ -93,6 +93,17 @@ const migrations: Record<number, (p: any) => any> = {
     const up = (core: any) => ({ ...core, schemaVersion: 6 });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
+  // v6 → v7: Fotos als Objekte (Data-URL, Beschriftung, Wand), Heimkino-Einstellungen, Leuchten-Lichtstrom.
+  6: (p) => {
+    const ph = (list: any[]) => (list ?? []).map((x: any, i: number) => (typeof x === 'string' ? { id: `foto_${i + 1}`, dataUrl: x, caption: '', at: '' } : x));
+    const up = (core: any) => ({
+      ...core,
+      schemaVersion: 7,
+      rooms: (core.rooms ?? []).map((r: any) => ({ ...r, photos: ph(r.photos) })),
+      distributions: (core.distributions ?? []).map((d: any) => ({ ...d, photos: ph(d.photos) })),
+    });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

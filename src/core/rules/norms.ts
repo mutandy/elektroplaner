@@ -13,6 +13,8 @@ import { computeAllRoutes, type RoomRoutes } from '../planning/routes';
 import { circuitCapacity, circuitPower, projectDemand, kw } from '../planning/loads';
 import { normValue } from './normValues';
 import type { Rule, Severity } from './types';
+import { lightingEstimate } from '../planning/lighting';
+import { wallGeoms } from '../geometry/room';
 
 // ---------------------------------------------------------------------------
 // Strombelastbarkeit
@@ -295,5 +297,51 @@ export const NORM_RULES: Rule[] = [
     },
   },
 ];
+
+NORM_RULES.push(
+  {
+    id: 'BELEUCHTUNG.ABSCHAETZUNG',
+    title: 'Lichtstrom je Raum (Abschätzung)',
+    source: 'DIN EN 12464-1 / Wohnpraxis – Richtwert',
+    confirm: false,
+    scope: 'raum',
+    check: (ctx, room) => {
+      if (!room || !room.roomType || room.roomType === 'heimkino') return [];
+      const e = lightingEstimate(ctx.project, room);
+      if (e.existing >= e.recommended) return [];
+      return [{ severity: 'hinweis' as Severity, message: `${room.name}: für ca. ${e.lux} lx auf ${fmt(e.area, 1)} m² rund ${fmt(e.lumenNeeded, 0)} lm nötig – etwa ${e.recommended} Leuchten à ${fmt(e.perLuminaire, 0)} lm, geplant ${e.existing} Lichtauslass/-auslässe (Spots/Lichtband zählen je Auslass; Leuchtenstärke anpassen).` }];
+    },
+  },
+  {
+    id: 'ABSTAND.TUERAUFSCHLAG',
+    title: 'Möbel und Einbauten nicht im Türaufschlag',
+    source: 'Praxisregel / DIN 18040 (Bewegungsflächen) sinngemäß',
+    confirm: false,
+    scope: 'raum',
+    check: (_ctx, room) => {
+      if (!room) return [];
+      const ws = wallGeoms(room);
+      const out: { severity: Severity; message: string }[] = [];
+      for (const d of room.doors.filter((x) => x.swing === 'innen')) {
+        const w = ws[d.wallIndex];
+        if (!w) continue;
+        const hingeS = d.hinge === 'links' ? d.s : d.s + d.width;
+        const toOpen = d.hinge === 'links' ? 1 : -1;
+        const H = { x: w.a.x + w.dir.x * hingeS, y: w.a.y + w.dir.y * hingeS };
+        for (const it of [...room.furniture.map((f) => ({ ...f, name: f.label || f.kind })), ...room.obstacles.filter((o) => (o.zFrom ?? 0) < d.height).map((o) => ({ ...o, name: o.label || o.kind }))]) {
+          // nächster Punkt des Rechtecks zum Bandpunkt
+          const px = Math.max(it.x, Math.min(H.x, it.x + it.w));
+          const py = Math.max(it.y, Math.min(H.y, it.y + it.d));
+          const vx = px - H.x, vy = py - H.y;
+          const dist = Math.hypot(vx, vy);
+          const along = (vx * w.dir.x + vy * w.dir.y) * toOpen; // Richtung Öffnung
+          const into = vx * w.normal.x + vy * w.normal.y; // in den Raum
+          if (dist < d.width - 2 && along > -2 && into > -2) out.push({ severity: 'warnung', message: `${room.name}: „${it.name}“ steht im Aufschlag der Tür in Wand ${d.wallIndex + 1} (Türblatt ${fmt(d.width)} cm) – Tür lässt sich nicht ganz öffnen.` });
+        }
+      }
+      return out;
+    },
+  },
+);
 
 export { isBath };

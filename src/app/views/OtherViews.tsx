@@ -10,6 +10,7 @@ import { store, downloadFile } from '../store';
 import { EditTable, Field, Section, TextInput, opts, type Col } from '../components/ui';
 import { FindingsList } from './RoomView';
 import { CircuitProposalPanel } from '../components/Planning';
+import { DistributionPhotoAi } from '../ai/AiPanels';
 
 const up = (text: string, fn: (p: Draft<Project>) => void) => store.update(text, fn);
 
@@ -38,6 +39,7 @@ export function DistributionView({ project }: { project: Project }) {
           onAdd={() => up('Verteilung ergänzt', (p) => { p.distributions.push({ id: newId('uv'), name: 'Neue UV', kind: 'UV', feedCable: '', feedFuse: '', mainFuse: '', netForm: 'unbekannt', meter: '', freeModules: 12, breakers: [], rcds: [], hasSpd: false, photos: [], note: '' }); })} addLabel="Verteilung" />
         {project.distributions.map((d, di) => (
           <div key={d.id} className="subblock">
+            <DistributionPhotoAi project={project} distributionId={d.id} />
             <h4>{d.name}: vorhandene/freie Leitungsschutzschalter</h4>
             <EditTable rows={d.breakers} rowKey={(r) => r.id}
               cols={[

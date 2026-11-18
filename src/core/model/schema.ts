@@ -21,7 +21,7 @@
 import { z } from 'zod';
 import { ROOM_TYPES } from './roomTypes';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -116,6 +116,8 @@ export const Settings = z.object({
   /** Bohrdurchmesser für UP-/Hohlwanddosen. */
   boxDrill: cm.default(6.8),
   switchProgram: SwitchProgram.default({}),
+  /** Lichtstrom je Standardleuchte (lm) für die Beleuchtungsabschätzung */
+  luminaireLumen: cm.positive().default(1500),
   /** Vorgaben für neu angelegte Räume (aus dem Assistenten). */
   defaultInstallationType: InstallationType.default('unterputz'),
   defaultFutureBuildup: cm.nonnegative().default(0),
@@ -125,6 +127,15 @@ export const Settings = z.object({
   confirmedNorms: z.record(z.string(), z.string()).default({}),
   /** Regeln, die bewusst deaktiviert wurden (mit Begründung). */
   disabledRules: z.record(z.string(), z.string()).default({}),
+});
+
+/** Foto (verkleinert, als Data-URL), optional einer Wand zugeordnet. */
+export const Photo = z.object({
+  id,
+  dataUrl: z.string(),
+  caption: z.string().default(''),
+  wallIndex: z.number().int().nonnegative().optional(),
+  at: z.string().default(''),
 });
 
 // ---------------------------------------------------------------------------
@@ -172,7 +183,7 @@ export const Distribution = z.object({
   breakers: z.array(BreakerGroup).default([]),
   rcds: z.array(Rcd).default([]),
   hasSpd: z.boolean().default(false),
-  photos: z.array(z.string()).default([]),
+  photos: z.array(Photo).default([]),
   note: z.string().default(''),
 });
 
@@ -518,7 +529,24 @@ export const Room = z.object({
   /** Der Nutzer hat die Raum-Zusammenfassung bestätigt. */
   confirmed: z.boolean().default(false),
   provenance: Provenance.default('gemessen'),
-  photos: z.array(z.string()).default([]),
+  photos: z.array(Photo).default([]),
+  /** Heimkino-Planung (Lautsprecher-Layout, Beamer) */
+  theater: z.object({
+    layout: z.enum(['5.1', '5.1.2', '5.1.4', '7.1', '7.1.2', '7.1.4', '9.1.4']).default('7.1.4'),
+    /** Wand mit Leinwand */
+    screenWall: z.number().int().nonnegative().default(0),
+    /** Abstand Hörplatz (Ohr) von der Leinwand, cm */
+    listeningDistance: z.number().positive().default(300),
+    /** Ohrhöhe sitzend über FFB, cm */
+    earHeight: z.number().positive().default(110),
+    /** Bildbreite, cm */
+    screenWidth: z.number().positive().default(240),
+    /** Projektionsverhältnis (Abstand / Bildbreite), min und max laut Beamer-Datenblatt */
+    throwMin: z.number().positive().default(1.36),
+    throwMax: z.number().positive().default(2.18),
+    /** Unterkante Bild über FFB, cm */
+    screenBottom: z.number().nonnegative().default(60),
+  }).optional(),
   note: z.string().default(''),
 });
 
@@ -684,3 +712,5 @@ export type RoutingOptions = z.infer<typeof RoutingOptions>;
 export type FloorLevel = z.infer<typeof FloorLevel>;
 export type CostSettings = z.infer<typeof CostSettings>;
 export type Load = z.infer<typeof Load>;
+export type Photo = z.infer<typeof Photo>;
+export type TheaterConfig = NonNullable<z.infer<typeof Room>['theater']>;

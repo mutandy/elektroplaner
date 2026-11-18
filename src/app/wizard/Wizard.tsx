@@ -19,9 +19,10 @@ import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
 import { runRules } from '../../core/rules/rules';
-import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions, RoomTypeCards, LoadsEditor, DemandSummary, FeasibilityPanel } from '../components/Planning';
+import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions, RoomTypeCards, LoadsEditor, DemandSummary, FeasibilityPanel, TheaterPanel } from '../components/Planning';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 import { setRoomType } from '../components/Planning';
+import { AiKeySettings, FloorPlanAi, DistributionPhotoAi, RoomTextAi, RoomPhotos } from '../ai/AiPanels';
 import { suggestOutlets } from '../../core/planning/suggest';
 import { computeAllRoutes, routeTotals } from '../../core/planning/routes';
 
@@ -182,6 +183,7 @@ function StartStep({ project }: { project: Project }) {
       ]} />
       <Field label="Kurzbeschreibung (optional)"><TextInput wide value={project.description} placeholder="z. B. Keller wird zur Wohnung ausgebaut, Garage mit Wallbox" onChange={(v) => up('Beschreibung', (p) => { p.description = v; })} /></Field>
       <Why>Im Bestand fragt das Programm zusätzlich nach vorhandenen Leitungen, Dosen und der bestehenden Verteilung. Im Neubau entfällt das.</Why>
+      <details className="why"><summary>Optional: KI-Unterstützung einschalten (Grundriss, Fotos, Beschreibungen auswerten)</summary><AiKeySettings /></details>
     </>
   );
 }
@@ -286,6 +288,7 @@ function DistributionStep({ project }: { project: Project }) {
         <Field label="Netzform" hint="steht oft im Hausanschlusskasten; sonst Netzbetreiber fragen"><Select value={hv.netForm} options={opts({ 'TN-C-S': 'TN-C-S (häufig)', 'TN-S': 'TN-S', TT: 'TT', unbekannt: 'weiß ich nicht' })} onChange={(v) => v && setHv('Netzform', (d) => { d.netForm = v as any; })} /></Field>
         <Field label="Hauptsicherung (falls bekannt)"><TextInput value={hv.mainFuse} placeholder="z. B. 3× 63 A" onChange={(v) => setHv('Hauptsicherung', (d) => { d.mainFuse = v; })} /></Field>
       </div>
+      <DistributionPhotoAi project={project} distributionId={hv.id} />
       <h3>Was ist frei?</h3>
       <div className="grid3">
         <Field label="Freie Leitungsschutzschalter B16"><NumberInput step={1} value={group('B', 16)?.free ?? 0} onChange={(v) => setFree('B', 16, v)} /></Field>
@@ -392,6 +395,7 @@ function FloorPlanCard({ project, fi }: { project: Project; fi: number }) {
         <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode={mode}
           onCalibrate={(sc) => { up(`Maßstab ${floor.name}`, (p) => { p.floors[fi].backgroundScale = sc; }); setMode('ansehen'); }} />
       )}
+      {floor.backgroundPlan && <FloorPlanAi project={project} floorId={floor.id} />}
     </div>
   );
 }
@@ -623,6 +627,8 @@ function WallsStep({ room }: { room: Room }) {
           { key: 'horizontalSlotsAllowed', label: 'waagerecht schlitzen ok', type: 'check' },
         ] as Col<any>[]}
         onChange={(i, k, v) => upRoom(room.id, `${room.name}: W${i + 1} ${k}`, (r) => { (r.walls[i] as any)[k] = v; })} />
+      <h3>Fotos der Wände</h3>
+      <RoomPhotos room={room} />
       <Why>Das Material entscheidet über Schlitztiefe, Dosenart und Werkzeug (Bims ist weich, Beton nur mit Diamant). Außenwände: Feuchte und Dämmung beachten. Waagerechte Schlitze schwächen tragende Wände – deshalb sind sie standardmäßig aus.</Why>
     </>
   );
@@ -809,6 +815,7 @@ function UsageStep({ project, room }: { project: Project; room: Room }) {
     <>
       <h3>Wofür wird „{room.name}“ genutzt?</h3>
       <p className="muted small">Die Nutzung bestimmt typische Verbraucher (Leistungsbedarf), eigene Stromkreise, Mindestausstattung, Rauchwarnmelder und Schutzbereiche.</p>
+      <RoomTextAi room={room} />
       <RoomTypeCards project={project} room={room} />
       {room.roomType && (
         <>
@@ -832,6 +839,7 @@ function FurnitureStep({ project, room }: { project: Project; room: Room }) {
   return (
     <>
       <p className="muted small">Aus Möbeln und Geräten leitet das Programm Auslässe ab (Nachttisch → Steckdose 70 cm, Schreibtisch → Steckdosen + LAN, Kühlschrank → eigene Dose …). Lage x/y ab Nullpunkt.</p>
+      {(room.roomType === 'heimkino' || room.theater) && <><h3>Heimkino</h3><TheaterPanel project={project} room={room} /></>}
       <div className="wiz-split">
         <div><EinrichtungTab room={room} wallOpts={room.walls.map((w) => ({ value: String(w.index), label: wallName(room, w.index) }))} /></div>
         <div className="wiz-preview"><RoomPlan project={project} room={room} layers={['moebel', 'beschriftung', 'masse']} /></div>
@@ -857,3 +865,4 @@ function ExistingStep({ room }: { room: Room }) {
     </>
   );
 }
+

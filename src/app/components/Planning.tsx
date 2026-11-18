@@ -12,6 +12,7 @@ import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/ro
 import { loadsForType, roomPower, projectDemand, kw, circuitPower, circuitCapacity } from '../../core/planning/loads';
 import { newId } from '../../core/model/factory';
 import { routingFeasibility, routeOptionLabel, type Verdict, type RouteOption } from '../../core/planning/feasibility';
+import { planTheater } from '../../core/planning/theater';
 
 function acceptSuggestions(room: Room, list: Suggestion[]) {
   store.update(`${room.name}: ${list.length} Vorschlag/Vorschläge übernommen`, (p) => {
@@ -243,6 +244,44 @@ export function FeasibilityPanel({ project, room, compact }: { project: Project;
           : <span className="ok small">✔ bestätigt</span>}
         <button className="small" onClick={() => store.update(`Leitungsweg-Antworten von ${room.name} auf das Geschoss übertragen`, (p) => { for (const r of p.rooms.filter((x) => x.floorId === room.floorId && x.id !== room.id && x.inScope)) r.routingOptions = { ...room.routingOptions, answered: false }; })}>Antworten für alle Räume im Geschoss übernehmen</button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Heimkino
+// ---------------------------------------------------------------------------
+
+export function TheaterPanel({ project, room }: { project: Project; room: Room }) {
+  const t = room.theater;
+  const set = (text: string, fn: (r: Room) => void) => store.update(`${room.name}: ${text}`, (p) => fn(p.rooms.find((x) => x.id === room.id) as Room));
+  if (!t) return <button onClick={() => set('Heimkino-Planung eingeschaltet', (r) => { r.theater = { layout: '7.1.4', screenWall: 0, listeningDistance: 300, earHeight: 110, screenWidth: 240, throwMin: 1.36, throwMax: 2.18, screenBottom: 60 }; })}>🎬 Heimkino planen (Lautsprecher-Layout, Beamer)</button>;
+  const plan = planTheater(project, room, t);
+  const f = (k: keyof NonNullable<Room['theater']>, label: string, hint?: string) => (
+    <Field label={label} hint={hint}><NumberInput value={t[k] as number} onChange={(v) => v != null && set(`Heimkino ${String(k)}`, (r) => { (r.theater as any)[k] = v; })} /></Field>
+  );
+  return (
+    <div>
+      <div className="grid3">
+        <Field label="Layout"><Select value={t.layout} options={['5.1', '5.1.2', '5.1.4', '7.1', '7.1.2', '7.1.4', '9.1.4'].map((x) => ({ value: x, label: x }))} onChange={(v) => v && set('Heimkino Layout', (r) => { r.theater!.layout = v as any; })} /></Field>
+        <Field label="Leinwand an Wand"><Select value={String(t.screenWall)} options={wallGeoms(room).map((w) => ({ value: String(w.index), label: wallName(room, w.index) }))} onChange={(v) => set('Leinwandwand', (r) => { r.theater!.screenWall = Number(v); })} /></Field>
+        {f('listeningDistance', 'Hörplatz ↔ Leinwand (cm)', 'Ohr bis Leinwand-Ebene')}
+        {f('earHeight', 'Ohrhöhe sitzend (cm ü. FFB)')}
+        {f('screenWidth', 'Bildbreite (cm)', 'Hörabstand ca. 1–1,5 × Bildbreite')}
+        {f('screenBottom', 'Bild-Unterkante (cm ü. FFB)')}
+        {f('throwMin', 'Projektionsverhältnis min', 'Datenblatt Beamer (Throw Ratio)')}
+        {f('throwMax', 'Projektionsverhältnis max')}
+      </div>
+      <table className="findings">
+        <thead><tr><th>Kanal</th><th>Position</th><th className="num">Azimut</th><th className="num">Elevation</th><th>Hinweis</th></tr></thead>
+        <tbody>
+          {plan.speakers.map((sp) => <tr key={sp.code}><td><b>{sp.code}</b> {sp.label}</td><td className="small">{sp.mount === 'wand' ? `W${sp.wallIndex! + 1}, ${fmt(sp.s)} cm, Höhe ${fmt(sp.z)}` : `Decke x ${fmt(sp.x)} / y ${fmt(sp.y)}`}</td><td>{sp.azimuth}°</td><td className={sp.ok ? '' : 'sev-warnung'}>{sp.elevation}°</td><td className="small">{sp.note}</td></tr>)}
+          {plan.projector && <tr><td><b>Beamer</b></td><td className="small">Decke x {fmt(plan.projector.x)} / y {fmt(plan.projector.y)}</td><td /><td /><td className={plan.projector.ok ? 'small' : 'small sev-warnung'}>{plan.projector.note}</td></tr>}
+        </tbody>
+      </table>
+      <p className="small">Bild {fmt(t.screenWidth)} × {plan.imageHeight} cm (16:9). {plan.warnings.map((w) => <span key={w} className="sev-warnung"> {w}</span>)}</p>
+      <p className="muted small">Fehlende Kanäle erscheinen unter „Auslässe → Vorschläge“ (mit Code [FL], [TFL] … in der Bemerkung). Empfehlungen nach gängigen Dolby-Winkeln; Feinabstimmung vor Ort/beim Einmessen.</p>
+      <button className="small danger" onClick={() => set('Heimkino-Planung entfernt', (r) => { r.theater = undefined; })}>Heimkino-Planung entfernen</button>
     </div>
   );
 }

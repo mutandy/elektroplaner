@@ -6,7 +6,7 @@
       "properties": {
         "schemaVersion": {
           "type": "number",
-          "const": 6
+          "const": 7
         },
         "id": {
           "type": "string",
@@ -236,6 +236,11 @@
               },
               "additionalProperties": false,
               "default": {}
+            },
+            "luminaireLumen": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "default": 1500
             },
             "defaultInstallationType": {
               "type": "string",
@@ -1445,9 +1450,89 @@
               "photos": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "dataUrl": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string",
+                      "default": ""
+                    },
+                    "wallIndex": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "at": {
+                      "type": "string",
+                      "default": ""
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "dataUrl"
+                  ],
+                  "additionalProperties": false
                 },
                 "default": []
+              },
+              "theater": {
+                "type": "object",
+                "properties": {
+                  "layout": {
+                    "type": "string",
+                    "enum": [
+                      "5.1",
+                      "5.1.2",
+                      "5.1.4",
+                      "7.1",
+                      "7.1.2",
+                      "7.1.4",
+                      "9.1.4"
+                    ],
+                    "default": "7.1.4"
+                  },
+                  "screenWall": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "listeningDistance": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 300
+                  },
+                  "earHeight": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 110
+                  },
+                  "screenWidth": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 240
+                  },
+                  "throwMin": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 1.36
+                  },
+                  "throwMax": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 2.18
+                  },
+                  "screenBottom": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 60
+                  }
+                },
+                "additionalProperties": false
               },
               "note": {
                 "type": "string",
@@ -1638,7 +1723,33 @@
               "photos": {
                 "type": "array",
                 "items": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "dataUrl": {
+                      "type": "string"
+                    },
+                    "caption": {
+                      "type": "string",
+                      "default": ""
+                    },
+                    "wallIndex": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "at": {
+                      "type": "string",
+                      "default": ""
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "dataUrl"
+                  ],
+                  "additionalProperties": false
                 },
                 "default": []
               },
@@ -1936,7 +2047,7 @@
                 "properties": {
                   "schemaVersion": {
                     "type": "number",
-                    "const": 6
+                    "const": 7
                   },
                   "id": {
                     "type": "string",
@@ -2166,6 +2277,11 @@
                         },
                         "additionalProperties": false,
                         "default": {}
+                      },
+                      "luminaireLumen": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "default": 1500
                       },
                       "defaultInstallationType": {
                         "type": "string",
@@ -3375,9 +3491,89 @@
                         "photos": {
                           "type": "array",
                           "items": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "dataUrl": {
+                                "type": "string"
+                              },
+                              "caption": {
+                                "type": "string",
+                                "default": ""
+                              },
+                              "wallIndex": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "at": {
+                                "type": "string",
+                                "default": ""
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "dataUrl"
+                            ],
+                            "additionalProperties": false
                           },
                           "default": []
+                        },
+                        "theater": {
+                          "type": "object",
+                          "properties": {
+                            "layout": {
+                              "type": "string",
+                              "enum": [
+                                "5.1",
+                                "5.1.2",
+                                "5.1.4",
+                                "7.1",
+                                "7.1.2",
+                                "7.1.4",
+                                "9.1.4"
+                              ],
+                              "default": "7.1.4"
+                            },
+                            "screenWall": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "default": 0
+                            },
+                            "listeningDistance": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 300
+                            },
+                            "earHeight": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 110
+                            },
+                            "screenWidth": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 240
+                            },
+                            "throwMin": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 1.36
+                            },
+                            "throwMax": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 2.18
+                            },
+                            "screenBottom": {
+                              "type": "number",
+                              "minimum": 0,
+                              "default": 60
+                            }
+                          },
+                          "additionalProperties": false
                         },
                         "note": {
                           "type": "string",
@@ -3568,7 +3764,33 @@
                         "photos": {
                           "type": "array",
                           "items": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "dataUrl": {
+                                "type": "string"
+                              },
+                              "caption": {
+                                "type": "string",
+                                "default": ""
+                              },
+                              "wallIndex": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "at": {
+                                "type": "string",
+                                "default": ""
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "dataUrl"
+                            ],
+                            "additionalProperties": false
                           },
                           "default": []
                         },

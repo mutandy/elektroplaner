@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -49,6 +49,7 @@
       "color": "polarweiß glänzend",
       "wetRoomSeries": "Merten Aquastar (AP, IP44)"
     },
+    "luminaireLumen": 1500,
     "defaultInstallationType": "unterputz",
     "defaultFutureBuildup": 0,
     "normOverrides": {},
@@ -175,13 +176,13 @@
           "width": 76,
           "height": 201,
           "hinge": "rechts",
-          "swing": "aussen",
+          "swing": "innen",
           "hasFrame": true,
           "fireRating": "keine",
           "leadsToRoomId": "bad",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "aus_plan"
+          "provenance": "annahme"
         },
         {
           "id": "flur_t_kueche",
@@ -577,13 +578,13 @@
           "width": 76,
           "height": 201,
           "hinge": "links",
-          "swing": "innen",
+          "swing": "aussen",
           "hasFrame": true,
           "fireRating": "keine",
           "leadsToRoomId": "flur",
           "leadsTo": "",
           "isMainEntrance": false,
-          "provenance": "aus_plan"
+          "provenance": "annahme"
         }
       ],
       "windows": [
@@ -1550,7 +1551,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Subwoofer/Center in Baffle"
+          "note": "[SUB] Subwoofer/Center in Baffle"
         },
         {
           "id": "h3",
@@ -1570,7 +1571,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Front L (Baffle)"
+          "note": "[FL] Front links (Baffle)"
         },
         {
           "id": "h4",
@@ -1590,7 +1591,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Center (Baffle)"
+          "note": "[C] Center (Baffle)"
         },
         {
           "id": "h5",
@@ -1610,7 +1611,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Front R (Baffle)"
+          "note": "[FR] Front rechts (Baffle)"
         },
         {
           "id": "h6",
@@ -1630,7 +1631,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Surround (rechts), leicht hinter Hörplatz"
+          "note": "[SL] Surround links, leicht hinter Hörplatz"
         },
         {
           "id": "h7",
@@ -1650,7 +1651,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Surround (links), leicht hinter Hörplatz"
+          "note": "[SR] Surround rechts, leicht hinter Hörplatz"
         },
         {
           "id": "h8",
@@ -1670,7 +1671,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Rear Surround"
+          "note": "[SBR] Rear rechts"
         },
         {
           "id": "h9",
@@ -1690,7 +1691,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Rear Surround"
+          "note": "[SBL] Rear links"
         },
         {
           "id": "h10",
@@ -1707,7 +1708,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Front (in Linie mit Front L)"
+          "note": "[TFL] Atmos Top Front links (in Linie mit Front L)"
         },
         {
           "id": "h11",
@@ -1724,7 +1725,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Front (in Linie mit Front R)"
+          "note": "[TFR] Atmos Top Front rechts (in Linie mit Front R)"
         },
         {
           "id": "h12",
@@ -1741,7 +1742,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Rear"
+          "note": "[TRL] Atmos Top Rear links"
         },
         {
           "id": "h13",
@@ -1758,7 +1759,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Atmos Top Rear"
+          "note": "[TRR] Atmos Top Rear rechts"
         },
         {
           "id": "h14",
@@ -1778,7 +1779,7 @@
           "controls": [],
           "smart": false,
           "status": "neu",
-          "note": "Beamer; Abstand aus Throw Ratio (Etappe 5). HDMI-Glasfaser"
+          "note": "[BEAMER] Beamer; HDMI-Glasfaser"
         },
         {
           "id": "h15",
@@ -1926,6 +1927,16 @@
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
+      "theater": {
+        "layout": "7.1.4",
+        "screenWall": 2,
+        "listeningDistance": 230,
+        "earHeight": 110,
+        "screenWidth": 240,
+        "throwMin": 1.36,
+        "throwMax": 2.18,
+        "screenBottom": 50
+      },
       "note": ""
     },
     {

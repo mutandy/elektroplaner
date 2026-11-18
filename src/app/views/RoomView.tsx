@@ -11,7 +11,8 @@ import { normValue } from '../../core/rules/normValues';
 import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts, type Col } from '../components/ui';
 import { RoomPlan, WallElevation } from '../components/PlanCanvas';
-import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType } from '../components/Planning';
+import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType, TheaterPanel } from '../components/Planning';
+import { RoomTextAi, RoomPhotos } from '../ai/AiPanels';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 
 type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
@@ -122,8 +123,10 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
           {tab === 'einrichtung' && <>
             <Section title="Nutzung und Verbraucher">
               <Field label="Raumtyp"><Select value={room.roomType} allowEmpty="– wählen –" options={ROOM_TYPES.map((t) => ({ value: t, label: ROOM_TYPE_INFO[t].label }))} onChange={(v) => v && setRoomType(project, room, v as RoomTypeId)} /></Field>
+              <RoomTextAi room={room} />
               <LoadsEditor room={room} />
             </Section>
+            {(room.roomType === 'heimkino' || room.theater) && <Section title="Heimkino: Lautsprecher und Beamer"><TheaterPanel project={project} room={room} /></Section>}
             <EinrichtungTab room={room} wallOpts={wallOpts} />
           </>}
           {tab === 'auslaesse' && <AuslassTab project={project} room={room} wallOpts={wallOpts} wallIndex={wi} selected={sel} />}
@@ -315,6 +318,8 @@ function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wal
           onAdd={() => upRoom(id, `${room.name}: Hindernis ergänzt`, (r) => { r.obstacles.push({ id: newId('h'), kind: 'heizkoerper', label: 'Heizkörper', x: 50, y: 0, w: 100, d: 10, zFrom: 15, zTo: 75, wallIndex: 0, note: '' }); })}
           addLabel="Hindernis" />
       </Section>
+
+      <Section title={`Fotos (${room.photos.length})`} open={room.photos.length > 0}><RoomPhotos room={room} /></Section>
 
       <Section title={`Bestandsleitungen (${room.existingCables.length})`} open={room.existingCables.length > 0}>
         <EditTable rows={room.existingCables} rowKey={(r) => r.id}

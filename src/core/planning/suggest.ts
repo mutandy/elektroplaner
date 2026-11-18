@@ -13,6 +13,7 @@ import { newId } from '../model/factory';
 import { runRules } from '../rules/rules';
 import { produce } from 'immer';
 import { kw } from './loads';
+import { planTheater } from './theater';
 
 export interface Suggestion {
   key: string;
@@ -184,6 +185,7 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
         break;
       }
       case 'beamer':
+        if (room.theater) break;
         add(`beamer:${f.id}`, 'Beamer: Deckensteckdose + Signalweg (HDMI-Glasfaser ohne Leerrohr-Engpass)', 'moebel', { kind: 'steckdose', mount: 'decke', x: f.x + f.w / 2, y: f.y + f.d / 2, boxType: room.ceiling.cavityDepth > 0 ? 'decke_hohl' : 'decke_beton', inserts: ['steckdose'], note: 'Beamer' });
         break;
       case 'auto':
@@ -192,6 +194,22 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
       case 'fitness':
         wall(mid, zSD, { gangs: 2, inserts: ['steckdose', 'steckdose'] }, 'fitness', 'Fitnessgerät: Steckdose');
         break;
+    }
+  }
+
+  // --- Heimkino: Lautsprecher und Beamer nach Layout -------------------------------
+  if (room.theater) {
+    const tp = planTheater(project, room, room.theater);
+    const items = [...tp.speakers.map((sp) => ({ ...sp, beamer: false })), ...(tp.projector ? [{ code: 'BEAMER', label: 'Beamer', mount: 'decke' as const, x: tp.projector.x, y: tp.projector.y, azimuth: 0, elevation: 0, ok: tp.projector.ok, note: tp.projector.note, beamer: true }] : [])];
+    for (const sp of items) {
+      if (room.outlets.some((o) => o.note.includes(`[${sp.code}]`))) continue;
+      const sub = sp.code === 'SUB';
+      const kind: Outlet['kind'] = sub || sp.beamer ? 'steckdose' : 'lautsprecher';
+      const inserts: Outlet['inserts'] = kind === 'steckdose' ? ['steckdose'] : ['lautsprecher_klemme'];
+      if (sp.mount === 'wand') add(`kino:${sp.code}`, `Heimkino ${room.theater.layout}: ${sp.label} (Azimut ${sp.azimuth}°${sp.elevation ? `, Elevation ${sp.elevation}°` : ''})${sp.note ? ' – ' + sp.note : ''}`, 'raum',
+        { kind, mount: 'wand', wallIndex: sp.wallIndex, s: Math.round(sp.s! * 10) / 10, z: Math.round(sp.z! * 10) / 10, inserts, note: `[${sp.code}] ${sp.label}` });
+      else add(`kino:${sp.code}`, `Heimkino ${room.theater.layout}: ${sp.label}${sp.elevation ? ` (Elevation ${sp.elevation}°)` : ''}${sp.note ? ' – ' + sp.note : ''}`, 'raum',
+        { kind, mount: 'decke', x: sp.x, y: sp.y, inserts, boxType: room.ceiling.cavityDepth > 0 ? 'decke_hohl' : 'decke_beton', note: `[${sp.code}] ${sp.label}` });
     }
   }
 
