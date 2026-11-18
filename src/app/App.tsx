@@ -9,6 +9,7 @@ import { DISCLAIMER } from '../core/docs/documents';
 import { Wizard } from './wizard/Wizard';
 import { MaterialView } from './views/MaterialView';
 import { progress } from '../core/wizard/steps';
+import { BROWSER_DEMO } from './browserDemo';
 
 export function App() {
   const project = useStore((s) => s.project);
@@ -72,6 +73,7 @@ export function App() {
         </div>
       </header>
       <div className="disclaimer">⚡ {DISCLAIMER}</div>
+      {BROWSER_DEMO && <div className="disclaimer">Browser-Version zum Ausprobieren: Dein Projekt wird automatisch in diesem Browser gespeichert. Drucken/PDF, Datei-Downloads (Speichern, CSV, Excel) und die KI-Funktionen gehen hier nicht – dafür die App lokal installieren.</div>}
       {loadError && <div className="error">{loadError}</div>}
       <div className="main">
         <nav className="side">
