@@ -20,6 +20,12 @@ export function setApiKey(v: string) {
   try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch { /* privates Fenster */ }
 }
 
+/** KI über den eigenen Server (Schlüssel liegt dort, nicht im Browser)? */
+let serverAi = false;
+export function setServerAi(v: boolean) { serverAi = v; }
+export function aiAvailable(): boolean { return serverAi || !!getApiKey(); }
+export function aiViaServer(): boolean { return serverAi; }
+
 export class AiError extends Error {}
 
 export type ImageInput = { dataUrl: string };
@@ -42,8 +48,11 @@ export async function askStructured<S extends z.ZodTypeAny>(opts: {
   effort?: 'low' | 'medium' | 'high';
 }): Promise<z.infer<S>> {
   const apiKey = getApiKey();
-  if (!apiKey) throw new AiError('Kein API-Schlüssel hinterlegt (Projekt → KI-Unterstützung).');
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+  if (!apiKey && !serverAi) throw new AiError('Kein API-Schlüssel hinterlegt (Projekt → KI-Unterstützung).');
+  // Mit eigenem Server: Anfrage geht an /api/claude, der Server setzt den echten Schlüssel ein.
+  const client = serverAi && !apiKey
+    ? new Anthropic({ apiKey: 'auf-dem-server', baseURL: new URL('api/claude', document.baseURI).href.replace(/\/$/, ''), dangerouslyAllowBrowser: true, maxRetries: 1 })
+    : new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
   const content: Anthropic.Beta.Messages.BetaContentBlockParam[] = [...(opts.images ?? []).map(imageBlock), { type: 'text', text: opts.text }];
   let response: Anthropic.Beta.Messages.BetaMessage;
   try {

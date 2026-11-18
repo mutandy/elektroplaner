@@ -33,6 +33,64 @@ Weitere Befehle:
 
 Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beispiel-ausgaben/).
 
+## Auf dem eigenen Server betreiben (Unraid, NAS, Docker)
+
+Als Docker-Container läuft die App mit allen Funktionen: Drucken/PDF, Datei-Export, KI. Das Projekt liegt **zentral auf dem Server**, PC, Tablet und Handy sehen also denselben Stand.
+
+- **Zentrale Speicherung:** Das Projekt liegt in `/data/projekt.json`. Alte Stände landen in `/data/sicherungen/`, höchstens alle 10 Minuten einer, die letzten 30 bleiben (`BACKUPS`).
+- **Gerätewechsel:** Kehrst du zur App zurück, holt sie den neuesten Stand. Haben zwei Geräte gleichzeitig geändert, meldet die App einen Konflikt. Du wählst dann „Stand vom Server laden“ oder „Meinen Stand behalten“.
+- **Offline:** Ist der Server kurz weg, speichert der Browser weiter. Die App lädt nach, sobald der Server wieder da ist.
+- **KI:** Der Claude-API-Schlüssel steht als `ANTHROPIC_API_KEY` nur auf dem Server. Der Server leitet die Anfragen weiter, im Browser muss kein Schlüssel eingetragen werden.
+- **Passwort:** Mit `APP_PASSWORD` (Benutzer `APP_USER`, Standard `elektro`) fragt der Browser beim Öffnen nach Benutzer und Passwort.
+
+### Image
+
+GitHub baut bei jedem Push auf `main` automatisch `ghcr.io/mutandy/elektroplaner:latest` für amd64 und arm64 (`.github/workflows/docker.yml`). Bei einem privaten Repository ist auch das Image privat. Dann gibt es zwei Wege:
+
+- **Image öffentlich machen:** GitHub → Profil → Packages → elektroplaner → Package settings → Change visibility. Das Image enthält nur den App-Code, keine Projektdaten und keine Schlüssel.
+- **Unraid anmelden:** In einem Unraid-Terminal einmalig `docker login ghcr.io -u mutandy` ausführen. Als Passwort dient ein GitHub-Token mit dem Recht `read:packages`.
+
+Wer selbst bauen will: `docker build -t elektroplaner .`
+
+### Unraid
+
+1. Die Vorlage `deploy/unraid-elektroplaner.xml` nach `/boot/config/plugins/dockerMan/templates-user/` kopieren, z. B. über die Netzwerkfreigabe `flash` → `config/plugins/dockerMan/templates-user/`.
+2. Unter **Docker → Add Container** die Vorlage **elektroplaner** wählen.
+3. Passwort setzen und, wenn gewünscht, den Claude-API-Schlüssel eintragen. Der Datenordner `/mnt/user/appdata/elektroplaner` sowie PUID 99 und PGID 100 sind vorbelegt.
+4. **Apply** drücken. Danach ist die App unter `http://<unraid-ip>:8080` erreichbar, oder über **WebUI** im Docker-Menü.
+
+Ohne Vorlage geht es auch so: Add Container mit Repository `ghcr.io/mutandy/elektroplaner:latest`, Port 8080, Pfad `/data` → `/mnt/user/appdata/elektroplaner` und den Variablen `PUID=99`, `PGID=100`, `APP_PASSWORD`, `ANTHROPIC_API_KEY`.
+
+### Andere Server (docker compose)
+
+```bash
+docker compose up -d
+```
+
+Die Datei `docker-compose.yml` liegt im Repository. Darin Passwort und Schlüssel eintragen.
+
+### Zugriff von unterwegs
+
+Den Port 8080 **nicht** einfach im Router freigeben, denn dann ginge der Verkehr unverschlüsselt durchs Internet. Besser ist einer dieser Wege:
+
+- **Tailscale (empfohlen, am einfachsten):** Auf Unraid das Plugin *Tailscale* installieren, dazu die Tailscale-App aufs Handy oder den Laptop. Die App ist dann von überall unter `http://<unraid-tailscale-name>:8080` erreichbar, ohne offenen Port. Ein WireGuard-VPN im Router (z. B. FRITZ!Box) funktioniert genauso.
+- **Reverse Proxy mit HTTPS:** Nginx Proxy Manager oder SWAG auf Unraid, dazu eine eigene Domain und ein Let's-Encrypt-Zertifikat. In diesem Fall **unbedingt** `APP_PASSWORD` setzen. Bei langen KI-Anfragen das Proxy-Timeout auf etwa 10 Minuten stellen, das Upload-Limit auf etwa 40 MB (Fotos).
+
+Läuft die App ohne Passwort und ist trotzdem von außen erreichbar, kann jeder das Projekt lesen, ändern und mit deinem API-Schlüssel die KI nutzen.
+
+### Variablen
+
+| Variable | Standard | Bedeutung |
+|---|---|---|
+| `PORT` | 8080 | Port im Container |
+| `DATA_DIR` | /data | Projekt und Sicherungen |
+| `PUID` / `PGID` | 1000 / 1000 | Besitzer des Datenordners (Unraid: 99 / 100) |
+| `APP_USER` / `APP_PASSWORD` | elektro / leer | Anmeldung; leer = kein Passwort |
+| `ANTHROPIC_API_KEY` | leer | schaltet die KI-Funktionen für alle Geräte ein |
+| `BACKUPS` | 30 | Anzahl aufbewahrter Sicherungen |
+
+Ohne Docker geht es auch: `npm run build`, danach `npm run serve`.
+
 ## Bedienung in Kürze
 
 ### Assistent (Start bei Null)

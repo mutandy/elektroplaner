@@ -17,6 +17,8 @@ export function App() {
   const canUndo = useStore((s) => s.past.length > 0);
   const canRedo = useStore((s) => s.future.length > 0);
   const savedAt = useStore((s) => s.savedAt);
+  const server = useStore((s) => s.server);
+  const sync = useStore((s) => s.sync);
   const loadError = useStore((s) => s.loadError);
   const fileRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<'auto' | 'hell' | 'dunkel'>(() => {
@@ -75,6 +77,13 @@ export function App() {
       <div className="disclaimer">⚡ {DISCLAIMER}</div>
       {BROWSER_DEMO && <div className="disclaimer">Browser-Version zum Ausprobieren: Dein Projekt wird automatisch in diesem Browser gespeichert. Drucken/PDF, Datei-Downloads (Speichern, CSV, Excel) und die KI-Funktionen gehen hier nicht – dafür die App lokal installieren.</div>}
       {loadError && <div className="error">{loadError}</div>}
+      {sync === 'konflikt' && (
+        <div className="error">
+          Das Projekt wurde inzwischen auf einem anderen Gerät geändert. Deine Änderungen hier sind noch nicht auf dem Server.{' '}
+          <button onClick={() => void store.takeServer()}>Stand vom Server laden</button>{' '}
+          <button className="danger" onClick={() => void store.keepMine()}>Meinen Stand behalten (Server überschreiben)</button>
+        </div>
+      )}
       <div className="main">
         <nav className="side">
           <button className={ui.view === 'assistent' ? 'active' : ''} onClick={() => nav('assistent')}><span>🧭 Assistent</span>{!project.wizard.finished && <span className="pill sev-hinweis">{wiz.done}/{wiz.total}</span>}</button>
@@ -102,7 +111,9 @@ export function App() {
           <button className={ui.view === 'material' ? 'active' : ''} onClick={() => nav('material')}>Material, Kosten, Aufgaben</button>
           <button className={ui.view === 'ausgaben' ? 'active' : ''} onClick={() => nav('ausgaben')}>Ausgaben / Druck</button>
           <button className={ui.view === 'versionen' ? 'active' : ''} onClick={() => nav('versionen')}>Versionen & Protokoll</button>
-          <div className="saved muted small">{savedAt ? `Im Browser gesichert ${savedAt}` : 'Noch nicht gesichert'}</div>
+          <div className="saved muted small">{server
+            ? sync === 'konflikt' ? '⚠ Konflikt – siehe Hinweis oben' : sync === 'offline' ? '⚠ Server nicht erreichbar – Stand nur in diesem Browser' : sync === 'speichert' ? 'Speichert auf dem Server …' : savedAt ? `Auf dem Server gesichert ${savedAt}` : 'Zentral auf dem Server gespeichert'
+            : savedAt ? `Im Browser gesichert ${savedAt}` : 'Noch nicht gesichert'}</div>
         </nav>
         <main className="content">
           {ui.view === 'willkommen' && <Welcome onNew={startNew} onExample={() => store.replace(exampleProject(), 'Beispielprojekt geladen')} onOpen={() => fileRef.current?.click()} />}

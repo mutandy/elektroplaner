@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>elektroplaner</Name>
+  <Repository>ghcr.io/mutandy/elektroplaner:latest</Repository>
+  <Registry>https://github.com/mutandy/elektroplaner/pkgs/container/elektroplaner</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Overview>Elektroplaner: Planung von Elektroinstallationen in Wohngebäuden (ersetzt keine Elektrofachkraft).</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <Config Name="Web-Port" Target="8080" Default="8080" Mode="tcp" Description="Port der Weboberfläche" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Daten" Target="/data" Default="/mnt/user/appdata/elektroplaner" Mode="rw" Description="Projekt und Sicherungen" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/elektroplaner</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="Benutzer-ID für den Datenordner (Unraid: 99 = nobody)" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Gruppen-ID für den Datenordner (Unraid: 100 = users)" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+  <Config Name="Benutzer" Target="APP_USER" Default="elektro" Mode="" Description="Benutzername für die Anmeldung" Type="Variable" Display="always" Required="false" Mask="false">elektro</Config>
+  <Config Name="Passwort" Target="APP_PASSWORD" Default="" Mode="" Description="Leer = kein Passwort (nur im Heimnetz!)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Claude-API-Schlüssel" Target="ANTHROPIC_API_KEY" Default="" Mode="" Description="Optional, für KI-Funktionen" Type="Variable" Display="always" Required="false" Mask="true"></Config>
+</Container>

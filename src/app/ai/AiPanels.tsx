@@ -8,7 +8,7 @@ import { fmt } from '../../core/geometry/room';
 import { kw } from '../../core/planning/loads';
 import { wallSideLabel } from '../../core/wizard/steps';
 import { store } from '../store';
-import { AI_MODEL, askStructured, getApiKey, setApiKey } from './claude';
+import { AI_MODEL, aiAvailable, aiViaServer, askStructured, getApiKey, setApiKey } from './claude';
 import { loadImage } from '../components/PlanTracer';
 import { Select, TextInput } from '../components/ui';
 
@@ -26,6 +26,7 @@ function useAi<T>() {
 export function AiKeySettings() {
   const [key, setKey] = useState(getApiKey());
   const [saved, setSaved] = useState(!!getApiKey());
+  if (aiViaServer() && !key) return <p className="small ok">✔ KI-Unterstützung ist über deinen Server eingeschaltet ({AI_MODEL}). Der API-Schlüssel liegt auf dem Server, nicht im Browser. Bilder und Texte, die du auswerten lässt, gehen über den Server an die Claude-API.</p>;
   return (
     <div>
       <p className="small">Optional: Mit einem eigenen Claude-API-Schlüssel kann das Programm Grundrisse, Fotos der Verteilung und Raumbeschreibungen auswerten ({AI_MODEL}). Alles kommt als Vorschlag, den du prüfst. Der Schlüssel wird <b>nur in diesem Browser</b> gespeichert, nie in der Projektdatei; Bilder und Texte gehen dabei an die Claude-API.</p>
@@ -50,7 +51,7 @@ export function FloorPlanAi({ project, floorId }: { project: Project; floorId: s
   const [names, setNames] = useState<Record<number, string>>({});
   const [skip, setSkip] = useState<Record<number, boolean>>({});
   if (!floor.backgroundPlan) return null;
-  if (!getApiKey()) return <NoKey />;
+  if (!aiAvailable()) return <NoKey />;
   return (
     <div className="aibox">
       <div className="inline">
@@ -106,8 +107,8 @@ export function DistributionPhotoAi({ project, distributionId }: { project: Proj
             store.update(`${dist.name}: Foto ergänzt`, (p) => { p.distributions.find((d) => d.id === distributionId)!.photos.push({ id: newId('foto'), dataUrl: img.dataUrl, caption: f.name, at: new Date().toISOString() }); });
           }} />
         </label>
-        {photo && getApiKey() && <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: DistributionPhotoResult, system: DISTRIBUTION_PROMPT, text: `Verteilung „${dist.name}“. Lies alle Geräte aus.`, images: [{ dataUrl: photo.dataUrl }] }))}>{ai.busy ? 'Claude liest das Foto …' : '✨ Geräte aus dem Foto lesen (KI)'}</button>}
-        {photo && !getApiKey() && <span className="muted small">Mit API-Schlüssel kann das Foto ausgewertet werden.</span>}
+        {photo && aiAvailable() && <button disabled={ai.busy} onClick={() => ai.run(() => askStructured({ schema: DistributionPhotoResult, system: DISTRIBUTION_PROMPT, text: `Verteilung „${dist.name}“. Lies alle Geräte aus.`, images: [{ dataUrl: photo.dataUrl }] }))}>{ai.busy ? 'Claude liest das Foto …' : '✨ Geräte aus dem Foto lesen (KI)'}</button>}
+        {photo && !aiAvailable() && <span className="muted small">Mit API-Schlüssel kann das Foto ausgewertet werden.</span>}
       </div>
       {dist.photos.length > 0 && <div className="thumbs">{dist.photos.map((ph) => <img key={ph.id} src={ph.dataUrl} alt={ph.caption} title={ph.caption} />)}</div>}
       <Err msg={ai.error} />
@@ -134,7 +135,7 @@ export function RoomTextAi({ room }: { room: Room }) {
   const [text, setText] = useState('');
   const ai = useAi<RoomTextResult>();
   const [opt, setOpt] = useState({ type: true, loads: true, furniture: true });
-  if (!getApiKey()) return null;
+  if (!aiAvailable()) return null;
   return (
     <div className="aibox">
       <p className="small"><b>✨ In eigenen Worten beschreiben (KI):</b> z. B. „Schlafzimmer mit Doppelbett an der Fensterwand, links und rechts Nachttische, gegenüber Schrank, in der Ecke ein Schreibtisch mit zwei Monitoren, später vielleicht Kinderzimmer.“</p>

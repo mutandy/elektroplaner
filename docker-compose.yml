@@ -1,0 +1,18 @@
+# Start:  docker compose up -d   →  http://<server-ip>:8080
+services:
+  elektroplaner:
+    image: ghcr.io/mutandy/elektroplaner:latest
+    # Alternativ selbst bauen statt Image laden:
+    # build: .
+    container_name: elektroplaner
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      # Passwortschutz – Pflicht, sobald die App von außen erreichbar ist
+      APP_USER: elektro
+      APP_PASSWORD: ""
+      # Optional: Claude-API-Schlüssel für die KI-Funktionen (bleibt auf dem Server)
+      ANTHROPIC_API_KEY: ""
