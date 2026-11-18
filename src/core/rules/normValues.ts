@@ -46,6 +46,18 @@ export const NORM_VALUES: NormValue[] = [
   v('schlitz.senkrecht.maxBreite', 10, 'cm', 'Senkrechte Schlitze ohne Nachweis: max. Breite (Einzelschlitz)', 'DIN EN 1996-1-1/NA Tab. NA.19 – vereinfacht'),
   v('schlitz.waagerecht.maxTiefe', 1.5, 'cm', 'Waagerechte Schlitze ohne Nachweis: max. Tiefe (unbeschränkte Länge)', 'DIN EN 1996-1-1/NA Tab. NA.20 – vereinfacht'),
   v('schlitz.waagerecht.maxAbstandDecke', 40, 'cm', 'Waagerechte Schlitze nur in diesem Bereich unter/über Decke', 'DIN EN 1996-1-1/NA – vereinfacht'),
+  // Leitungswege (Praxis)
+  v('sturz.hoehe', 25, 'cm', 'Angenommene Sturzhöhe über Tür-/Fensteröffnungen (keine waagerechten Schlitze)', 'Praxisregel – vor Ort prüfen', true),
+  v('trasse.zuschlag', 10, '%', 'Zuschlag auf berechnete Leitungslänge (Verschnitt, Bögen)', 'Praxisregel', false),
+  v('trasse.anschlussreserve', 30, 'cm', 'Leitungsreserve je Dose (zum Anschließen)', 'Praxisregel', false),
+  v('trasse.verteilerreserve', 100, 'cm', 'Leitungsreserve in der Verteilung', 'Praxisregel', false),
+  v('trasse.kabelabstand', 5, 'mm', 'Abstand zwischen Kabeln im Schlitz (einlagig)', 'Praxisregel', false),
+  v('trasse.schlitzzugabe', 10, 'mm', 'Zugabe zur Schlitzbreite (Werkzeug, Fixierung)', 'Praxisregel', false),
+  v('trasse.ueberdeckung', 10, 'mm', 'Mindestüberdeckung des Kabels im Schlitz (Mörtel/Putz)', 'Praxisregel', false),
+  v('spannungsfall.max', 3, '%', 'Max. Spannungsfall Zähler → Verbraucher (Empfehlung)', 'DIN 18015-1 / DIN VDE 0100-520 Anh. G', true),
+  v('spannungsfall.kappa', 56, 'm/(Ω·mm²)', 'Leitfähigkeit Kupfer (bei 20 °C; warm ca. 48)', 'Physik', false),
+  v('stromkreis.maxSteckdosen', 8, 'Plätze', 'Steckdosenplätze je Stromkreis (Richtwert)', 'Praxisregel / DIN 18015-2', false),
+  v('stromkreis.maxJeRcd', 4, 'Stromkreise', 'Stromkreise je RCD (Fehlerfall: Ausfall begrenzen)', 'Praxisregel / DIN 18015-1', false),
   // Schutzmaßnahmen
   v('rcd.bemessungsdifferenzstrom', 30, 'mA', 'RCD für Steckdosen ≤ 32 A und Endstromkreise für Leuchten in Wohnungen', 'DIN VDE 0100-410:2018-10, 411.3.3'),
 ];

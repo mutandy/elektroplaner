@@ -9,6 +9,7 @@ import { circuitTable } from '../../core/docs/tables';
 import { store, downloadFile } from '../store';
 import { EditTable, Field, Section, TextInput, opts, type Col } from '../components/ui';
 import { FindingsList } from './RoomView';
+import { CircuitProposalPanel } from '../components/Planning';
 
 const up = (text: string, fn: (p: Draft<Project>) => void) => store.update(text, fn);
 
@@ -65,6 +66,7 @@ export function DistributionView({ project }: { project: Project }) {
           </div>
         ))}
       </Section>
+      <Section title="Stromkreisvorschlag, Längen und Spannungsfall"><CircuitProposalPanel project={project} /></Section>
       <Section title={`Stromkreise (${project.circuits.length})`}>
         <EditTable rows={project.circuits} rowKey={(r) => r.id}
           cols={[
@@ -88,7 +90,6 @@ export function DistributionView({ project }: { project: Project }) {
           <thead><tr><th>SK</th><th>Bezeichnung</th><th>LS</th><th>RCD</th><th>Räume</th><th>Auslässe</th></tr></thead>
           <tbody>{ct.map((c) => <tr key={c.id}><td><b>{c.label}</b></td><td>{c.name}</td><td>{c.breaker} ({c.existingBreaker})</td><td>{c.rcd}</td><td>{c.rooms}</td><td className="small">{c.outlets}</td></tr>)}</tbody>
         </table>
-        <p className="muted small">Automatischer Stromkreisvorschlag mit Längen und Spannungsfall folgt in Etappe 2.</p>
       </Section>
     </div>
   );
@@ -139,7 +140,7 @@ export function OutputView({ project }: { project: Project }) {
         <button className="primary" onClick={() => frame.current?.contentWindow?.print()}>Drucken / als PDF speichern</button>
         <button onClick={() => downloadFile(`${project.name} – ${documentLabel[kind]}.html`, html, 'text/html')}>HTML herunterladen</button>
       </div>
-      <p className="muted small">Im Druckdialog „A4 quer“, Ränder „keine“ und „Hintergrundgrafiken“ wählen. Serverseitiges PDF: <code>npm run pdf -- projekt.json</code>. Schlitzplan, Material-/Bestellliste, Kostenschätzung und Aufgabenliste folgen in den Etappen 2 und 3.</p>
+      <p className="muted small">Im Druckdialog „A4 quer“, Ränder „keine“ und „Hintergrundgrafiken“ wählen. Serverseitiges PDF: <code>npm run pdf -- projekt.json</code>. Material-/Bestellliste, Kostenschätzung und Aufgabenliste folgen in Etappe 3.</p>
       <iframe ref={frame} title="Druckvorschau" className="preview" srcDoc={html} />
     </div>
   );

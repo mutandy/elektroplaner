@@ -6,7 +6,7 @@
       "properties": {
         "schemaVersion": {
           "type": "number",
-          "const": 2
+          "const": 3
         },
         "id": {
           "type": "string",
@@ -1241,6 +1241,58 @@
               "distributionId": {
                 "type": "string"
               },
+              "routing": {
+                "type": "object",
+                "properties": {
+                  "strategy": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "boden",
+                      "decke",
+                      "wand_waagerecht",
+                      "aufputz"
+                    ],
+                    "default": "auto"
+                  },
+                  "floorOffset": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 12
+                  },
+                  "surfaceBelowCeiling": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "default": 20
+                  },
+                  "entry": {
+                    "type": "object",
+                    "properties": {
+                      "wallIndex": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "s": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "wallIndex",
+                      "s"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false,
+                "default": {}
+              },
+              "dismissedSuggestions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              },
               "confirmed": {
                 "type": "boolean",
                 "default": false
@@ -1612,7 +1664,7 @@
                 "properties": {
                   "schemaVersion": {
                     "type": "number",
-                    "const": 2
+                    "const": 3
                   },
                   "id": {
                     "type": "string",
@@ -2846,6 +2898,58 @@
                         },
                         "distributionId": {
                           "type": "string"
+                        },
+                        "routing": {
+                          "type": "object",
+                          "properties": {
+                            "strategy": {
+                              "type": "string",
+                              "enum": [
+                                "auto",
+                                "boden",
+                                "decke",
+                                "wand_waagerecht",
+                                "aufputz"
+                              ],
+                              "default": "auto"
+                            },
+                            "floorOffset": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 12
+                            },
+                            "surfaceBelowCeiling": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "default": 20
+                            },
+                            "entry": {
+                              "type": "object",
+                              "properties": {
+                                "wallIndex": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "s": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "wallIndex",
+                                "s"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false,
+                          "default": {}
+                        },
+                        "dismissedSuggestions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "default": []
                         },
                         "confirmed": {
                           "type": "boolean",

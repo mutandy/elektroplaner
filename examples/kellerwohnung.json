@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "beispiel_kellerwohnung",
   "name": "Beispiel: Kellerwohnung mit Garage",
   "projectType": "teilsanierung",
@@ -412,6 +412,12 @@
       "wetRoom": false,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -761,6 +767,12 @@
       "wetRoom": true,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -1193,6 +1205,12 @@
       "wetRoom": false,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -1745,6 +1763,12 @@
       "inScope": true,
       "smartHome": "home_assistant",
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -2063,6 +2087,12 @@
       "inScope": true,
       "smartHome": "home_assistant",
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -2388,6 +2418,12 @@
       "wetRoom": false,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "gemessen",
       "photos": [],
@@ -2510,6 +2546,12 @@
       "wetRoom": false,
       "inScope": false,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "aus_plan",
       "photos": [],
@@ -2753,6 +2795,12 @@
       "wetRoom": false,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "annahme",
       "photos": [],
@@ -3057,6 +3105,12 @@
       "wetRoom": true,
       "inScope": true,
       "heightOverrides": {},
+      "routing": {
+        "strategy": "auto",
+        "floorOffset": 12,
+        "surfaceBelowCeiling": 20
+      },
+      "dismissedSuggestions": [],
       "confirmed": false,
       "provenance": "annahme",
       "photos": [],

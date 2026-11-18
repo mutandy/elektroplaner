@@ -7,6 +7,8 @@ import { boxCenters, doorHandleSide, outletExtent, wallLength, zToFfb, futureBui
 import { normValue } from './normValues';
 import type { Rule, RuleFinding, Severity } from './types';
 import { outletKindLabel } from '../model/labels';
+import { computeRoomRoutes } from '../planning/routes';
+import { computeLengths } from '../planning/circuits';
 
 const isWallOutlet = (o: Outlet) => o.mount === 'wand' && o.wallIndex != null && o.s != null && o.z != null;
 const overlaps = (a1: number, a2: number, b1: number, b2: number) => a1 < b2 && b1 < a2;
@@ -338,7 +340,32 @@ export const RULES: Rule[] = [
       return [];
     },
   },
+  {
+    id: 'TRASSE',
+    title: 'Leitungswege: Schlitztiefen, Zonen, Tabubereiche, Erreichbarkeit',
+    source: 'DIN 18015-3 / DIN EN 1996 (Schlitze) / Praxisregel',
+    confirm: true,
+    scope: 'raum',
+    check: (ctx, room) => {
+      if (!room) return [];
+      return computeRoomRoutes(ctx.project, room).issues.map((i) => ({ severity: i.severity, message: i.message }));
+    },
+  },
   // ----------------------------- Projekt ----------------------------------
+  {
+    id: 'VDE0100-520.SPANNUNGSFALL',
+    title: 'Spannungsfall je Stromkreis',
+    source: 'DIN 18015-1 / DIN VDE 0100-520 Anh. G',
+    confirm: true,
+    scope: 'projekt',
+    check: (ctx) => {
+      const l = computeLengths(ctx.project);
+      return l.circuits.filter((c) => c.ok === false).map((c) => {
+        const cc = ctx.project.circuits.find((x) => x.id === c.circuitId)!;
+        return { severity: 'warnung' as Severity, ref: cc.label, message: `Stromkreis ${cc.label} (${cc.name}): ca. ${fmt(c.farthestM)} m bis zum letzten Auslass → Spannungsfall ${fmt(c.voltageDropPct, 2)} % bei ${cc.ratedCurrent} A (konservativ: Nennstrom am Kreisende). Kreis aufteilen, größeren Querschnitt oder kleineren LS prüfen.` };
+      });
+    },
+  },
   {
     id: 'VDE0100-410.RCD',
     title: 'RCD 30 mA für Steckdosen- und Lichtstromkreise',

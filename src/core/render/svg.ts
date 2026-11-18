@@ -61,6 +61,16 @@ export const PLAN_STYLE = `
 .ep .sel .box,.ep .sel circle{stroke:var(--ep-sel,#7c3aed)!important}
 .ep [data-outlet]{cursor:pointer}
 .ep .lbl{font-weight:600}
+.ep .slot{stroke:var(--ep-slot,#b45309);fill:none;stroke-linecap:butt}
+.ep .slotfill{fill:var(--ep-slot,#b45309);fill-opacity:.35;stroke:var(--ep-slot,#b45309)}
+.ep .slott{fill:var(--ep-slot,#b45309);font-weight:700}
+.ep .cavity{stroke:var(--ep-slot,#b45309);fill:none;stroke-dasharray:3 2;opacity:.7}
+.ep .ceil{stroke:var(--ep-ceil,#7c3aed);fill:none}
+.ep .ceilt{fill:var(--ep-ceil,#7c3aed)}
+.ep .ap{stroke:var(--ep-ap,#047857);fill:none}
+.ep .apt{fill:var(--ep-ap,#047857)}
+.ep .pen{fill:var(--ep-bg,#fff);stroke:var(--ep-slot,#b45309)}
+.ep .pen.fire{stroke:var(--ep-err,#b91c1c)}
 `;
 
 export function defs(unit: number): string {

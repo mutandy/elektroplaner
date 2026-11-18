@@ -9,7 +9,7 @@
 import type { Project, Room } from '../model/schema';
 import { wallGeoms } from '../geometry/room';
 
-export type StepGroup = 'Projekt' | 'Grundriss' | 'Räume' | 'Abschluss';
+export type StepGroup = 'Projekt' | 'Grundriss' | 'Räume' | 'Empfehlungen' | 'Abschluss';
 
 export const ROOM_SUBSTEPS = ['masse', 'waende', 'tueren', 'fenster', 'besonderheiten', 'boden', 'decke', 'nutzung', 'bestand', 'zusammenfassung'] as const;
 export type RoomSubstep = (typeof ROOM_SUBSTEPS)[number];
@@ -60,7 +60,9 @@ export function allSteps(project: Project): Step[] {
       steps.push({ id: `raum:${r.id}:${sub}`, group: 'Räume', title: `${r.name}: ${roomSubstepLabel[sub]}`, roomId: r.id, sub });
     }
   }
-  steps.push({ id: 'abschluss', group: 'Abschluss', title: 'Fertig erfasst – was noch offen ist' });
+  steps.push({ id: 'empfehlungen.auslaesse', group: 'Empfehlungen', title: 'Vorgeschlagene Auslässe' });
+  steps.push({ id: 'empfehlungen.stromkreise', group: 'Empfehlungen', title: 'Stromkreise und Leitungswege' });
+  steps.push({ id: 'abschluss', group: 'Abschluss', title: 'Fertig – was noch offen ist' });
   return steps;
 }
 

@@ -49,13 +49,23 @@ Jeder Schritt erklärt unter „Warum wird das gefragt?“, wozu die Angabe dien
 
 Pläne sind oft nicht maßhaltig (Foto schräg, Zeichnung ungenau). Deshalb nutzt das Programm den Grundriss nur als Vorlage für die Lage. Verbindlich sind die vor Ort gemessenen Maße, die im Schritt „Maße und Höhe“ abgefragt werden.
 
+### Empfehlungen (Etappe 2)
+
+Nach der Erfassung schlägt das Programm vor – nichts davon wird ohne Zustimmung übernommen:
+
+* **Auslässe:** Schalter an jeder Tür (Griffseite, 15 cm neben Zarge; bei 3+ Türen Taster), Deckenlicht, Rauchwarnmelder, Steckdosen/Anschlüsse aus Möbeln und Geräten (Bett, Schreibtisch, TV, Rack, Küchenzeile, Kühlschrank, Spülmaschine, Herd, Waschtisch, Werkbank, Waschmaschine, Wallbox, Beamer …), fehlende Steckdosen je Wand nach Ausstattungswert. Positionen meiden Türöffnung, Türblatt, Fenster, Tabuzonen und Ecken; in Vorwänden wird automatisch die Hohlwanddose gewählt. Jeder Vorschlag wird vorab gegen die Regeln geprüft.
+* **Stromkreise:** Großgeräte und Drehstrom eigener Kreis, Küche zwei Arbeitsflächenkreise, Bad und AV/Technik getrennt, Steckdosen je Raum (max. 8 Plätze), Licht getrennt (bis 3 Räume), Außenbereich mit Erdkabel, Wallbox mit eigenem RCD. Verteilung auf RCDs (max. 4 je RCD, Licht und Steckdosen eines Raums möglichst getrennt), Abgleich mit den freien LS; fehlende LS und RCD werden benannt.
+* **Leitungswege je Raum:** automatisch Aufputz → Bodenschlitz → Decke → waagerechte Wandschlitze (je Raum änderbar). Alle Leitungen kommen an einer Einspeisung neben der Haupttür an (Durchbruch, bei Brandabschnitt mit Abschottungshinweis) und laufen auf einer gemeinsamen Trasse nebeneinander – dadurch kreuzungsfrei und einlagig. Bodenschlitze 12 cm vor der Wand, senkrechte Stiche zu den Dosen; in Vorwänden/Baffle-Wänden im Hohlraum ohne Schlitz, darüber Schlitz ab Vorwand-Oberkante; Lautsprecher sternförmig zum AV-Rack; waagerechte Wandschlitze nicht in Stürze; Aufputztrasse bei niedrigen Räumen knapp über dem höchsten Sturz.
+* **Schlitzmaße** aus den Kabeldurchmessern (Breite = Summe + Abstände, Tiefe = dickstes Kabel + Überdeckung), geprüft gegen die erlaubte Bodenschlitztiefe und die Schlitztiefen ohne statischen Nachweis.
+* **Leitungslängen** je Verbindung (Kette Verteilung → Raum → Auslass → Auslass, LAN sternförmig zum Netzwerkschrank) inkl. Reserven und Zuschlag; **Spannungsfall** je Stromkreis (konservativ mit Nennstrom am Kreisende).
+
 ### Expertenansicht
 
 1. **Projekt**: Projektart, Bundesland, Höhenbezug, Standardhöhen, Schalterprogramm (Standard: Merten System M, frei änderbar), **Smart Home** (aus/ein, System: KNX, Home Assistant, Shelly, Zigbee, Matter/Thread, Homematic IP, gemischt; mit Erklärung, was das für die Leitungsplanung bedeutet), Geschosse und Räume.
 2. **Verteilung & Stromkreise**: Hauptverteilung und Unterverteilungen mit freien LS und RCDs, Stromkreise mit Zuordnung.
 3. **Räume**, Raum für Raum in vier Schritten: *Bauliches* (Grundriss, Wände, Vorwand-Abschnitte mit eigener Höhe, Kaminwange/Tabuzonen, Türen, Fenster, Boden- und Deckenaufbau, Hindernisse, Bestandsleitungen), *Einrichtung* (Möbel/Geräte), *Auslässe* (Schnellanlage, Detailformular, Verschieben per Maus in Draufsicht und Wandabwicklung), *Zusammenfassung* (offene Fragen, Regelprüfung, „Raum bestätigen“).
 4. **Prüfung**: alle Regelmeldungen (Fehler/Warnung/Hinweis) mit Quelle, Klick springt zum Raum.
-5. **Ausgaben**: Raumlayouts (Bauherr) und Ausführungsplan (Elektriker) als Druckvorschau → „Drucken / als PDF speichern“.
+5. **Ausgaben**: Raumlayouts (Bauherr), Ausführungsplan (Elektriker, mit Stromkreisliste inkl. Länge/ΔU und Leitungsliste) und Schlitzplan (Regeln, Werkzeug, Summen, je Raum Bodenschlitze, Wandschlitze, Bohrungen, Durchbrüche, Wandabwicklungen mit Schlitzen) als Druckvorschau → „Drucken / als PDF speichern“.
 6. **Versionen & Protokoll**: benannte Stände („Stand 28.10.“) sichern und wiederherstellen, Änderungsprotokoll. Rückgängig/Wiederholen mit Strg+Z / Strg+Y.
 
 ### Bezugssystem (wichtig gegen Verwechslungen)
@@ -77,6 +87,10 @@ src/core/              reine TypeScript-Logik, ohne Browser-Abhängigkeit (läuf
   geometry/room.ts     Wände aus Polygon, Bezugssystem, Dosenmitten, Höhenumrechnung
   geometry/edit.ts     Geometrie-Änderungen mit Bezugsnachführung (z. B. Kamin in Ecke ausschneiden)
   wizard/steps.ts      Assistent: Schrittfolge, fehlende Angaben, Fortschritt
+  planning/cables.ts   Kabelkatalog (Durchmesser, Gebinde), Leerrohr/Stecker-Prüfung
+  planning/suggest.ts  Auslass-Vorschläge
+  planning/routes.ts   Leitungswege je Raum: Schlitze, Stiche, Bohrungen, Durchbrüche
+  planning/circuits.ts Leitungslängen, Spannungsfall, Stromkreisvorschlag
   rules/normValues.ts  Norm- und Praxiswerte mit Quelle und Kennzeichen „vom Elektriker zu bestätigen“
   rules/rules.ts       Regelbasis (reine Funktionen) + runRules()
   render/plan.ts       Draufsicht und Geschossübersicht als SVG-String
@@ -136,7 +150,7 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 
 **Noch nicht umgesetzt:**
 
-* Etappe 2: automatische Auslass-Vorschläge aus Nutzung und Möbeln, automatischer Stromkreisvorschlag, **Leitungstrassen** (Wandschlitze in Zonen, Bodenschlitz-Trassen kreuzungsfrei mit Abstand vor der Wand, Vorwand/Aufputz/Hohlräume, Durchbrüche, Brandschutz-Abschottungen), **Schlitzplan**, Leitungslängen und Spannungsfall, Leerrohr-Prüfung gegen Steckergröße.
+* Etappe 2 (Rest): Leerrohre als eigene Trasse mit Stecker-Prüfung in der Oberfläche (die Prüffunktion gibt es schon), Leitungswege zwischen Räumen (heute Schätzung über die Lage im Geschoss), Schaltdrähte Schalter → Leuchte bei Bestands-Deckenauslässen.
 * Etappe 3: Material- und Bestellliste mit Gebinden und Preisen (XLSX/CSV/PDF), Kostenschätzung, Aufgaben- und Prüfliste für die Bauphase.
 * Etappe 4: vollständige Regelmodule (VDE 0100-701 Bad-Schutzbereiche, -520 Strombelastbarkeit, -420 AFDD, -443/-534 SPD, -722 E-Mobilität, Erdverlegung, Abstände/Bewegungsflächen, Beleuchtungsstärke) und ein Prüfprotokoll zum Abzeichnen.
 * Etappe 5: Fotos je Wand/Raum, **KI-Auswertung (Claude-API)** – z. B. Raumnamen und Maße aus dem hochgeladenen Grundriss vorschlagen – von Fotos, Plänen und Freitext mit Bestätigung, Bausteine Heimkino (Lautsprecherwinkel, Throw Ratio), Garage, Garten, Unterverteilung.
@@ -148,6 +162,8 @@ Grundlage ist der Bestandsplan Kellergeschoss (18,00 × 10,50 m) und das Aufmaß
 * Türen werden je Raum erfasst. Eine Tür zwischen zwei Räumen steht in beiden Räumen getrennt; die beiden Einträge werden noch nicht verknüpft.
 * Die Wanddicke ist im Plan nur symbolisch gezeichnet. Die Lage der Räume im Geschoss dient nur der Orientierung.
 * Die Rauchwarnmelder-Regel erkennt Schlaf-, Kinder- und Flurräume am Namen und an der Nutzung, nicht an einer genauen Auswertung der jeweiligen Landesbauordnung.
-* Die Installationszonen-Regel prüft die Lage der Dose, aber noch nicht den Leitungsweg (der kommt mit den Trassen).
+* Leitungswege werden je Raum berechnet; zwischen Räumen und zur Verteilung schätzt das Programm die Länge rechtwinklig über die Lage im Geschoss (in Listen als „Schätzung“ markiert).
+* Innerhalb eines Stromkreises wird eine Kette Auslass → Auslass angenommen (Reihenfolge nach Entfernung von der Einspeisung).
+* Kabeldurchmesser und Gebinde sind typische Herstellerwerte; maßgeblich ist das Datenblatt.
 * Die Normwerte stammen aus allgemein zugänglichen Darstellungen. Die Normtexte sind nicht hinterlegt. Alle mit ⚠ gekennzeichneten Werte muss die Elektrofachkraft bestätigen.
 * Der Browser-Druck setzt Seitenzahlen fest pro Seite. Wird eine Tabelle zu lang, wird sie auf Folgeseiten verteilt (feste Zeilenanzahl).

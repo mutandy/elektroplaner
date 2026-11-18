@@ -12,11 +12,16 @@ import { runRules, severityLabel } from '../rules/rules';
 import { NORM_VALUES } from '../rules/normValues';
 import { boxTable, circuitTable, insertBom } from './tables';
 import { effectiveSmart } from '../rules/rules';
+import { computeLengths, cableTotals, describeDrop } from '../planning/circuits';
+import { routeTotals, type RoomRoutes } from '../planning/routes';
+import { boxTypeLabel } from '../model/labels';
+import { wallName, zToFfb } from '../geometry/room';
 
-export type DocumentKind = 'raumlayout' | 'ausfuehrung';
+export type DocumentKind = 'raumlayout' | 'ausfuehrung' | 'schlitzplan';
 
 export const documentLabel: Record<DocumentKind, string> = {
   raumlayout: 'Raumlayouts (Kontrolle Bauherr)',
+  schlitzplan: 'Schlitzplan (Fräsen und Bohren)',
   ausfuehrung: 'Ausführungsplan (Elektrofachkraft)',
 };
 
@@ -187,16 +192,29 @@ ${project.keepAsIs.length ? `<dt>Bleibt unverändert</dt><dd>${project.keepAsIs.
   if (kind === 'ausfuehrung') {
     // Verteilungen + Stromkreisliste
     const ct = circuitTable(project);
+    const lengths = computeLengths(project);
+    const calc = (id: string) => lengths.circuits.find((c) => c.circuitId === id);
     const dists = project.distributions.map((d) => `<h3>${esc(d.name)}</h3><p class="small">${d.kind}${d.feedCable ? ` · Zuleitung ${esc(d.feedCable)} ${esc(d.feedFuse)}` : ''}${d.mainFuse ? ` · Hauptsicherung ${esc(d.mainFuse)}` : ''} · Netzform ${esc(d.netForm)} · ${d.freeModules} TE frei${d.hasSpd ? ' · SPD vorgesehen' : ''}<br>
 Freie LS: ${d.breakers.map((b) => `${b.free}× ${b.characteristic}${b.ratedCurrent}`).join(', ') || '–'} · RCD: ${d.rcds.map((r) => esc(r.label) + (r.existing ? '' : ' (neu)')).join(', ') || '–'}${d.note ? '<br>' + esc(d.note) : ''}</p>`).join('');
     for (const [i, part] of chunk(ct, 18).entries()) {
       pages.push({
         title: 'Stromkreisliste',
         subtitle: i ? '(Fortsetzung)' : '',
-        body: `<div class="col" style="flex:1">${i === 0 ? dists : ''}<table><thead><tr><th>SK</th><th>Bezeichnung</th><th>Verteilung</th><th>LS</th><th>LS vorh.?</th><th>RCD</th><th>Leitung</th><th>Räume</th><th>Auslässe</th><th>Begründung</th></tr></thead><tbody>${part.map((c) => `<tr><td><b>${esc(c.label)}</b></td><td>${esc(c.name)}</td><td>${esc(c.distribution)}</td><td>${esc(c.breaker)}</td><td>${esc(c.existingBreaker)}</td><td>${esc(c.rcd)}</td><td>${esc(c.cable)}</td><td>${esc(c.rooms)}</td><td class="small">${esc(c.outlets)}</td><td class="small">${esc(c.reason)}</td></tr>`).join('')}</tbody></table>
-<p class="small">Absicherung, Querschnitt und Selektivität bestimmt die Elektrofachkraft (Leitungslänge, Verlegeart, Spannungsfall nach DIN VDE 0100-520). Automatischer Stromkreisvorschlag folgt in Etappe 2.</p></div>`,
+        body: `<div class="col" style="flex:1">${i === 0 ? dists : ''}<table><thead><tr><th>SK</th><th>Bezeichnung</th><th>Verteilung</th><th>LS</th><th>LS vorh.?</th><th>RCD</th><th>Leitung</th><th class="num">Länge</th><th class="num">ΔU</th><th>Räume</th><th>Auslässe</th><th>Begründung</th></tr></thead><tbody>${part.map((c) => `<tr><td><b>${esc(c.label)}</b></td><td>${esc(c.name)}</td><td>${esc(c.distribution)}</td><td>${esc(c.breaker)}</td><td>${esc(c.existingBreaker)}</td><td>${esc(c.rcd)}</td><td>${esc(c.cable)}</td><td class="num">${calc(c.id)?.lengthM ? fmt(calc(c.id)!.lengthM) + ' m' : '–'}</td><td class="num">${esc(describeDrop(calc(c.id)))}</td><td>${esc(c.rooms)}</td><td class="small">${esc(c.outlets)}</td><td class="small">${esc(c.reason)}</td></tr>`).join('')}</tbody></table>
+<p class="small">Absicherung, Querschnitt und Selektivität bestimmt die Elektrofachkraft (Leitungslänge, Verlegeart, Spannungsfall nach DIN VDE 0100-520). Längen aus den berechneten Leitungswegen inkl. Zuschlag; Wege zwischen Räumen sind Schätzungen über die Lage im Geschoss. ΔU konservativ mit Nennstrom am Kreisende.</p></div>`,
       });
     }
+    // Leitungsliste
+    const totals = cableTotals(lengths);
+    for (const [i, part] of chunk(lengths.runs, 26).entries()) {
+      pages.push({
+        title: 'Leitungsliste',
+        subtitle: i ? '(Fortsetzung)' : `${lengths.runs.length} Leitungen`,
+        body: `<div class="col" style="flex:1"><table><thead><tr><th>Nr.</th><th>Leitung</th><th>SK</th><th>von</th><th>nach</th><th class="num">Länge</th><th>Art</th></tr></thead><tbody>${part.map((r) => `<tr><td>${esc(r.id)}</td><td>${esc(r.cable)}</td><td>${esc(project.circuits.find((c) => c.id === r.circuitId)?.label ?? '')}</td><td>${esc(r.from)}</td><td>${esc(r.to)}</td><td class="num">${fmt(r.length)} m</td><td class="small">${r.kind}${r.estimate ? ' (Schätzung)' : ''}</td></tr>`).join('')}</tbody></table>
+${i === Math.ceil(lengths.runs.length / 26) - 1 ? `<h3>Summe je Kabeltyp (inkl. Reserven, ohne Gebinde-Aufrundung)</h3><table style="width:120mm"><tbody>${totals.map((t) => `<tr><td>${esc(t.cable)}</td><td class="num">${fmt(t.meters)} m</td></tr>`).join('')}</tbody></table>` : ''}</div>`,
+      });
+    }
+
     // Einsatz-Stückliste
     const bom = insertBom(project);
     pages.push({
@@ -222,6 +240,11 @@ Freie LS: ${d.breakers.map((b) => `${b.free}× ${b.characteristic}${b.ratedCurre
         return `<tr><td class="small">${esc(v.key)}</td><td>${esc(v.label)}</td><td class="num">${fmt(o ?? v.value)} ${esc(v.unit)}${o != null ? ' (angepasst)' : ''}</td><td class="small">${esc(v.source)}</td><td>${v.confirm ? '<span class="confirm">⚠ vom Elektriker zu bestätigen</span>' : 'Praxiswert'}</td></tr>`;
       }).join('')}</tbody></table></div>`,
     });
+  }
+
+  if (kind === 'schlitzplan') {
+    buildSlotPlanPages(project, pages);
+    return wrapPages(project, kind, pages);
   }
 
   // Raumseiten
@@ -281,3 +304,89 @@ Freie LS: ${d.breakers.map((b) => `${b.free}× ${b.characteristic}${b.ratedCurre
 
   return wrapPages(project, kind, pages);
 }
+
+// ===========================================================================
+// Schlitzplan
+// ===========================================================================
+
+const SLOT_RULES = [
+  'Vor dem Schlitzen: Leitungssucher über jede Trasse, auf Betonstürze und alte Leitungen prüfen. Keine Schlitze über Türstürzen, in Kaminwangen oder Hohlkörperdecken (Hourdis).',
+  'Wandschlitze senkrecht in den Installationszonen (DIN 18015-3); waagerecht nur, wo im Plan freigegeben. Tiefe und Breite laut Tabelle nicht überschreiten.',
+  'Bodenschlitze: maximal die angegebene Tiefe (Folie/Dämmung/Fußbodenheizung nie anschneiden), einlagig, Kabel nebeneinander, keine Dübel im Boden – Fixierung mit Schnellzement-Batzen.',
+  'Bodenschlitze mit zementärem Reparaturmörtel verfüllen (nicht Gips), danach Ausgleichsmasse. Wandschlitze mit Gips/Haftputz schließen.',
+  'Dosen bündig zur Rohwand setzen; Putzausgleichsringe nur bei späterem Putz > 5 mm. Dosenmitte = Bohrmitte (Ø 68 mm).',
+  'Vor dem Verschließen: jede Trasse mit Zollstock fotografieren. Isolationsmessung durch die Elektrofachkraft vor dem Einmörteln.',
+  'Durchbrüche in Brandwänden/an Brandschutztüren nur mit zugelassener Abschottung (MLAR) – vom Fachbetrieb.',
+];
+const TOOLS = [
+  'Mauernutfräse mit Absaugung (Staubklasse M), Diamantscheiben passend zum Material',
+  'Bohrhammer mit Dosensenker Ø 68 mm (Hartmetall/Diamant), Fliesen-/Hohlwandsenker für Vorwände',
+  'Leitungssucher / Ortungsgerät, Laser-Linienlaser, Zollstock, Wasserwaage, Bleistift',
+  'Flachmeißel/Stemmeisen für Schlitzgrund, Staubsauger (Klasse M), Gehör-/Augenschutz, FFP2-Maske',
+  'Schnellzement, zementärer Reparaturmörtel, Gips/Haftputz, Dosenmörtel',
+];
+
+function slotPlanRoomPages(project: Project, room: Room, rr: RoomRoutes, pages: Page[]) {
+  const layers: Layer[] = ['230v', 'daten', 'licht', 'beschriftung', 'masse', 'trassen'];
+  const { svg, scale } = planFor(project, room, 150, BODY_H - 8, layers);
+  const t = routeTotals(rr);
+  const fsRows = rr.floorSlots.map((f) => `<tr><td><b>${f.id}</b></td><td>W${f.wallIndex + 1}</td><td class="num">${fmt(f.sFrom)} → ${fmt(f.sTo)}</td><td class="num">${fmt(room.routing.floorOffset)}</td><td class="num">${fmt(f.length)}</td><td class="num">${f.inCavity ? '–' : `${f.width} × ${f.depth}`}</td><td>${f.inCavity ? 'im Vorwand-Hohlraum, kein Schlitz' : f.crossesDoor ? 'quert Türöffnung (Schwelle)' : ''}</td><td class="small">${esc(f.cables.join(', '))}</td></tr>`).join('');
+  const wsRows = rr.wallSlots.map((w) => `<tr><td><b>${w.id}</b></td><td>W${w.wallIndex + 1}</td><td>${w.orientation}</td><td class="num">${w.orientation === 'senkrecht' ? fmt(w.s) : `${fmt(w.s)} → ${fmt(w.sTo)}`}</td><td class="num">${fmt(w.zFrom)} – ${fmt(w.zTo)}</td><td class="num">${w.width} × ${w.depth}</td><td>${w.inVerticalZone ? '✔' : 'außerhalb'}</td><td class="small">${esc(w.cables.join(', '))}</td></tr>`).join('');
+  const strat: Record<string, string> = { boden: 'Bodenschlitz-Trasse vor der Wand, senkrechte Stiche', decke: 'über Decke/Deckenhohlraum, Stiche von oben', wand_waagerecht: 'waagerechte Wandschlitze in der oberen Zone', aufputz: 'Aufputz (Rohr/Kanal) unter der Decke', keine: 'kein Leitungsweg möglich' };
+  pages.push({
+    title: `${room.name} – Schlitzplan`,
+    subtitle: `${roomSubtitle(room)} · M 1:${scale}`,
+    body: `<div class="col" style="width:155mm"><div class="planbox" style="flex:1">${svg}</div><div class="legend"><span style="color:#b45309">▬ Bodenschlitz (Breite maßstäblich)</span><span style="color:#b45309">■ Wandschlitz</span><span style="color:#7c3aed">┄ Decke</span><span style="color:#047857">▬ Aufputz</span><span style="color:#b45309">⊗ Durchbruch</span></div></div>
+<div class="col" style="flex:1"><dl class="kv"><dt>Leitungsweg</dt><dd>${esc(strat[rr.strategy])} (${esc(rr.strategyReason)})</dd>
+<dt>Höhenbezug</dt><dd>${esc(project.settings.heightReference.label)}; Bodenaufbau +${fmt(futureBuildup(room))} cm</dd>
+<dt>Boden</dt><dd>${room.floor.slotsAllowed ? `Schlitztiefe max. ${fmt(room.floor.maxSlotDepth * 10, 0)} mm (Folie ab ${fmt(room.floor.protectedLayerDepth)} cm)` : 'keine Bodenschlitze'}</dd>
+<dt>Summen</dt><dd>${fmt(t.floorSlotM, 2)} m Bodenschlitz · ${fmt(t.wallSlotM, 2)} m Wandschlitz${t.surfaceM ? ` · ${fmt(t.surfaceM, 1)} m Aufputz` : ''} · ${t.drillUP} UP-Bohrungen · ${t.drillHollow} Hohlwand · ${t.surfaceBoxes} Aufputzdosen · ${t.drillCeiling} Decke · ${t.penetrations} Durchbruch</dd></dl>
+${rr.floorSlots.length ? `<h3>Bodenschlitze (s ab linker Ecke der Wand)</h3><table><thead><tr><th>Nr.</th><th>Wand</th><th class="num">von → bis</th><th class="num">vor Wand</th><th class="num">Länge</th><th class="num">B × T mm</th><th>Hinweis</th><th>Kabel</th></tr></thead><tbody>${fsRows}</tbody></table>` : ''}
+${rr.wallSlots.length ? `<h3>Wandschlitze</h3><table><thead><tr><th>Nr.</th><th>Wand</th><th>Richtung</th><th class="num">Position</th><th class="num">Höhe von – bis</th><th class="num">B × T mm</th><th>Zone</th><th>Kabel</th></tr></thead><tbody>${wsRows}</tbody></table>` : ''}
+${rr.issues.length ? `<h3>Achtung (${rr.issues.length})</h3>${rr.issues.slice(0, 2).map((i) => `<p class="small sev-${i.severity}">${esc(i.message)}</p>`).join('')}${rr.issues.length > 2 ? `<p class="small">… weitere ${rr.issues.length - 2} im Prüfprotokoll des Ausführungsplans.</p>` : ''}` : ''}</div>`,
+  });
+  const kinds: [string, string][] = [['UP', 'UP-Dosen bohren Ø 68'], ['Hohlwand', 'Hohlwand-/Vorwanddosen'], ['Aufputz', 'Aufputzdosen (nicht bohren)'], ['Decke', 'Deckendosen'], ['Bestand', 'Bestandsdosen (bleiben)']];
+  const drillRows = rr.drillings.map((d) => {
+    const z = d.z != null ? `${fmt(d.z)} (${fmt(zToFfb(room, d.z))})` : '–';
+    return `<tr><td><b>${esc(d.label)}</b></td><td>${d.wallIndex != null ? `W${d.wallIndex + 1}` : 'Decke'}</td><td class="num">${d.s != null ? fmt(d.s) : `x ${fmt(d.x)} / y ${fmt(d.y)}`}</td><td class="num">${z}</td><td>${esc(kinds.find((k) => k[0] === d.kind)?.[1] ?? d.kind)}</td></tr>`;
+  });
+  const half = Math.ceil(drillRows.length / 2);
+  const tbl = (rows: string[]) => `<table><thead><tr><th>Dose</th><th>Wand</th><th class="num">ab l. Ecke</th><th class="num">Höhe Bezug (FFB)</th><th>Art</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  pages.push({
+    title: `${room.name} – Bohrungen und Durchbrüche`,
+    subtitle: roomSubtitle(room),
+    body: `<div class="col" style="flex:1">${tbl(drillRows.slice(0, half))}</div><div class="col" style="flex:1">${tbl(drillRows.slice(half))}
+${rr.penetrations.length ? `<h3>Durchbrüche</h3><table><thead><tr><th>Nr.</th><th>Wand</th><th class="num">Position</th><th class="num">Höhe</th><th class="num">Ø mm</th><th>Hinweis</th></tr></thead><tbody>${rr.penetrations.map((p) => `<tr><td>${p.id}</td><td>W${p.wallIndex + 1}</td><td class="num">${fmt(p.s)}</td><td class="num">${fmt(p.z)}</td><td class="num">${p.diameter}</td><td class="${p.fireStop ? 'sev-fehler' : ''}">${esc(p.note)}</td></tr>`).join('')}</tbody></table>` : ''}
+<p class="small">Dosenmitte = Bohrmitte. Höhe über ${esc(project.settings.heightReference.label)}, in Klammern über Fertigfußboden. Mehrfachdosen: jede Dose einzeln (Nr. .1, .2 …).</p></div>`,
+  });
+  // Wandabwicklungen nur für Wände mit Arbeit
+  const work = wallGeoms(room).filter((w) => rr.wallSlots.some((x) => x.wallIndex === w.index) || rr.drillings.some((d) => d.wallIndex === w.index && d.kind !== 'Bestand') || rr.penetrations.some((p) => p.wallIndex === w.index) || rr.surfaceRuns.some((a) => a.wallIndex === w.index));
+  for (const w of work) {
+    const sc = [20, 25, 50, 75, 100].find((x) => ((w.length + 42 * (x / 10)) * 10) / x <= BODY_W && ((room.height + 45 * (x / 10)) * 10) / x <= BODY_H - 6) ?? 100;
+    pages.push({
+      title: `${room.name} – Wand ${w.index + 1} (Schlitze/Bohrungen)`,
+      subtitle: `${wallName(room, w.index)} · M 1:${sc}`,
+      body: `<div class="col" style="flex:1;align-items:center">${renderElevation(project, room, w.index, { scale: sc, layers: ['230v', 'daten', 'licht', 'beschriftung', 'masse', 'trassen'], routes: rr })}<span class="small">${esc(elevationLegendText())}</span></div>`,
+    });
+  }
+}
+
+function buildSlotPlanPages(project: Project, pages: Page[]) {
+  const l = computeLengths(project);
+  const rooms = project.rooms.filter((r) => r.inScope);
+  const sums = rooms.map((r) => ({ r, t: routeTotals(l.routes.get(r.id)!) }));
+  const tot = sums.reduce((a, { t }) => ({ f: a.f + t.floorSlotM, w: a.w + t.wallSlotM, up: a.up + t.drillUP, h: a.h + t.drillHollow, ap: a.ap + t.surfaceBoxes, d: a.d + t.drillCeiling, p: a.p + t.penetrations, s: a.s + t.surfaceM }), { f: 0, w: 0, up: 0, h: 0, ap: 0, d: 0, p: 0, s: 0 });
+  pages.push({
+    title: 'Schlitzplan – Regeln, Werkzeug, Summen',
+    body: `<div class="col" style="flex:1.2"><h2>Regeln für die Ausführung</h2><ol>${SLOT_RULES.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+<h2>Werkzeug / Miete</h2><ul>${TOOLS.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>
+<div class="col" style="flex:1"><h2>Summen</h2><table><thead><tr><th>Raum</th><th class="num">Boden m</th><th class="num">Wand m</th><th class="num">UP</th><th class="num">Hohlw.</th><th class="num">AP</th><th class="num">Decke</th><th class="num">Durchbr.</th></tr></thead><tbody>
+${sums.map(({ r, t }) => `<tr><td>${esc(r.name)}</td><td class="num">${fmt(t.floorSlotM, 1)}</td><td class="num">${fmt(t.wallSlotM, 1)}</td><td class="num">${t.drillUP}</td><td class="num">${t.drillHollow}</td><td class="num">${t.surfaceBoxes}</td><td class="num">${t.drillCeiling}</td><td class="num">${t.penetrations}</td></tr>`).join('')}
+<tr><td><b>Summe</b></td><td class="num"><b>${fmt(tot.f, 1)}</b></td><td class="num"><b>${fmt(tot.w, 1)}</b></td><td class="num"><b>${tot.up}</b></td><td class="num"><b>${tot.h}</b></td><td class="num"><b>${tot.ap}</b></td><td class="num"><b>${tot.d}</b></td><td class="num"><b>${tot.p}</b></td></tr></tbody></table>
+${tot.s ? `<p>Aufputz-Trassen gesamt: ${fmt(tot.s, 1)} m</p>` : ''}
+<p class="badge">Vor dem Schlitzen auf Betonstürze, alte Leitungen und Rohre prüfen. Maße ab Nullpunkt / linker Wandecke – vor Ort anzeichnen und mit dem Plan vergleichen.</p></div>`,
+  });
+  for (const { r } of sums) slotPlanRoomPages(project, r, l.routes.get(r.id)!, pages);
+}
+
+export { boxTypeLabel };

@@ -20,7 +20,7 @@
  */
 import { z } from 'zod';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -414,6 +414,30 @@ export const ExistingCable = z.object({
   note: z.string().default(''),
 });
 
+/** Wie Leitungen im Raum geführt werden. */
+export const RoutingStrategy = z.enum([
+  /** Programm wählt: Aufputz → Bodenschlitz → Decke → waagerechte Wandschlitze. */
+  'auto',
+  /** Bodenschlitz-Trasse vor der Wand, Stiche senkrecht zu den Dosen. */
+  'boden',
+  /** Über Decke/Deckenhohlraum, senkrechte Wandschlitze von oben. */
+  'decke',
+  /** Waagerechte Wandschlitze in der oberen Installationszone. */
+  'wand_waagerecht',
+  /** Aufputz: Rohr/Kanal ca. 20 cm unter der Decke, senkrecht zu den Auslässen. */
+  'aufputz',
+]);
+
+export const RoomRouting = z.object({
+  strategy: RoutingStrategy.default('auto'),
+  /** Abstand der Bodenschlitz-Trasse von der Wand (Achse). */
+  floorOffset: cm.positive().default(12),
+  /** Abstand der Aufputz-Trasse unter der Decke. */
+  surfaceBelowCeiling: cm.positive().default(20),
+  /** Wo die Leitungen in den Raum kommen (Standard: neben der Haupttür, Griffseite). */
+  entry: z.object({ wallIndex: z.number().int().nonnegative(), s: cm }).optional(),
+});
+
 export const Room = z.object({
   id,
   floorId: z.string(),
@@ -446,6 +470,9 @@ export const Room = z.object({
   /** Abweichende Standardhöhen für diesen Raum. */
   heightOverrides: DefaultHeights.partial().default({}),
   distributionId: z.string().optional(),
+  routing: RoomRouting.default({}),
+  /** Abgelehnte Auslass-Vorschläge (Schlüssel), damit sie nicht wiederkommen. */
+  dismissedSuggestions: z.array(z.string()).default([]),
   /** Der Nutzer hat die Raum-Zusammenfassung bestätigt. */
   confirmed: z.boolean().default(false),
   provenance: Provenance.default('gemessen'),
@@ -570,4 +597,5 @@ export type SmartHomeConfig = z.infer<typeof SmartHomeConfig>;
 export type SmartHomeSystem = z.infer<typeof SmartHomeSystem>;
 export type InstallationType = z.infer<typeof InstallationType>;
 export type WizardState = z.infer<typeof WizardState>;
+export type RoutingStrategy = z.infer<typeof RoutingStrategy>;
 export type FloorLevel = z.infer<typeof FloorLevel>;

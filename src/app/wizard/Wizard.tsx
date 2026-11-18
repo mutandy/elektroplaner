@@ -19,6 +19,9 @@ import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
 import { runRules } from '../../core/rules/rules';
+import { SuggestionsPanel, CircuitProposalPanel, RoutingPanel, acceptSuggestions } from '../components/Planning';
+import { suggestOutlets } from '../../core/planning/suggest';
+import { computeAllRoutes, routeTotals } from '../../core/planning/routes';
 
 const up = (text: string, fn: (p: Draft<Project>) => void) => store.update(text, fn);
 
@@ -156,6 +159,8 @@ function ProjectStep({ project, step }: { project: Project; step: Step }) {
     case 'projekt.netzwerk': return <NetworkStep project={project} />;
     case 'grundriss': return <PlanStep project={project} />;
     case 'raeume': return <RoomsStep project={project} />;
+    case 'empfehlungen.auslaesse': return <SuggestStep project={project} />;
+    case 'empfehlungen.stromkreise': return <CircuitsStep project={project} />;
     case 'abschluss': return <FinishStep project={project} />;
   }
   return null;
@@ -439,6 +444,48 @@ function RoomsStep({ project }: { project: Project }) {
   );
 }
 
+function SuggestStep({ project }: { project: Project }) {
+  const rooms = project.rooms.filter((r) => r.inScope);
+  const [roomId, setRoomId] = useState(rooms[0]?.id);
+  const room = rooms.find((r) => r.id === roomId) ?? rooms[0];
+  const counts = rooms.map((r) => ({ r, n: suggestOutlets(project, r).length }));
+  const total = counts.reduce((s, c) => s + c.n, 0);
+  if (!room) return <p>Noch keine Räume angelegt.</p>;
+  return (
+    <>
+      <p>Jetzt, wo das Programm die Räume kennt, schlägt es Auslässe vor: Schalter an den Türen (Griffseite), Licht, Rauchwarnmelder, Steckdosen und Anschlüsse aus Möbeln und Geräten, fehlende Steckdosen nach Ausstattungswert {project.equipmentLevel}. Du übernimmst, lehnst ab oder verschiebst sie danach im Plan.</p>
+      <div className="inline">
+        {counts.map(({ r, n }) => <button key={r.id} className={r.id === room.id ? 'active' : ''} onClick={() => setRoomId(r.id)}>{r.name} ({n})</button>)}
+        <span className="spacer" />
+        <button disabled={!total} onClick={() => { for (const { r } of counts) { const cur = store.getState().project.rooms.find((x) => x.id === r.id)!; const l = suggestOutlets(store.getState().project, cur); if (l.length) acceptSuggestions(cur, l); } }}>Alle {total} Vorschläge in allen Räumen übernehmen</button>
+      </div>
+      <div className="wiz-split">
+        <div><SuggestionsPanel project={project} room={room} /></div>
+        <div className="wiz-preview"><RoomPlan project={project} room={room} layers={['moebel', '230v', 'daten', 'licht', 'beschriftung']} /></div>
+      </div>
+    </>
+  );
+}
+
+function CircuitsStep({ project }: { project: Project }) {
+  const routes = computeAllRoutes(project);
+  const rooms = project.rooms.filter((r) => r.inScope);
+  return (
+    <>
+      <h3>Stromkreise</h3>
+      <p>Das Programm teilt die Auslässe auf Stromkreise auf, ordnet sie den FI/RCD zu und prüft gegen die freien Plätze in der Verteilung.</p>
+      <CircuitProposalPanel project={project} />
+      <h3>Leitungswege je Raum</h3>
+      <table className="findings">
+        <thead><tr><th>Raum</th><th>Leitungsweg</th><th className="num">Bodenschlitz</th><th className="num">Wandschlitz</th><th className="num">Bohrungen</th><th>Hinweise</th></tr></thead>
+        <tbody>{rooms.map((r) => { const rr = routes.get(r.id)!; const t = routeTotals(rr); return <tr key={r.id}><td>{r.name}</td><td>{rr.strategy}</td><td>{fmt(t.floorSlotM, 1)} m</td><td>{fmt(t.wallSlotM, 1)} m</td><td>{t.drillUP + t.drillHollow}</td><td className="small">{rr.issues.filter((i) => i.severity !== 'hinweis').length || ''}</td></tr>; })}</tbody>
+      </table>
+      <details className="why"><summary>Leitungsweg eines Raums ändern</summary>{rooms.map((r) => <div key={r.id}><h4>{r.name}</h4><RoutingPanel project={project} room={r} /></div>)}</details>
+      <p className="muted small">Der vollständige Schlitzplan (Bodenschlitze, Wandschlitze, Bohrungen, Durchbrüche) steht unter „Ausgaben“.</p>
+    </>
+  );
+}
+
 function FinishStep({ project }: { project: Project }) {
   const pr = progress(project);
   const report = runRules(project);
@@ -456,7 +503,7 @@ function FinishStep({ project }: { project: Project }) {
         </>)}
       <p>Regelprüfung der Erfassung: {report.counts.fehler} Fehler, {report.counts.warnung} Warnungen, {report.counts.hinweis} Hinweise.</p>
       <div className="impact">
-        <b>Wie es weitergeht:</b> Jetzt kennt das Programm das Gebäude. Im nächsten Schritt schlägt es Auslässe, Stromkreise und Leitungswege vor (Etappe 2). Bis dahin kannst du Auslässe in der Expertenansicht je Raum selbst setzen und die Pläne drucken.
+        <b>Wie es weitergeht:</b> Unter „Ausgaben“ stehen Raumlayouts, Ausführungsplan (mit Stromkreis- und Leitungsliste) und Schlitzplan zum Drucken. Jede Änderung in der Expertenansicht zieht sich durch alle Pläne. Materialliste und Kostenschätzung folgen in Etappe 3.
       </div>
       <div className="inline">
         <button className="primary" onClick={() => { up('Assistent abgeschlossen', (p) => { p.wizard.finished = true; if (!p.wizard.done.includes('abschluss')) p.wizard.done.push('abschluss'); }); store.setUi({ view: 'projekt' }); }}>Assistent abschließen</button>

@@ -11,8 +11,9 @@ import { normValue } from '../../core/rules/normValues';
 import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts, type Col } from '../components/ui';
 import { RoomPlan, WallElevation } from '../components/PlanCanvas';
+import { SuggestionsPanel, RoutingPanel } from '../components/Planning';
 
-type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'zusammenfassung';
+type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
 
 const upRoom = (roomId: string, text: string, fn: (r: Draft<Room>, p: Draft<Project>) => void) =>
   store.update(text, (p) => {
@@ -94,6 +95,7 @@ function newOutlet(project: Project, room: Room, kind: Outlet['kind'], wallIndex
 export function RoomView({ project, room, outletId, wallIndex }: { project: Project; room: Room; outletId?: string; wallIndex: number }) {
   const [tab, setTab] = useState<Tab>('bau');
   const [layers, setLayers] = useState<Layer[]>(ALL_LAYERS.filter((l) => l !== 'zonen'));
+  const showLayers = tab === 'leitungen' && !layers.includes('trassen') ? [...layers, 'trassen' as Layer] : layers;
   const walls = wallGeoms(room);
   const wi = Math.min(wallIndex, walls.length - 1);
   const wallOpts = walls.map((w) => ({ value: String(w.index), label: wallName(room, w.index) }));
@@ -108,7 +110,7 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
           <div className="muted small">{fmt(roomArea(room), 2)} m² · Höhe {fmt(room.height)} cm · {installationTypeLabel[room.installationType]} · {room.outlets.length} Auslässe {room.confirmed ? '· ✔ bestätigt' : ''}</div>
         </div>
         <div className="tabs">
-          {([['bau', '1 Bauliches'], ['einrichtung', '2 Einrichtung'], ['auslaesse', '3 Auslässe'], ['zusammenfassung', '4 Zusammenfassung']] as [Tab, string][]).map(([k, l]) => (
+          {([['bau', '1 Bauliches'], ['einrichtung', '2 Einrichtung'], ['auslaesse', '3 Auslässe'], ['leitungen', '4 Leitungswege'], ['zusammenfassung', '5 Zusammenfassung']] as [Tab, string][]).map(([k, l]) => (
             <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{l}{k === 'zusammenfassung' && findings.some((f) => f.severity === 'fehler') ? ' ⛔' : ''}</button>
           ))}
         </div>
@@ -118,6 +120,7 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
           {tab === 'bau' && <BauTab project={project} room={room} wallOpts={wallOpts} />}
           {tab === 'einrichtung' && <EinrichtungTab room={room} wallOpts={wallOpts} />}
           {tab === 'auslaesse' && <AuslassTab project={project} room={room} wallOpts={wallOpts} wallIndex={wi} selected={sel} />}
+          {tab === 'leitungen' && <Section title="Leitungsweg in diesem Raum"><RoutingPanel project={project} room={room} /></Section>}
           {tab === 'zusammenfassung' && <SummaryTab project={project} room={room} findings={findings} />}
         </div>
         <div className="viewer">
@@ -126,12 +129,12 @@ export function RoomView({ project, room, outletId, wallIndex }: { project: Proj
               <label key={l} className="check small"><input type="checkbox" checked={layers.includes(l)} onChange={(e) => setLayers(e.target.checked ? [...layers, l] : layers.filter((x) => x !== l))} />{layerLabel[l]}</label>
             ))}
           </div>
-          <RoomPlan project={project} room={room} layers={layers} selectedOutletId={outletId} />
+          <RoomPlan project={project} room={room} layers={showLayers} selectedOutletId={outletId} />
           <div className="wallpick">
             <span className="muted small">Wandabwicklung:</span>
             {walls.map((w) => <button key={w.index} className={w.index === wi ? 'active' : ''} onClick={() => store.setUi({ wallIndex: w.index })} title={wallName(room, w.index)}>W{w.index + 1}</button>)}
           </div>
-          <WallElevation project={project} room={room} wallIndex={wi} layers={layers} selectedOutletId={outletId} />
+          <WallElevation project={project} room={room} wallIndex={wi} layers={showLayers} selectedOutletId={outletId} />
           <p className="muted small">Auslässe lassen sich in Draufsicht (entlang der Wand) und Abwicklung (Position + Höhe) mit der Maus verschieben. Raster 0,5 cm. Strg+Z macht rückgängig.</p>
         </div>
       </div>
@@ -387,6 +390,7 @@ function AuslassTab({ project, room, wallOpts, wallIndex, selected }: { project:
   });
   return (
     <>
+      <Section title="Vorschläge des Programms"><SuggestionsPanel project={project} room={room} /></Section>
       <Section title="Neuer Auslass">
         <div className="quick">
           {QUICK.map((k) => (

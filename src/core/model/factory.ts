@@ -68,6 +68,11 @@ const migrations: Record<number, (p: any) => any> = {
     const up = (core: any) => ({ ...core, schemaVersion: 2, wizard: core.wizard ?? { finished: true, step: 'start', done: [], skipped: [] } });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
+  // v2 → v3: Leitungsweg-Einstellungen je Raum (Standard „auto“), abgelehnte Vorschläge.
+  2: (p) => {
+    const up = (core: any) => ({ ...core, schemaVersion: 3 });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

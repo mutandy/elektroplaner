@@ -5,12 +5,14 @@ import { outletKindLabel } from '../model/labels';
 import { normValue } from '../rules/normValues';
 import { PLAN_STYLE, attrs, defs, el, g, n, scaleInfo, text, title } from './svg';
 import { outletClass, outletLayer, outletTooltip, ALL_LAYERS, type Layer } from './plan';
+import { computeRoomRoutes, type RoomRoutes } from '../planning/routes';
 
 export interface ElevationOptions {
   scale?: number;
   layers?: Layer[];
   selectedOutletId?: string;
   screen?: boolean;
+  routes?: RoomRoutes;
 }
 
 /** Projektion eines Grundriss-Rechtecks auf eine Wand → s-Bereich. */
@@ -117,6 +119,33 @@ export function renderElevation(project: Project, room: Room, wallIndex: number,
       el('rect', { x: w.s, y: Y(w.sill + w.height), width: w.width, height: w.height, class: 'window', 'stroke-width': 0.4 * u }),
       text(w.s + w.width / 2, Y(w.sill) - 1.5 * u, `Fenster BRH ${fmt(w.sill)}`, { class: 'muted', 'font-size': 1.7 * u, 'text-anchor': 'middle' }),
     ].join('')));
+  }
+
+  // Leitungswege an dieser Wand
+  if (layers.has('trassen')) {
+    const rr = opts.routes ?? computeRoomRoutes(project, room);
+    const tp: string[] = [];
+    for (const w of rr.wallSlots.filter((x) => x.wallIndex === wallIndex)) {
+      const wcm = Math.max(w.width / 10, 1.5);
+      if (w.orientation === 'senkrecht') {
+        tp.push(g({}, title(`${w.id}: senkrechter Schlitz bei ${fmt(w.s)} cm, Höhe ${fmt(w.zFrom)}–${fmt(w.zTo)} cm, ${w.width}×${w.depth} mm – ${w.cables.join(', ')}`) +
+          el('rect', { x: w.s - wcm / 2, y: Y(w.zTo), width: wcm, height: w.zTo - w.zFrom, class: 'slotfill', 'stroke-width': 0.2 * u }) +
+          g({ class: 'ly-beschriftung' }, text(w.s + wcm / 2 + 0.8 * u, Y((w.zFrom + w.zTo) / 2), w.id, { class: 'slott', 'font-size': 1.6 * u, 'dominant-baseline': 'central', transform: `rotate(-90 ${n(w.s + wcm / 2 + 0.8 * u)} ${n(Y((w.zFrom + w.zTo) / 2))})`, 'text-anchor': 'middle' }))));
+      } else {
+        tp.push(g({}, title(`${w.id}: waagerechter Schlitz ${fmt(w.s)}–${fmt(w.sTo)} cm bei ${fmt(w.zFrom)} cm`) + el('rect', { x: w.s, y: Y(w.zFrom) - wcm / 2, width: w.sTo - w.s, height: wcm, class: 'slotfill', 'stroke-width': 0.2 * u })));
+      }
+    }
+    for (const a of rr.surfaceRuns.filter((x) => x.wallIndex === wallIndex)) {
+      const sA = (a.from.x - wallGeoms(room)[wallIndex].a.x) * wallGeoms(room)[wallIndex].dir.x + (a.from.y - wallGeoms(room)[wallIndex].a.y) * wallGeoms(room)[wallIndex].dir.y;
+      const sB = (a.to.x - wallGeoms(room)[wallIndex].a.x) * wallGeoms(room)[wallIndex].dir.x + (a.to.y - wallGeoms(room)[wallIndex].a.y) * wallGeoms(room)[wallIndex].dir.y;
+      if (a.kind === 'trasse') tp.push(g({}, title(`${a.id}: Aufputztrasse bei ${fmt(a.z)} cm – ${a.cables.join(', ')}`) + el('line', { x1: sA, y1: Y(a.z), x2: sB, y2: Y(a.z), class: 'ap', 'stroke-width': 0.8 * u })));
+      else if (a.kind === 'stich') tp.push(g({}, title(`${a.id}: Aufputz senkrecht ${fmt(a.z)}–${fmt(a.zTo)} cm`) + el('line', { x1: sA, y1: Y(a.z), x2: sA, y2: Y(a.zTo ?? H), class: 'ap', 'stroke-width': 0.8 * u })));
+    }
+    for (const pe of rr.penetrations.filter((x) => x.wallIndex === wallIndex)) {
+      tp.push(g({}, title(`Durchbruch Ø ${pe.diameter} mm, Höhe ${fmt(pe.z)} cm – ${pe.note}`) + el('circle', { cx: pe.s, cy: Y(pe.z), r: Math.max(pe.diameter / 20, 1.5 * u), class: `pen ${pe.fireStop ? 'fire' : ''}`, 'stroke-width': 0.5 * u }) +
+        text(pe.s, Y(pe.z) - Math.max(pe.diameter / 20, 1.5 * u) - 1 * u, `Ø${pe.diameter}${pe.fireStop ? ' Brandschutz' : ''}`, { class: 'slott', 'font-size': 1.6 * u, 'text-anchor': 'middle' })));
+    }
+    parts.push(g({ class: 'ly-trassen' }, tp.join('')));
   }
 
   // Wand, Boden, Decke

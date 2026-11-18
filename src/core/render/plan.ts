@@ -3,11 +3,12 @@ import type { Outlet, Project, Room } from '../model/schema';
 import { bbox, boxCenters, pointOnWall, wallGeoms, fmt, roomArea, type Pt } from '../geometry/room';
 import { outletKindLabel, outletKindShort, boxTypeLabel } from '../model/labels';
 import { PLAN_STYLE, attrs, defs, el, esc, g, n, scaleInfo, text, title } from './svg';
+import { computeRoomRoutes, type RoomRoutes } from '../planning/routes';
 
-export type Layer = 'moebel' | '230v' | 'daten' | 'licht' | 'beschriftung' | 'masse' | 'zonen';
-export const ALL_LAYERS: Layer[] = ['moebel', '230v', 'daten', 'licht', 'beschriftung', 'masse', 'zonen'];
+export type Layer = 'moebel' | '230v' | 'daten' | 'licht' | 'beschriftung' | 'masse' | 'zonen' | 'trassen';
+export const ALL_LAYERS: Layer[] = ['moebel', '230v', 'daten', 'licht', 'beschriftung', 'masse', 'zonen', 'trassen'];
 export const layerLabel: Record<Layer, string> = {
-  moebel: 'Möbel', '230v': '230 V', daten: 'LAN/Audio', licht: 'Licht/Decke', beschriftung: 'Beschriftung', masse: 'Maße', zonen: 'Installationszonen',
+  moebel: 'Möbel', '230v': '230 V', daten: 'LAN/Audio', licht: 'Licht/Decke', beschriftung: 'Beschriftung', masse: 'Maße', zonen: 'Installationszonen', trassen: 'Leitungswege',
 };
 
 export function outletLayer(o: Outlet): '230v' | 'daten' | 'licht' {
@@ -38,6 +39,40 @@ export interface PlanOptions {
   selectedOutletId?: string;
   /** Feste Breite in px statt mm (Bildschirm). */
   screen?: boolean;
+  /** Vorberechnete Leitungswege (sonst werden sie berechnet, wenn die Ebene an ist). */
+  routes?: RoomRoutes;
+}
+
+/** Leitungswege in der Draufsicht. */
+export function routesSvg(room: Room, rr: RoomRoutes, u: number): string {
+  const parts: string[] = [];
+  for (const f of rr.floorSlots) {
+    const w = Math.max(f.width / 10, 1.2 * u);
+    parts.push(g({}, [
+      title(`${f.id}: Bodenschlitz ${f.inCavity ? '(im Vorwand-Hohlraum – kein Schlitz) ' : ''}entlang Wand ${f.wallIndex + 1}, ${fmt(f.length)} cm, ${f.width}×${f.depth} mm, Kabel: ${f.cables.join(', ')}`),
+      el('line', { x1: f.from.x, y1: f.from.y, x2: f.to.x, y2: f.to.y, class: f.inCavity ? 'cavity' : 'slot', 'stroke-width': f.inCavity ? 0.4 * u : w, 'stroke-opacity': f.inCavity ? 1 : 0.55 }),
+      f.inCavity || f.length < 25 * u ? '' : g({ class: 'ly-beschriftung' }, text((f.from.x + f.to.x) / 2, (f.from.y + f.to.y) / 2, f.id, { class: 'slott', 'font-size': 1.7 * u, 'text-anchor': 'middle', 'dominant-baseline': 'central', style: 'paint-order:stroke;stroke:var(--ep-room,#fff);stroke-width:' + n(0.6 * u) })),
+    ].join('')));
+  }
+  for (const c of rr.ceilingRuns) {
+    parts.push(g({}, title(`${c.id}: ${c.slot ? 'Deckenschlitz' : 'im Deckenhohlraum'} zu ${c.cables.join(', ')} (${fmt(c.length)} cm)`) +
+      el('path', { d: `M${n(c.from.x)} ${n(c.from.y)}L${n(c.to.x)} ${n(c.from.y)}L${n(c.to.x)} ${n(c.to.y)}`, class: 'ceil', 'stroke-width': 0.4 * u, 'stroke-dasharray': `${n(1.5 * u)} ${n(u)}` })));
+  }
+  for (const a of rr.surfaceRuns) {
+    if (a.kind === 'stich') continue;
+    const d = a.kind === 'decke' ? `M${n(a.from.x)} ${n(a.from.y)}L${n(a.to.x)} ${n(a.from.y)}L${n(a.to.x)} ${n(a.to.y)}` : `M${n(a.from.x)} ${n(a.from.y)}L${n(a.to.x)} ${n(a.to.y)}`;
+    parts.push(g({}, title(`${a.id}: Aufputz ${a.kind === 'decke' ? 'an der Decke' : `Trasse bei ${fmt(a.z)} cm`} – ${a.cables.join(', ')}`) + el('path', { d, class: 'ap', 'stroke-width': 0.8 * u })));
+  }
+  for (const w of rr.wallSlots.filter((x) => x.orientation === 'senkrecht')) {
+    const p = pointOnWall(room, w.wallIndex, w.s, 0.6 * u);
+    parts.push(g({}, title(`${w.id}: senkrechter Wandschlitz Wand ${w.wallIndex + 1} bei ${fmt(w.s)} cm, Höhe ${fmt(w.zFrom)}–${fmt(w.zTo)}, ${w.width}×${w.depth} mm`) + el('rect', { x: p.x - 0.9 * u, y: p.y - 0.9 * u, width: 1.8 * u, height: 1.8 * u, class: 'slotfill', 'stroke-width': 0.25 * u })));
+  }
+  for (const pe of rr.penetrations) {
+    const p = pointOnWall(room, pe.wallIndex, pe.s, -2 * u);
+    parts.push(g({}, title(`Durchbruch Ø ${pe.diameter} mm bei ${fmt(pe.s)} cm, Höhe ${fmt(pe.z)} – ${pe.note}`) + el('circle', { cx: p.x, cy: p.y, r: 1.6 * u, class: `pen ${pe.fireStop ? 'fire' : ''}`, 'stroke-width': 0.5 * u }) +
+      el('path', { d: `M${n(p.x - u)} ${n(p.y - u)}L${n(p.x + u)} ${n(p.y + u)}M${n(p.x + u)} ${n(p.y - u)}L${n(p.x - u)} ${n(p.y + u)}`, class: `pen ${pe.fireStop ? 'fire' : ''}`, 'stroke-width': 0.35 * u })));
+  }
+  return g({ class: 'ly-trassen' }, parts.join(''));
 }
 
 /** Tür als Plan-Elemente: Öffnung, Blatt, Aufschlagbogen. */
@@ -245,6 +280,9 @@ export function renderRoomPlan(project: Project, room: Room, opts: PlanOptions =
     ].join('')));
   }
   parts.push(wl.join(''));
+
+  // Leitungswege
+  if (layers.has('trassen')) parts.push(routesSvg(room, opts.routes ?? computeRoomRoutes(project, room), u));
 
   // Auslässe
   const outs = room.outlets
