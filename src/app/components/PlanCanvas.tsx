@@ -34,7 +34,7 @@ function useDrag(project: Project, room: Room, mode: 'plan' | 'elevation', wallI
     if (!target) return;
     const id = target.getAttribute('data-outlet')!;
     store.setUi({ outletId: id });
-    drag.current = { id, before: store.getState().project, moved: false };
+    drag.current = { id, before: store.getState().project!, moved: false };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -67,7 +67,7 @@ function useDrag(project: Project, room: Room, mode: 'plan' | 'elevation', wallI
     const d = drag.current;
     drag.current = null;
     if (!d || !d.moved) return;
-    const o = store.getState().project.rooms.find((r) => r.id === room.id)?.outlets.find((x) => x.id === d.id);
+    const o = store.getState().project?.rooms.find((r) => r.id === room.id)?.outlets.find((x) => x.id === d.id);
     store.commit(`${room.name}: ${o?.label ?? 'Auslass'} verschoben`, d.before);
   };
   return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp };

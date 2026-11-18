@@ -28,9 +28,10 @@ const APP_PASSWORD = process.env.APP_PASSWORD ?? '';
 const BACKUPS = Math.max(1, Number(process.env.BACKUPS ?? 30));
 const MAX_BODY = 40 * 1024 * 1024; // Grundriss- und Verteilerfotos stecken im Projekt
 
-const PROJECT_FILE = path.join(DATA_DIR, 'projekt.json');
-const META_FILE = path.join(DATA_DIR, 'projekt.meta.json');
+const PROJECT_DIR = path.join(DATA_DIR, 'projekte');
 const BACKUP_DIR = path.join(DATA_DIR, 'sicherungen');
+const TRASH_DIR = path.join(DATA_DIR, 'papierkorb');
+const LEGACY_FILE = path.join(DATA_DIR, 'projekt.json');
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -68,8 +69,12 @@ function authorized(req) {
   return eq(user, APP_USER) & eq(pass, APP_PASSWORD) ? true : false;
 }
 
-async function readMeta() {
-  try { return JSON.parse(await fs.readFile(META_FILE, 'utf8')); } catch { return { rev: 0, savedAt: null }; }
+const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+const projectFile = (id) => path.join(PROJECT_DIR, `${id}.json`);
+const metaFile = (id) => path.join(PROJECT_DIR, `${id}.meta.json`);
+
+async function readMeta(id) {
+  try { return JSON.parse(await fs.readFile(metaFile(id), 'utf8')); } catch { return null; }
 }
 
 async function writeAtomic(file, data) {
@@ -78,45 +83,112 @@ async function writeAtomic(file, data) {
   await fs.rename(tmp, file);
 }
 
-// Speichern nacheinander abarbeiten, damit sich zwei Geräte nicht überholen
+// Schreibzugriffe nacheinander abarbeiten, damit sich zwei Geräte nicht überholen
 let queue = Promise.resolve();
 const serial = (fn) => (queue = queue.then(fn, fn));
 
-async function backup() {
-  if (!existsSync(PROJECT_FILE)) return;
-  await fs.mkdir(BACKUP_DIR, { recursive: true });
+const lastBackup = new Map();
+async function backup(id) {
+  if (!existsSync(projectFile(id))) return;
+  if (Date.now() - (lastBackup.get(id) ?? 0) < 10 * 60 * 1000) return; // höchstens alle 10 Minuten
+  lastBackup.set(id, Date.now());
+  const dir = path.join(BACKUP_DIR, id);
+  await fs.mkdir(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  await fs.copyFile(PROJECT_FILE, path.join(BACKUP_DIR, `projekt-${stamp}.json`));
-  const files = (await fs.readdir(BACKUP_DIR)).filter((f) => f.startsWith('projekt-')).sort();
-  for (const f of files.slice(0, Math.max(0, files.length - BACKUPS))) await fs.rm(path.join(BACKUP_DIR, f), { force: true });
+  await fs.copyFile(projectFile(id), path.join(dir, `${stamp}.json`));
+  const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.json')).sort();
+  for (const f of files.slice(0, Math.max(0, files.length - BACKUPS))) await fs.rm(path.join(dir, f), { force: true });
 }
 
-let lastBackup = 0;
+/** Kurzinfo fürs Projektverzeichnis – wird beim Speichern mitgeschrieben, damit die Liste ohne große Dateien auskommt. */
+function summarize(p) {
+  return {
+    name: String(p.name ?? 'Ohne Namen'),
+    projectType: p.projectType ?? null,
+    updatedAt: p.updatedAt ?? null,
+    floors: Array.isArray(p.floors) ? p.floors.length : 0,
+    rooms: Array.isArray(p.rooms) ? p.rooms.length : 0,
+    address: p.address ?? null,
+  };
+}
 
-async function handleProject(req, res) {
+async function writeProject(id, body, parsed, prevRev) {
+  await fs.mkdir(PROJECT_DIR, { recursive: true });
+  await backup(id);
+  await writeAtomic(projectFile(id), body);
+  const meta = { id, rev: prevRev + 1, savedAt: new Date().toISOString(), ...summarize(parsed) };
+  await writeAtomic(metaFile(id), JSON.stringify(meta));
+  return meta;
+}
+
+/** Früher gab es nur /data/projekt.json – beim Start einmalig ins Projektverzeichnis übernehmen. */
+async function migrateLegacy() {
+  if (!existsSync(LEGACY_FILE)) return;
+  try {
+    const body = await fs.readFile(LEGACY_FILE);
+    const parsed = JSON.parse(body.toString('utf8'));
+    const id = ID_RE.test(parsed.id ?? '') ? parsed.id : `projekt_${Date.now().toString(36)}`;
+    if (!existsSync(projectFile(id))) await writeProject(id, body, { ...parsed, id }, 0);
+    await fs.rename(LEGACY_FILE, `${LEGACY_FILE}.uebernommen`);
+    await fs.rm(path.join(DATA_DIR, 'projekt.meta.json'), { force: true });
+    console.log(`  Übernommen:   bisheriges Projekt „${parsed.name}“`);
+  } catch (e) {
+    console.error(`Bisheriges Projekt konnte nicht übernommen werden: ${e.message}`);
+  }
+}
+
+async function listProjects() {
+  if (!existsSync(PROJECT_DIR)) return [];
+  const out = [];
+  for (const f of await fs.readdir(PROJECT_DIR)) {
+    if (!f.endsWith('.meta.json')) continue;
+    const m = await readMeta(f.slice(0, -'.meta.json'.length));
+    if (m) out.push(m);
+  }
+  return out.sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+}
+
+async function handleProjects(req, res, rest) {
+  if (!rest) {
+    if (req.method === 'GET') return send(res, 200, await listProjects(), { 'cache-control': 'no-store' });
+    return send(res, 405, { error: 'Methode nicht erlaubt' });
+  }
+  const [id, sub] = rest.split('/');
+  if (!ID_RE.test(id)) return send(res, 400, { error: 'Ungültige Projekt-ID' });
+  if (sub === 'rev' && req.method === 'GET') {
+    const m = await readMeta(id);
+    return m ? send(res, 200, { rev: m.rev, savedAt: m.savedAt }, { 'cache-control': 'no-store' }) : send(res, 404, { error: 'Projekt nicht gefunden' });
+  }
+  if (sub) return send(res, 404, { error: 'Unbekannt' });
   if (req.method === 'GET') {
-    const meta = await readMeta();
-    if (!existsSync(PROJECT_FILE)) return send(res, 404, { error: 'Noch kein Projekt gespeichert', rev: 0 });
-    const data = await fs.readFile(PROJECT_FILE, 'utf8');
-    return send(res, 200, data, { 'content-type': 'application/json; charset=utf-8', 'x-rev': String(meta.rev), 'cache-control': 'no-store' });
+    const m = await readMeta(id);
+    if (!m || !existsSync(projectFile(id))) return send(res, 404, { error: 'Projekt nicht gefunden' });
+    const data = await fs.readFile(projectFile(id), 'utf8');
+    return send(res, 200, data, { 'content-type': 'application/json; charset=utf-8', 'x-rev': String(m.rev), 'cache-control': 'no-store' });
   }
   if (req.method === 'PUT') {
     const body = await readBody(req);
     let parsed;
     try { parsed = JSON.parse(body.toString('utf8')); } catch { return send(res, 400, { error: 'Kein gültiges JSON' }); }
     if (!parsed || typeof parsed !== 'object' || !('schemaVersion' in parsed)) return send(res, 400, { error: 'Keine Elektroplaner-Projektdatei' });
+    if (parsed.id !== id) return send(res, 400, { error: 'Projekt-ID passt nicht zur Adresse' });
     const baseRev = Number(req.headers['x-base-rev'] ?? -1);
     const force = req.headers['x-force'] === '1';
     return serial(async () => {
-      const meta = await readMeta();
-      if (!force && baseRev !== meta.rev) return send(res, 409, { error: 'Projekt wurde inzwischen auf einem anderen Gerät geändert', rev: meta.rev, savedAt: meta.savedAt });
-      await fs.mkdir(DATA_DIR, { recursive: true });
-      // höchstens alle 10 Minuten eine Sicherung des vorherigen Stands
-      if (Date.now() - lastBackup > 10 * 60 * 1000) { await backup(); lastBackup = Date.now(); }
-      await writeAtomic(PROJECT_FILE, body);
-      const next = { rev: meta.rev + 1, savedAt: new Date().toISOString() };
-      await writeAtomic(META_FILE, JSON.stringify(next));
-      return send(res, 200, next);
+      const rev = (await readMeta(id))?.rev ?? 0;
+      if (!force && baseRev !== rev) return send(res, 409, { error: 'Projekt wurde inzwischen auf einem anderen Gerät geändert', rev });
+      return send(res, 200, await writeProject(id, body, parsed, rev));
+    });
+  }
+  if (req.method === 'DELETE') {
+    return serial(async () => {
+      if (!existsSync(projectFile(id))) return send(res, 404, { error: 'Projekt nicht gefunden' });
+      // nicht endgültig löschen: in den Papierkorb verschieben
+      await fs.mkdir(TRASH_DIR, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      await fs.rename(projectFile(id), path.join(TRASH_DIR, `${id}-${stamp}.json`));
+      await fs.rm(metaFile(id), { force: true });
+      return send(res, 200, { ok: true });
     });
   }
   return send(res, 405, { error: 'Methode nicht erlaubt' });
@@ -163,10 +235,9 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('x-content-type-options', 'nosniff');
     res.setHeader('referrer-policy', 'same-origin');
     if (url.pathname === '/api/status') {
-      const meta = await readMeta();
-      return send(res, 200, { server: true, ai: !!API_KEY, rev: meta.rev, savedAt: meta.savedAt }, { 'cache-control': 'no-store' });
+      return send(res, 200, { server: true, ai: !!API_KEY }, { 'cache-control': 'no-store' });
     }
-    if (url.pathname === '/api/projekt') return await handleProject(req, res);
+    if (url.pathname === '/api/projekte' || url.pathname.startsWith('/api/projekte/')) return await handleProjects(req, res, url.pathname.slice('/api/projekte/'.length));
     if (url.pathname.startsWith('/api/claude/')) return await handleClaude(req, res, url.pathname.slice('/api/claude'.length) + url.search);
     if (url.pathname.startsWith('/api/')) return send(res, 404, { error: 'Unbekannt' });
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Methode nicht erlaubt');
@@ -210,6 +281,7 @@ async function checkWritable() {
 
 await dropPrivileges();
 const writable = await checkWritable();
+if (writable) await migrateLegacy();
 
 server.requestTimeout = 11 * 60 * 1000;
 server.listen(PORT, () => {

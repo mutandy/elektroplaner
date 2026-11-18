@@ -203,3 +203,22 @@ table.edit tr.done td, .tasklist li.done > label span { opacity: .55; text-decor
 .photogrid img { width: 100%; height: 130px; object-fit: cover; }
 .photogrid figcaption { display: flex; gap: 4px; padding: 4px; flex-wrap: wrap; align-items: center; }
 .photogrid figcaption input { flex: 1; min-width: 6em; }
+
+/* Projektübersicht */
+.linkish { background: none; border: none; padding: 0; text-align: left; color: inherit; font: inherit; }
+.linkish:hover:not(:disabled) { color: var(--accent); }
+button.pname { color: var(--ink); font-weight: 600; }
+button.pname small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.projects { max-width: 960px; margin: 8px auto 24px; display: flex; flex-direction: column; gap: 14px; }
+.projects-head h1 { margin: 0 0 4px; font-size: 24px; }
+.projects-head p { margin: 0; max-width: 70ch; }
+.projects-listhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.projects-listhead h2 { margin: 0; font-size: 16px; flex: 1; }
+.projects-listhead input { width: 220px; max-width: 100%; }
+.projectlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.projectrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.projectrow.is-open { border-color: var(--accent); }
+.projectrow-main { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.projectrow-name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.projectrow-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.main.single .content { padding-top: 18px; }

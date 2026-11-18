@@ -37,7 +37,7 @@ Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beis
 
 Als Docker-Container läuft die App mit allen Funktionen: Drucken/PDF, Datei-Export, KI. Das Projekt liegt **zentral auf dem Server**, PC, Tablet und Handy sehen also denselben Stand.
 
-- **Zentrale Speicherung:** Das Projekt liegt in `/data/projekt.json`. Alte Stände landen in `/data/sicherungen/`, höchstens alle 10 Minuten einer, die letzten 30 bleiben (`BACKUPS`).
+- **Mehrere Projekte:** Jedes Projekt liegt einzeln in `/data/projekte/<id>.json`. Alte Stände landen in `/data/sicherungen/<id>/`, höchstens alle 10 Minuten einer, die letzten 30 bleiben (`BACKUPS`). Gelöschte Projekte kommen nach `/data/papierkorb/` und lassen sich von dort zurückholen. Ein Projekt aus einer früheren Version (`/data/projekt.json`) übernimmt der Server beim Start automatisch.
 - **Gerätewechsel:** Kehrst du zur App zurück, holt sie den neuesten Stand. Haben zwei Geräte gleichzeitig geändert, meldet die App einen Konflikt. Du wählst dann „Stand vom Server laden“ oder „Meinen Stand behalten“.
 - **Offline:** Ist der Server kurz weg, speichert der Browser weiter. Die App lädt nach, sobald der Server wieder da ist.
 - **KI:** Der Claude-API-Schlüssel steht als `ANTHROPIC_API_KEY` nur auf dem Server. Der Server leitet die Anfragen weiter, im Browser muss kein Schlüssel eingetragen werden.
@@ -90,6 +90,14 @@ Läuft die App ohne Passwort und ist trotzdem von außen erreichbar, kann jeder 
 | `BACKUPS` | 30 | Anzahl aufbewahrter Sicherungen |
 
 Ohne Docker geht es auch: `npm run build`, danach `npm run serve`.
+
+## Projekte
+
+Die App startet mit der **Projektübersicht**. Dort legst du neue Projekte an, fügst das Beispielprojekt hinzu oder importierst eine Projektdatei. Vorhandene Projekte kannst du öffnen, umbenennen, duplizieren und löschen. Jedes Projekt ist eigenständig: Ein neues Projekt überschreibt nichts, und auch ein Import landet immer als zusätzliches Projekt in der Liste.
+
+- Mit **„← Alle Projekte“** in der Seitenleiste oder einem Klick auf den Projektnamen oben kommst du zurück zur Übersicht.
+- Jedes Gerät öffnet beim Start das Projekt, das dort zuletzt offen war.
+- Ohne Server liegen die Projekte im Browser (IndexedDB), mit Server zentral auf dem Server.
 
 ## Bedienung in Kürze
 

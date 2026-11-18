@@ -480,7 +480,7 @@ function SuggestStep({ project }: { project: Project }) {
       <div className="inline">
         {counts.map(({ r, n }) => <button key={r.id} className={r.id === room.id ? 'active' : ''} onClick={() => setRoomId(r.id)}>{r.name} ({n})</button>)}
         <span className="spacer" />
-        <button disabled={!total} onClick={() => { for (const { r } of counts) { const cur = store.getState().project.rooms.find((x) => x.id === r.id)!; const l = suggestOutlets(store.getState().project, cur); if (l.length) acceptSuggestions(cur, l); } }}>Alle {total} Vorschläge in allen Räumen übernehmen</button>
+        <button disabled={!total} onClick={() => { for (const { r } of counts) { const cur = store.getState().project!.rooms.find((x) => x.id === r.id)!; const l = suggestOutlets(store.getState().project!, cur); if (l.length) acceptSuggestions(cur, l); } }}>Alle {total} Vorschläge in allen Räumen übernehmen</button>
       </div>
       <div className="wiz-split">
         <div><SuggestionsPanel project={project} room={room} /></div>

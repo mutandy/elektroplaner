@@ -1,29 +1,29 @@
 /**
- * Zustandsspeicher: ein Projekt als einzige Datenquelle, Undo/Redo über
- * Schnappschüsse (Immer: strukturelles Teilen), Änderungsprotokoll,
- * automatisches Speichern im Browser (IndexedDB).
+ * Zustandsspeicher: das geöffnete Projekt als einzige Datenquelle, Undo/Redo
+ * über Schnappschüsse (Immer: strukturelles Teilen), Änderungsprotokoll,
+ * automatisches Speichern in der Projektablage (Server oder Browser, siehe repo.ts).
  */
 import { produce, type Draft } from 'immer';
 import { useSyncExternalStore } from 'react';
-import { get as idbGet, set as idbSet } from 'idb-keyval';
 import type { Project } from '../core/model/schema';
 import { Project as ProjectSchema } from '../core/model/schema';
-import { loadProject, nowIso } from '../core/model/factory';
+import { createProject, loadProject, newId, nowIso } from '../core/model/factory';
 import exampleJson from '../../examples/kellerwohnung.json';
 import { setServerAi } from './ai/claude';
+import { browserRepo, detectServer, lastOpened, rememberOpened, serverRepo, takeLegacyBrowserProject, type ProjectMeta, type Repo } from './repo';
 
 const HISTORY_LIMIT = 200;
-const STORAGE_KEY = 'elektroplaner.projekt';
 
 export interface UiState {
-  view: 'willkommen' | 'assistent' | 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'material' | 'ausgaben' | 'versionen';
+  view: 'projekte' | 'assistent' | 'projekt' | 'verteilung' | 'raum' | 'pruefung' | 'material' | 'ausgaben' | 'versionen';
   roomId?: string;
   outletId?: string;
   wallIndex: number;
 }
 
 interface State {
-  project: Project;
+  /** Geöffnetes Projekt; null = keins geöffnet (Projektübersicht) */
+  project: Project | null;
   past: Project[];
   future: Project[];
   ui: UiState;
@@ -31,27 +31,32 @@ interface State {
   loadError?: string;
   /** Läuft die App auf dem eigenen Server (Docker/Unraid)? */
   server?: { ai: boolean };
-  /** Stand der zentralen Speicherung auf dem Server */
+  /** Stand der Speicherung */
   sync?: 'ok' | 'speichert' | 'konflikt' | 'offline';
+  /** Alle Projekte (Kurzinfo) */
+  projects: ProjectMeta[];
+  ready: boolean;
 }
 
 export function exampleProject(): Project {
   return loadProject(exampleJson);
 }
 
-let state: State = {
-  project: exampleProject(),
-  past: [],
-  future: [],
-  ui: { view: 'willkommen', wallIndex: 0 },
-};
+/** Kopie mit neuer ID (Beispiel hinzufügen, Duplizieren, Import einer schon vorhandenen Datei). */
+export function withNewId(p: Project, name = p.name): Project {
+  return { ...p, id: newId('projekt'), name, createdAt: nowIso(), updatedAt: nowIso() };
+}
+
+let state: State = { project: null, past: [], future: [], ui: { view: 'projekte', wallIndex: 0 }, projects: [], ready: false };
+let repo: Repo = browserRepo;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
-/** Revision des Projekts auf dem Server, auf der der lokale Stand aufbaut. */
-let serverRev = 0;
+/** Revision des geöffneten Projekts in der Ablage, auf der der lokale Stand aufbaut. */
+let baseRev = 0;
 let dirty = false;
+let saving: Promise<void> = Promise.resolve();
 
 function scheduleSave() {
   dirty = true;
@@ -59,53 +64,55 @@ function scheduleSave() {
   saveTimer = setTimeout(() => void saveNow(), 600);
 }
 
-async function saveNow(force = false) {
-  const json = JSON.stringify(state.project);
-  try {
-    await idbSet(STORAGE_KEY, json);
-    if (!state.server) state = { ...state, savedAt: new Date().toLocaleTimeString('de-DE') };
-  } catch {
-    /* Speichern im Browser nicht möglich (z. B. privates Fenster) – Export bleibt möglich */
-  }
-  if (state.server && (state.sync !== 'konflikt' || force)) {
-    state = { ...state, sync: 'speichert' };
-    emit();
-    try {
-      const r = await fetch('api/projekt', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-base-rev': String(serverRev), ...(force ? { 'x-force': '1' } : {}) }, body: json });
-      if (r.status === 409) state = { ...state, sync: 'konflikt' };
-      else if (!r.ok) {
-        const msg = await r.json().then((j) => j.error as string).catch(() => `Status ${r.status}`);
-        state = { ...state, sync: 'offline', loadError: `Speichern auf dem Server fehlgeschlagen: ${msg}` };
-      }
-      else {
-        serverRev = (await r.json()).rev;
-        dirty = JSON.stringify(state.project) !== json;
-        state = { ...state, sync: 'ok', loadError: undefined, savedAt: new Date().toLocaleTimeString('de-DE') };
-      }
-    } catch {
-      state = { ...state, sync: 'offline' };
-    }
+function saveNow(force = false): Promise<void> {
+  clearTimeout(saveTimer);
+  saving = saving.then(() => doSave(force));
+  return saving;
+}
+
+async function doSave(force: boolean) {
+  const project = state.project;
+  if (!project || !dirty) return;
+  if (state.sync === 'konflikt' && !force) return;
+  const json = JSON.stringify(project);
+  state = { ...state, sync: 'speichert' };
+  emit();
+  const r = await repo.save(project, json, baseRev, force);
+  if (r.ok) {
+    baseRev = r.rev;
+    dirty = state.project !== project; // inzwischen weiter geändert?
+    state = { ...state, sync: 'ok', loadError: undefined, savedAt: new Date().toLocaleTimeString('de-DE') };
+    upsertMeta(project, r.rev);
+    if (dirty) scheduleSave();
+  } else if (r.conflict) {
+    state = { ...state, sync: 'konflikt' };
+  } else {
+    state = { ...state, sync: 'offline', loadError: `Speichern fehlgeschlagen: ${r.error}` };
   }
   emit();
 }
 
-async function fetchServerProject(): Promise<Project | null> {
-  const r = await fetch('api/projekt', { cache: 'no-store' });
-  if (r.status === 404) { serverRev = 0; return null; }
-  if (!r.ok) throw new Error(`Server antwortet mit ${r.status}`);
-  serverRev = Number(r.headers.get('x-rev') ?? 0);
-  return loadProject(await r.text());
+function upsertMeta(p: Project, rev: number) {
+  const meta: ProjectMeta = { id: p.id, name: p.name, projectType: p.projectType ?? null, updatedAt: p.updatedAt ?? null, savedAt: new Date().toISOString(), floors: p.floors.length, rooms: p.rooms.length, rev };
+  state = { ...state, projects: [meta, ...state.projects.filter((m) => m.id !== p.id)] };
 }
 
-async function serverStatus(): Promise<{ server: boolean; ai: boolean; rev: number } | null> {
-  try {
-    const r = await fetch('api/status', { cache: 'no-store', signal: AbortSignal.timeout(4000) });
-    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) return null;
-    const j = await r.json();
-    return j?.server ? j : null;
-  } catch {
-    return null;
-  }
+function viewFor(p: Project): UiState['view'] {
+  return p.wizard.finished ? 'projekt' : 'assistent';
+}
+
+function show(project: Project, rev: number) {
+  baseRev = rev;
+  dirty = false;
+  rememberOpened(project.id);
+  state = { ...state, project, past: [], future: [], sync: 'ok', savedAt: undefined, loadError: undefined, ui: { view: viewFor(project), wallIndex: 0 } };
+  emit();
+}
+
+/** Für Bearbeitungsfunktionen: geöffnetes Projekt (Ansichten werden nur mit Projekt gezeigt). */
+function current(): Project {
+  if (!state.project) throw new Error('Kein Projekt geöffnet');
+  return state.project;
 }
 
 export const store = {
@@ -117,34 +124,34 @@ export const store = {
 
   /** Änderung mit Undo-Eintrag und Protokollzeile. */
   update(text: string, fn: (d: Draft<Project>) => void) {
-    const next = produce(state.project, (d) => {
+    const next = produce(current(), (d) => {
       fn(d);
       d.updatedAt = nowIso();
       d.changeLog.push({ at: d.updatedAt, text });
       if (d.changeLog.length > 2000) d.changeLog.splice(0, d.changeLog.length - 2000);
     });
-    state = { ...state, project: next, past: [...state.past, state.project].slice(-HISTORY_LIMIT), future: [] };
+    state = { ...state, project: next, past: [...state.past, current()].slice(-HISTORY_LIMIT), future: [] };
     emit();
     scheduleSave();
   },
 
   /** Änderung ohne Undo-Eintrag und ohne Protokoll, aber gespeichert (z. B. Assistent-Schritt). */
   silent(fn: (d: Draft<Project>) => void) {
-    state = { ...state, project: produce(state.project, fn) };
+    state = { ...state, project: produce(current(), fn) };
     emit();
     scheduleSave();
   },
 
   /** Vorschau ohne Undo-Eintrag (z. B. während Ziehen). */
   preview(fn: (d: Draft<Project>) => void) {
-    state = { ...state, project: produce(state.project, fn) };
+    state = { ...state, project: produce(current(), fn) };
     emit();
   },
 
   /** Abschluss einer Vorschau-Serie: ein Undo-Schritt zurück auf `before`. */
   commit(text: string, before: Project) {
     if (before === state.project) return;
-    const next = produce(state.project, (d) => {
+    const next = produce(current(), (d) => {
       d.updatedAt = nowIso();
       d.changeLog.push({ at: d.updatedAt, text });
     });
@@ -156,22 +163,16 @@ export const store = {
   undo() {
     const prev = state.past[state.past.length - 1];
     if (!prev) return;
-    state = { ...state, project: prev, past: state.past.slice(0, -1), future: [state.project, ...state.future] };
+    state = { ...state, project: prev, past: state.past.slice(0, -1), future: [current(), ...state.future] };
     emit();
     scheduleSave();
   },
   redo() {
     const [next, ...rest] = state.future;
     if (!next) return;
-    state = { ...state, project: next, past: [...state.past, state.project], future: rest };
+    state = { ...state, project: next, past: [...state.past, current()], future: rest };
     emit();
     scheduleSave();
-  },
-
-  replace(project: Project, text = 'Projekt geladen') {
-    const view = project.wizard.finished ? 'projekt' : 'assistent';
-    state = { ...state, project, past: [...state.past, state.project].slice(-HISTORY_LIMIT), future: [], ui: { view, wallIndex: 0 } };
-    store.update(text, () => {});
   },
 
   setUi(patch: Partial<UiState>) {
@@ -179,82 +180,176 @@ export const store = {
     emit();
   },
 
+  /** Start: Ablage wählen (Server oder Browser), Projekte laden, zuletzt geöffnetes öffnen. */
   async restore() {
-    const status = await serverStatus();
-    if (status) {
-      setServerAi(status.ai);
-      state = { ...state, server: { ai: status.ai }, sync: 'ok' };
-      emit();
-      try {
-        const project = await fetchServerProject();
-        if (project) {
-          state = { ...state, project, ui: { ...state.ui, view: project.wizard.finished ? 'projekt' : 'assistent' } };
-          emit();
-          watchServer();
-          return;
-        }
-      } catch (e) {
-        state = { ...state, sync: 'offline', loadError: `Projekt vom Server konnte nicht geladen werden: ${(e as Error).message}` };
-        emit();
-      }
-      watchServer();
+    const srv = await detectServer();
+    if (srv) {
+      repo = serverRepo;
+      setServerAi(srv.ai);
+      state = { ...state, server: { ai: srv.ai } };
     }
     try {
-      const raw = await idbGet<string>(STORAGE_KEY);
-      if (raw) {
-        const project = loadProject(raw);
-        state = { ...state, project, ui: { ...state.ui, view: project.wizard.finished ? 'projekt' : 'assistent' } };
-        emit();
-        // Erster Start mit Server: bisherigen Browser-Stand hochladen
-        if (state.server && state.sync === 'ok') scheduleSave();
+      let projects = await repo.list();
+      // Früher gab es nur ein Projekt im Browser: einmalig übernehmen
+      const legacy = await takeLegacyBrowserProject();
+      if (legacy && !projects.some((m) => m.id === legacy.id)) {
+        await repo.save(legacy, JSON.stringify(legacy), 0);
+        projects = await repo.list();
       }
+      // Ganz leer: Beispielprojekt anlegen, damit man etwas zum Ansehen hat
+      if (!projects.length) {
+        const ex = withNewId(exampleProject());
+        await repo.save(ex, JSON.stringify(ex), 0);
+        projects = await repo.list();
+      }
+      state = { ...state, projects, ready: true };
+      emit();
+      const last = lastOpened();
+      if (last && projects.some((m) => m.id === last)) await store.open(last);
     } catch (e) {
-      state = { ...state, loadError: `Gespeicherter Stand konnte nicht geladen werden: ${(e as Error).message}` };
+      state = { ...state, ready: true, loadError: `Projekte konnten nicht geladen werden: ${(e as Error).message}` };
+      emit();
+    }
+    if (repo.kind === 'server') watchServer();
+    window.addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+  },
+
+  async refreshList() {
+    try { state = { ...state, projects: await repo.list() }; emit(); } catch (e) { state = { ...state, loadError: (e as Error).message }; emit(); }
+  },
+
+  /** Projekt öffnen (vorher Änderungen am bisherigen sichern). */
+  async open(id: string) {
+    await saveNow();
+    try {
+      const r = await repo.load(id);
+      if (!r) { state = { ...state, loadError: 'Projekt nicht gefunden – evtl. auf einem anderen Gerät gelöscht.' }; await store.refreshList(); return; }
+      show(r.project, r.rev);
+    } catch (e) {
+      state = { ...state, loadError: `Projekt konnte nicht geöffnet werden: ${(e as Error).message}` };
       emit();
     }
   },
 
-  /** Konflikt lösen: Stand vom Server übernehmen (eigener Stand bleibt über „Rückgängig“ erreichbar). */
+  /** Neues Projekt in der Ablage anlegen und öffnen. */
+  async create(project: Project, text = 'Projekt angelegt') {
+    await saveNow();
+    let p = project;
+    if (state.projects.some((m) => m.id === p.id)) p = withNewId(p);
+    // gleicher Name schon vorhanden → durchnummerieren, damit man die Projekte unterscheiden kann
+    const taken = new Set(state.projects.map((m) => m.name));
+    if (taken.has(p.name)) {
+      const base = p.name.replace(/ \(\d+\)$/, '');
+      let n = 2;
+      while (taken.has(`${base} (${n})`)) n++;
+      p = { ...p, name: `${base} (${n})` };
+    }
+    p = produce(p, (d) => { d.updatedAt = nowIso(); d.changeLog.push({ at: d.updatedAt, text }); });
+    const r = await repo.save(p, JSON.stringify(p), 0);
+    if (!r.ok) { state = { ...state, loadError: `Projekt konnte nicht angelegt werden: ${r.error}` }; emit(); return; }
+    upsertMeta(p, r.rev);
+    show(p, r.rev);
+  },
+
+  newProject(name = 'Neues Projekt') {
+    return store.create(createProject({ name }), 'Neues Projekt angelegt');
+  },
+  addExample() {
+    return store.create(withNewId(exampleProject()), 'Beispielprojekt angelegt');
+  },
+  async importProject(text: string, fileName: string) {
+    const p = loadProject(text); // wirft ProjectLoadError mit Details
+    await store.create(p, `Projektdatei „${fileName}“ importiert`);
+  },
+
+  async duplicate(id: string) {
+    const r = state.project?.id === id ? { project: state.project } : await repo.load(id);
+    if (!r) return;
+    await store.create(withNewId(r.project, `${r.project.name} (Kopie)`), `Kopie von „${r.project.name}“`);
+  },
+
+  async rename(id: string, name: string) {
+    name = name.trim();
+    if (!name) return;
+    if (state.project?.id === id) { store.update(`Projekt umbenannt in „${name}“`, (d) => { d.name = name; }); await saveNow(); return; }
+    const r = await repo.load(id);
+    if (!r) return;
+    const p = produce(r.project, (d) => { d.name = name; d.updatedAt = nowIso(); d.changeLog.push({ at: d.updatedAt, text: `Projekt umbenannt in „${name}“` }); });
+    const res = await repo.save(p, JSON.stringify(p), r.rev);
+    if (res.ok) upsertMeta(p, res.rev); else state = { ...state, loadError: `Umbenennen fehlgeschlagen: ${res.error}` };
+    emit();
+  },
+
+  async remove(id: string) {
+    try {
+      await repo.remove(id);
+    } catch (e) {
+      state = { ...state, loadError: `Löschen fehlgeschlagen: ${(e as Error).message}` };
+      emit();
+      return;
+    }
+    if (state.project?.id === id) { clearTimeout(saveTimer); dirty = false; rememberOpened(null); state = { ...state, project: null, past: [], future: [], ui: { view: 'projekte', wallIndex: 0 } }; }
+    state = { ...state, projects: state.projects.filter((m) => m.id !== id) };
+    emit();
+  },
+
+  /** Zur Projektübersicht (geöffnetes Projekt bleibt gemerkt). */
+  async showProjects() {
+    await saveNow();
+    store.setUi({ view: 'projekte', roomId: undefined, outletId: undefined });
+    void store.refreshList();
+  },
+
+  /** Konflikt lösen: Stand vom Server übernehmen. */
   async takeServer() {
-    const project = await fetchServerProject();
+    const id = state.project?.id;
+    if (!id) return;
+    const r = await repo.load(id);
     dirty = false;
-    state = { ...state, sync: 'ok' };
-    if (project) store.replace(project, 'Stand vom Server übernommen');
+    if (r) show(r.project, r.rev);
   },
   /** Konflikt lösen: eigenen Stand auf den Server schreiben. */
   async keepMine() {
+    dirty = true;
     await saveNow(true);
   },
 
   saveVersion(name: string) {
     store.update(`Versionsstand „${name}“ gespeichert`, (d) => {
-      const { versions: _v, ...core } = JSON.parse(JSON.stringify(state.project)) as Project;
+      const { versions: _v, ...core } = JSON.parse(JSON.stringify(current())) as Project;
       d.versions.push({ name, at: nowIso(), snapshot: core as any });
     });
   },
 
   restoreVersion(index: number) {
-    const v = state.project.versions[index];
+    const v = current().versions[index];
     if (!v) return;
-    const restored = ProjectSchema.parse({ ...v.snapshot, versions: state.project.versions });
-    state = { ...state, project: restored, past: [...state.past, state.project], future: [] };
+    const restored = ProjectSchema.parse({ ...v.snapshot, versions: current().versions });
+    state = { ...state, project: restored, past: [...state.past, current()], future: [] };
     store.update(`Versionsstand „${v.name}“ wiederhergestellt`, () => {});
   },
 };
 
 /** Beim Zurückkehren zur App: wurde auf einem anderen Gerät weitergearbeitet? */
 function watchServer() {
+  let busy = false;
   const check = async () => {
-    if (document.visibilityState !== 'visible' || !state.server || state.sync === 'speichert') return;
-    const st = await serverStatus();
-    if (!st) { if (state.sync === 'ok') { state = { ...state, sync: 'offline' }; emit(); } return; }
-    if (state.sync === 'offline') { state = { ...state, sync: 'ok' }; if (dirty) void saveNow(); }
-    if (st.rev !== serverRev) {
-      if (dirty) { state = { ...state, sync: 'konflikt' }; emit(); return; }
-      try {
-        const project = await fetchServerProject();
-        if (project) { state = { ...state, project, past: [], future: [], sync: 'ok' }; emit(); await idbSet(STORAGE_KEY, JSON.stringify(project)).catch(() => {}); }
-      } catch { /* nächster Versuch beim nächsten Wechsel */ }
+    if (busy || document.visibilityState !== 'visible' || state.sync === 'speichert') return;
+    busy = true;
+    try {
+      if (state.ui.view === 'projekte') { await store.refreshList(); return; }
+      const p = state.project;
+      if (!p) return;
+      const rev = await repo.rev(p.id);
+      if (rev == null) { if (!(await detectServer())) { state = { ...state, sync: 'offline' }; emit(); } return; }
+      if (state.sync === 'offline') { state = { ...state, sync: 'ok' }; emit(); if (dirty) void saveNow(); }
+      if (rev !== baseRev && state.project === p) {
+        if (dirty) { state = { ...state, sync: 'konflikt' }; emit(); return; }
+        const r = await repo.load(p.id);
+        if (r && state.project === p) { baseRev = r.rev; state = { ...state, project: r.project, past: [], future: [], sync: 'ok' }; emit(); }
+      }
+    } finally {
+      busy = false;
     }
   };
   document.addEventListener('visibilitychange', () => void check());
