@@ -48,13 +48,15 @@ export function computeMaterial(project: Project, lengths: Lengths = computeLeng
   };
   const rooms = project.rooms.filter((r) => r.inScope);
   const isNew = (o: Outlet) => o.status === 'neu' || o.status === 'bestand_wird_ersetzt';
-  const powered = (o: Outlet) => ['steckdose', 'schalter', 'taster', 'bewegungsmelder', 'licht_decke', 'licht_wand', 'anschlussdose', 'herd', 'starkstrom'].includes(o.kind);
+  const powered = (o: Outlet) => ['steckdose', 'schalter', 'taster', 'bewegungsmelder', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom'].includes(o.kind);
 
   // --- Dosen, Einsätze, Rahmen, Klemmen ---------------------------------------
   for (const room of rooms) {
     const smartSys = effectiveSmart(project, room);
     for (const o of room.outlets.filter(isNew)) {
       if (o.kind === 'rauchwarnmelder') { add('lg.rwm', 1); continue; }
+      // Festanschluss (z. B. Wallbox): keine Dose, kein Einsatz – Leitung wird direkt im Gerät angeklemmt
+      if (o.kind === 'festanschluss') continue;
       const ap = o.boxType === 'aufputz';
       if (o.mount === 'wand') {
         if (o.boxType === 'up') add('dose.up', o.gangs);

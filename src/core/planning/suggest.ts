@@ -189,7 +189,7 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
         add(`beamer:${f.id}`, 'Beamer: Deckensteckdose + Signalweg (HDMI-Glasfaser ohne Leerrohr-Engpass)', 'moebel', { kind: 'steckdose', mount: 'decke', x: f.x + f.w / 2, y: f.y + f.d / 2, boxType: room.ceiling.cavityDepth > 0 ? 'decke_hohl' : 'decke_beton', inserts: ['steckdose'], note: 'Beamer' });
         break;
       case 'auto':
-        if (!room.outlets.some((o) => /wallbox/i.test(o.note))) wall(fw ? fw.from + 120 : 0, ffbToZ(room, 125), { kind: 'anschlussdose', inserts: ['geraeteanschluss'], note: 'Wallbox', boxType: 'aufputz' }, 'wallbox', 'Wallbox: Anschluss 5×6 mm² (11 kW), eigener Kreis und RCD');
+        if (!room.outlets.some((o) => /wallbox/i.test(o.note))) wall(fw ? fw.from + 120 : 0, ffbToZ(room, 125), { kind: 'festanschluss', inserts: [], note: 'Wallbox – Leitung direkt in die Wallbox (keine Anschlussdose), ca. 1 m Reserve', boxType: 'aufputz' }, 'wallbox', 'Wallbox: Festanschluss – Leitung 5×6 mm² (11 kW) direkt ins Gerät, eigener Kreis und RCD');
         break;
       case 'fitness':
         wall(mid, zSD, { gangs: 2, inserts: ['steckdose', 'steckdose'] }, 'fitness', 'Fitnessgerät: Steckdose');
@@ -220,8 +220,8 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
     const word = l.label.split(/[ /(]/)[0].toLowerCase();
     if (word.length > 3 && room.outlets.some((o) => o.note.toLowerCase().includes(word))) continue;
     if (!l.dedicated && l.connection === 'steckdose') continue; // normale Steckdosen deckt die Raumausstattung ab
-    const kind: Outlet['kind'] = l.connection === 'herd' ? 'herd' : l.connection === 'starkstrom' ? 'starkstrom' : l.connection === 'anschlussdose' ? 'anschlussdose' : 'steckdose';
-    const z = Math.round(ffbToZ(room, l.height ?? (kind === 'steckdose' ? (isAp(room) ? 105 : 30) : kind === 'anschlussdose' ? 125 : 40)) * 10) / 10;
+    const kind: Outlet['kind'] = l.connection === 'herd' ? 'herd' : l.connection === 'starkstrom' ? 'starkstrom' : l.connection === 'anschlussdose' ? 'anschlussdose' : l.connection === 'festanschluss' ? 'festanschluss' : 'steckdose';
+    const z = Math.round(ffbToZ(room, l.height ?? (kind === 'steckdose' ? (isAp(room) ? 105 : 30) : kind === 'anschlussdose' || kind === 'festanschluss' ? 125 : 40)) * 10) / 10;
     let placed: { wi: number; s: number } | null = null;
     search: for (const w of longest) {
       for (const f of [0.5, 0.3, 0.7, 0.15, 0.85]) {
@@ -236,7 +236,7 @@ export function suggestOutlets(project: Project, room: Room): Suggestion[] {
     out.push({
       key, source: 'verbraucher', loadId: l.id,
       reason: `${l.label} (${kw(l.power)}${l.phases === 3 ? ', Drehstrom' : ''}) – ${l.dedicated ? 'eigener Stromkreis' : 'eigener Anschluss'}; Lage bitte an Möbel/Gerät anpassen`,
-      outlet: { id: newId('v'), label: '?', kind, mount: 'wand', wallIndex: placed.wi, s: placed.s, z, gangs: 1, orientation: 'waagerecht', growth: 'rechts', boxType: isAp(room) ? 'aufputz' : 'up_tief', inserts: [kind === 'steckdose' ? (isAp(room) ? 'steckdose_klappdeckel' : 'steckdose') : kind === 'starkstrom' ? 'sonstiges' : 'geraeteanschluss'], controls: [], smart: false, status: 'neu', note: l.label } as Outlet,
+      outlet: { id: newId('v'), label: '?', kind, mount: 'wand', wallIndex: placed.wi, s: placed.s, z, gangs: 1, orientation: 'waagerecht', growth: 'rechts', boxType: isAp(room) ? 'aufputz' : 'up_tief', inserts: kind === 'festanschluss' ? [] : [kind === 'steckdose' ? (isAp(room) ? 'steckdose_klappdeckel' : 'steckdose') : kind === 'starkstrom' ? 'sonstiges' : 'geraeteanschluss'], controls: [], smart: false, status: 'neu', note: kind === 'festanschluss' ? `${l.label} – Festanschluss: Leitung direkt ins Gerät, keine Anschlussdose` : l.label } as Outlet,
     });
   }
 

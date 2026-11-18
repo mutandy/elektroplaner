@@ -357,7 +357,7 @@ export function buildKellerProject(): Project {
     outlets: [
       { id: 'ga1', label: 'GA1', kind: 'schalter', mount: 'wand', wallIndex: 0, s: 60 + 88.5 + 15, z: 105, gangs: 2, orientation: 'senkrecht', growth: 'unten', boxType: 'aufputz', inserts: ['ausschalter', 'taster'], circuitId: 'g2', note: 'oben Licht, unten Tortaster' },
       { id: 'ga2', label: 'GA2', kind: 'steckdose', mount: 'decke', x: 184, y: 285, boxType: 'aufputz', inserts: ['steckdose'], circuitId: 'g2', note: 'Deckensteckdose Torantrieb, hinter Schienenende' },
-      { id: 'ga3', label: 'GA3', kind: 'anschlussdose', mount: 'wand', wallIndex: 3, s: 200, z: 125, boxType: 'aufputz', inserts: ['geraeteanschluss'], circuitId: 'g1', note: 'Wallbox 11 kW (NYM-J 5×6), Anfahrschutz' },
+      { id: 'ga3', label: 'GA3', kind: 'festanschluss', mount: 'wand', wallIndex: 3, s: 200, z: 125, boxType: 'aufputz', inserts: [], circuitId: 'g1', note: 'Wallbox 11 kW – Festanschluss: NYM-J 5×6 direkt in die Wallbox (keine Anschlussdose), ca. 1 m Reserve, Anfahrschutz' },
       { id: 'ga4', label: 'GA4', kind: 'starkstrom', mount: 'wand', wallIndex: 0, s: 260, z: 105, boxType: 'aufputz', inserts: ['sonstiges'], circuitId: 'g3', note: 'CEE 16 A' },
       { id: 'ga5', label: 'GA5', kind: 'steckdose', mount: 'wand', wallIndex: 0, s: 300, z: 105, gangs: 2, boxType: 'aufputz', inserts: ['steckdose_klappdeckel', 'steckdose_klappdeckel'], circuitId: 'g3' },
       { id: 'ga6', label: 'GA6', kind: 'licht_decke', mount: 'decke', x: 184, y: 120, boxType: 'aufputz', circuitId: 'g2', note: 'Feuchtraum-Wannenleuchte' },

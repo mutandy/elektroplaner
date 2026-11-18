@@ -133,7 +133,7 @@ export const NORM_RULES: Rule[] = [
       if (!room || !o || !isBath(room) || o.status === 'bestand_entfaellt') return [];
       const z = bathZone(ctx.project, room, o);
       if (!z) return [];
-      const forbidden = ['steckdose', 'schalter', 'taster', 'starkstrom', 'lan', 'anschlussdose'].includes(o.kind) && !/lüfter|luefter/i.test(o.note);
+      const forbidden = ['steckdose', 'schalter', 'taster', 'starkstrom', 'lan', 'anschlussdose', 'festanschluss'].includes(o.kind) && !/lüfter|luefter/i.test(o.note);
       if (forbidden && (o.kind !== 'anschlussdose' || z.zone === 1)) {
         return [{ severity: 'fehler' as Severity, message: `${o.label} (${outletKindLabel[o.kind]}) liegt in Schutzbereich ${z.zone} (${z.fixture}). Dort sind Steckdosen und Schalter nicht zulässig (Ausnahmen nur SELV/Schutztrennung) – Position mind. ${fmt(normValue(ctx.project, 'bad.bereich2'))} cm vom Rand von Wanne/Dusche oder über ${fmt(normValue(ctx.project, 'bad.hoehe'))} cm.` }];
       }
@@ -159,7 +159,7 @@ export const NORM_RULES: Rule[] = [
     confirm: true,
     scope: 'projekt',
     check: (ctx) => {
-      const out: { severity: Severity; message: string; ref?: string }[] = [];
+      const out: { severity: Severity; message: string; ref?: string; roomId?: string; outletId?: string }[] = [];
       for (const k of capacityChecks(ctx.project)) {
         if (k.izReduced == null) continue;
         const c = k.circuit;
@@ -177,7 +177,7 @@ export const NORM_RULES: Rule[] = [
     confirm: true,
     scope: 'projekt',
     check: (ctx) => {
-      const out: { severity: Severity; message: string; ref?: string }[] = [];
+      const out: { severity: Severity; message: string; ref?: string; roomId?: string; outletId?: string }[] = [];
       for (const c of ctx.project.circuits) {
         if (c.afdd) continue;
         const rooms = [...new Set(ownCircuitOutlets(ctx.project, c).map(({ r }) => r))].filter((r) => r.roomType && ROOM_TYPE_INFO[r.roomType].afdd);
@@ -205,9 +205,10 @@ export const NORM_RULES: Rule[] = [
     confirm: true,
     scope: 'projekt',
     check: (ctx) => {
-      const out: { severity: Severity; message: string; ref?: string }[] = [];
+      const out: { severity: Severity; message: string; ref?: string; roomId?: string; outletId?: string }[] = [];
       for (const room of ctx.project.rooms) for (const o of room.outlets.filter((x) => /wallbox|ladestation/i.test(x.note) || room.loads.some((l) => l.outletId === x.id && /wallbox/i.test(l.label)))) {
         const c = ctx.project.circuits.find((x) => x.id === o.circuitId);
+        if (o.kind !== 'festanschluss') out.push({ severity: 'hinweis', outletId: o.id, roomId: room.id, ref: o.label, message: `Wallbox ${o.label}: Wallboxen werden fest angeschlossen – die Zuleitung geht direkt ins Gerät, nicht über eine ${o.kind === 'anschlussdose' ? 'Geräteanschlussdose' : 'Dose'}. Auslass-Typ auf „Festanschluss“ ändern.` });
         if (!c) { out.push({ severity: 'warnung', message: `${o.label} (Wallbox) hat noch keinen Stromkreis.` }); continue; }
         if (ownCircuitOutlets(ctx.project, c).length > 1) out.push({ severity: 'fehler', ref: c.label, message: `Wallbox ${o.label}: Stromkreis ${c.label} versorgt noch weitere Auslässe – Ladepunkt braucht einen eigenen Stromkreis.` });
         const rcd = ctx.project.distributions.flatMap((d) => d.rcds).find((r) => r.id === c.rcdId);
@@ -226,7 +227,7 @@ export const NORM_RULES: Rule[] = [
     confirm: true,
     scope: 'projekt',
     check: (ctx) => {
-      const out: { severity: Severity; message: string; ref?: string }[] = [];
+      const out: { severity: Severity; message: string; ref?: string; roomId?: string; outletId?: string }[] = [];
       for (const c of ctx.project.circuits) {
         const garden = ownCircuitOutlets(ctx.project, c).some(({ o, r }) => r.roomType === 'aussen' || /garten|erdkabel|außenverteil|aussenverteil/i.test(o.note));
         if (!garden) continue;

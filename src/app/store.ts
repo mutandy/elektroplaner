@@ -19,6 +19,8 @@ export interface UiState {
   roomId?: string;
   outletId?: string;
   wallIndex: number;
+  /** Reiter in der Raumansicht (z. B. von einem Lösungsvorschlag aus) */
+  tab?: 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
 }
 
 interface State {

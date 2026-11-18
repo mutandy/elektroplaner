@@ -104,7 +104,7 @@ function Workspace({ project }: { project: Project }) {
   const report = runRules(project);
   const room = project.rooms.find((r) => r.id === ui.roomId);
   const wiz = progress(project);
-  const nav = (view: typeof ui.view, roomId?: string) => store.setUi({ view, roomId, outletId: undefined, wallIndex: 0 });
+  const nav = (view: typeof ui.view, roomId?: string) => store.setUi({ view, roomId, outletId: undefined, wallIndex: 0, tab: undefined });
   return (
       <div className="main">
         <nav className="side">
@@ -140,7 +140,7 @@ function Workspace({ project }: { project: Project }) {
           {ui.view === 'assistent' && <Wizard project={project} />}
           {ui.view === 'projekt' && <ProjectView project={project} />}
           {ui.view === 'verteilung' && <DistributionView project={project} />}
-          {ui.view === 'raum' && room && <RoomView key={room.id} project={project} room={room} outletId={ui.outletId} wallIndex={ui.wallIndex} />}
+          {ui.view === 'raum' && room && <RoomView key={room.id} project={project} room={room} outletId={ui.outletId} wallIndex={ui.wallIndex} tab={ui.tab} />}
           {ui.view === 'raum' && !room && <p>Raum nicht gefunden.</p>}
           {ui.view === 'pruefung' && <RulesView project={project} />}
           {ui.view === 'material' && <MaterialView project={project} />}

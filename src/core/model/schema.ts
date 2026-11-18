@@ -21,7 +21,7 @@
 import { z } from 'zod';
 import { ROOM_TYPES } from './roomTypes';
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 const id = z.string().min(1);
 const cm = z.number().finite();
@@ -341,6 +341,8 @@ export const OutletKind = z.enum([
   'tv_sat',
   'lautsprecher',
   'anschlussdose',
+  /** Leitungsauslass ohne Dose: Gerät wird direkt angeklemmt (z. B. Wallbox) */
+  'festanschluss',
   'herd',
   'licht_decke',
   'licht_wand',
@@ -439,7 +441,7 @@ export const Load = z.object({
   phases: z.union([z.literal(1), z.literal(3)]).default(1),
   /** eigener Stromkreis */
   dedicated: z.boolean().default(false),
-  connection: z.enum(['steckdose', 'anschlussdose', 'herd', 'starkstrom']).default('steckdose'),
+  connection: z.enum(['steckdose', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom']).default('steckdose'),
   /** Auslass, an dem der Verbraucher hängt (falls zugeordnet) */
   outletId: z.string().optional(),
   /** Montagehöhe über FFB für den Anschlussvorschlag */

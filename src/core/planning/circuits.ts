@@ -214,7 +214,7 @@ export interface CircuitProposal {
   notes: string[];
 }
 
-const POWERED: Outlet['kind'][] = ['steckdose', 'schalter', 'taster', 'bewegungsmelder', 'licht_decke', 'licht_wand', 'anschlussdose', 'herd', 'starkstrom'];
+const POWERED: Outlet['kind'][] = ['steckdose', 'schalter', 'taster', 'bewegungsmelder', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'starkstrom'];
 const isLight = (o: Outlet) => ['licht_decke', 'licht_wand', 'schalter', 'taster', 'bewegungsmelder'].includes(o.kind) || (o.kind === 'anschlussdose' && /lüfter|luefter|ventil/i.test(o.note));
 const BIG = /spülmaschine|spuelmaschine|geschirrspül|waschmaschine|trockner|backofen|kühlschrank|kuehlschrank|gefrier|mikrowelle|wärmepumpe|durchlauferhitzer|boiler/i;
 const AV = /rack|\bav\b|av-|beamer|subwoofer|technik|server|netzwerk/i;
@@ -272,13 +272,13 @@ export function proposeCircuits(project: Project, mode: 'offen' | 'alle' = 'offe
     const txt = `${o.note} ${r.furniture.map((f) => '').join('')}`;
     if (o.kind === 'herd') assignment[o.id] = mk(distOf(r), `${r.name}: Herd/Kochfeld`, 'drehstrom', 'Großgerät Drehstrom – eigener Kreis', [r.id]).id;
     else if (/wallbox/i.test(txt)) assignment[o.id] = mk(distOf(r), `${r.name}: Wallbox`, 'wallbox', 'E-Mobilität (VDE 0100-722): eigener Kreis, RCD-Typ nach Wallbox', [r.id]).id;
-    else if (/garten|außen|aussen|erdkabel/i.test(txt) && (o.kind === 'anschlussdose' || o.kind === 'steckdose')) {
+    else if (/garten|außen|aussen|erdkabel/i.test(txt) && (o.kind === 'anschlussdose' || o.kind === 'festanschluss' || o.kind === 'steckdose')) {
       const c = mk(distOf(r), `${r.name}: Außenbereich/Garten`, 'drehstrom', 'Außenbereich eigener Kreis; Erdkabel mit Reserve-Leerrohr', [r.id]);
       c.cable = 'NYY-J 5×4';
       assignment[o.id] = c.id;
     }
     else if (o.kind === 'starkstrom') assignment[o.id] = mk(distOf(r), `${r.name}: CEE/Drehstrom`, 'drehstrom', 'Drehstromsteckdose eigener Kreis', [r.id]).id;
-    else if ((o.kind === 'steckdose' || o.kind === 'anschlussdose') && BIG.test(txt)) assignment[o.id] = mk(distOf(r), `${r.name}: ${(txt.match(BIG)?.[0] ?? 'Großgerät').replace(/^./, (x) => x.toUpperCase())}`, 'gross', 'Großgerät – eigener Kreis (DIN 18015-2)', [r.id]).id;
+    else if ((o.kind === 'steckdose' || o.kind === 'anschlussdose' || o.kind === 'festanschluss') && BIG.test(txt)) assignment[o.id] = mk(distOf(r), `${r.name}: ${(txt.match(BIG)?.[0] ?? 'Großgerät').replace(/^./, (x) => x.toUpperCase())}`, 'gross', 'Großgerät – eigener Kreis (DIN 18015-2)', [r.id]).id;
   }
 
   // 2) Küche Arbeitsfläche: zwei Kreise
@@ -293,7 +293,7 @@ export function proposeCircuits(project: Project, mode: 'offen' | 'alle' = 'offe
 
   // 3) Bad: Steckdosen eigener Kreis; AV/Technik eigener Kreis
   for (const r of rooms) {
-    const rest = r.outlets.filter((o) => open(o) && !assignment[o.id] && (o.kind === 'steckdose' || o.kind === 'anschlussdose') && !isLight(o));
+    const rest = r.outlets.filter((o) => open(o) && !assignment[o.id] && (o.kind === 'steckdose' || o.kind === 'anschlussdose' || o.kind === 'festanschluss') && !isLight(o));
     const av = rest.filter((o) => AV.test(o.note));
     if (av.length) { const c = mk(distOf(r), `${r.name}: AV/Technik`, 'steckdose', 'Technik/AV getrennt von Raumsteckdosen', [r.id]); av.forEach((o) => (assignment[o.id] = c.id)); }
     if (isBath(r)) { const b = rest.filter((o) => !assignment[o.id]); if (b.length) { const c = mk(distOf(r), `${r.name}: Steckdosen`, 'steckdose', 'Bad eigener Kreis (Föhn, Heizlüfter)', [r.id]); b.forEach((o) => (assignment[o.id] = c.id)); } }
@@ -302,7 +302,7 @@ export function proposeCircuits(project: Project, mode: 'offen' | 'alle' = 'offe
   // 4) Übrige Steckdosen: je Raum, kleine Räume zusammenfassen
   const pending = new Map<string, { places: number; circuit: Circuit }>();
   for (const r of rooms) {
-    const rest = r.outlets.filter((o) => open(o) && !assignment[o.id] && (o.kind === 'steckdose' || o.kind === 'anschlussdose') && !isLight(o));
+    const rest = r.outlets.filter((o) => open(o) && !assignment[o.id] && (o.kind === 'steckdose' || o.kind === 'anschlussdose' || o.kind === 'festanschluss') && !isLight(o));
     if (!rest.length) continue;
     const places = rest.reduce((s, o) => s + Math.max(1, o.inserts.filter((i) => i.startsWith('steckdose')).length || o.gangs), 0);
     const d = distOf(r);

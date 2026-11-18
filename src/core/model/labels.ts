@@ -16,6 +16,7 @@ export const outletKindLabel: Record<OutletKind, string> = {
   tv_sat: 'TV/SAT',
   lautsprecher: 'Lautsprecher',
   anschlussdose: 'Geräteanschlussdose',
+  festanschluss: 'Festanschluss (Leitung direkt ans Gerät)',
   herd: 'Herdanschluss',
   licht_decke: 'Deckenauslass Licht',
   licht_wand: 'Wandauslass Licht',
@@ -29,7 +30,7 @@ export const outletKindLabel: Record<OutletKind, string> = {
 /** Kurzzeichen im Plan. */
 export const outletKindShort: Record<OutletKind, string> = {
   steckdose: 'SD', schalter: 'S', taster: 'T', bewegungsmelder: 'BWM', lan: 'LAN', tv_sat: 'TV',
-  lautsprecher: 'LS', anschlussdose: 'AD', herd: 'HE', licht_decke: 'L', licht_wand: 'WL',
+  lautsprecher: 'LS', anschlussdose: 'AD', festanschluss: 'FA', herd: 'HE', licht_decke: 'L', licht_wand: 'WL',
   rauchwarnmelder: 'RWM', leerdose: 'LD', klingel: 'KL', starkstrom: 'CEE', sonstiges: '?',
 };
 

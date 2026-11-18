@@ -165,7 +165,7 @@ export function LoadsEditor({ room }: { room: Room }) {
           { key: 'power', label: 'Leistung W', type: 'number' },
           { key: 'phases', label: 'Phasen', type: 'select', options: [{ value: '1', label: '230 V' }, { value: '3', label: '400 V (3~)' }] },
           { key: 'dedicated', label: 'eigener Kreis', type: 'check' },
-          { key: 'connection', label: 'Anschluss', type: 'select', options: opts({ steckdose: 'Steckdose', anschlussdose: 'Geräteanschlussdose', herd: 'Herdanschluss', starkstrom: 'CEE/Drehstrom' }) },
+          { key: 'connection', label: 'Anschluss', type: 'select', options: opts({ steckdose: 'Steckdose', anschlussdose: 'Geräteanschlussdose', festanschluss: 'Festanschluss (z. B. Wallbox)', herd: 'Herdanschluss', starkstrom: 'CEE/Drehstrom' }) },
           { key: 'outletId', label: 'an Auslass', type: 'select', allowEmpty: '– noch keiner –', options: outletOpts },
         ] as Col<any>[]}
         onChange={(i, k, v) => up(`Verbraucher ${k}`, (r) => { (r.loads[i] as any)[k] = k === 'phases' ? Number(v) : v; })}

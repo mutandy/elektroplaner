@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Draft } from 'immer';
 import type { Outlet, Project, Room } from '../../core/model/schema';
 import { newId } from '../../core/model/factory';
@@ -7,6 +7,8 @@ import { boxTypeLabel, ceilingLabel, insertLabel, installationTypeLabel, outletK
 import { FURNITURE_TYPES } from '../../core/model/catalog';
 import { ALL_LAYERS, layerLabel, type Layer } from '../../core/render/plan';
 import { runRules, severityLabel, effectiveSmart } from '../../core/rules/rules';
+import { fixesFor, hasFixes, type FixProposal } from '../../core/rules/fixes';
+import type { RuleFinding } from '../../core/rules/types';
 import { normValue } from '../../core/rules/normValues';
 import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts, type Col } from '../components/ui';
@@ -94,8 +96,9 @@ function newOutlet(project: Project, room: Room, kind: Outlet['kind'], wallIndex
   return { ...base, mount: 'wand', wallIndex: wi, s: Math.round(s * 10) / 10, z: defaultZ(project, room, kind), inserts: inserts[kind] ?? [] };
 }
 
-export function RoomView({ project, room, outletId, wallIndex }: { project: Project; room: Room; outletId?: string; wallIndex: number }) {
-  const [tab, setTab] = useState<Tab>('bau');
+export function RoomView({ project, room, outletId, wallIndex, tab: wantedTab }: { project: Project; room: Room; outletId?: string; wallIndex: number; tab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(wantedTab ?? 'bau');
+  useEffect(() => { if (wantedTab) setTab(wantedTab); }, [wantedTab]);
   const [layers, setLayers] = useState<Layer[]>(ALL_LAYERS.filter((l) => l !== 'zonen'));
   const showLayers = tab === 'leitungen' && !layers.includes('trassen') ? [...layers, 'trassen' as Layer] : layers;
   const walls = wallGeoms(room);
@@ -392,7 +395,7 @@ export function EinrichtungTab({ room, wallOpts }: { room: Room; wallOpts: { val
 
 // ---------------------------------------------------------------------------
 
-const QUICK: Outlet['kind'][] = ['steckdose', 'schalter', 'taster', 'lan', 'licht_decke', 'licht_wand', 'anschlussdose', 'herd', 'lautsprecher', 'tv_sat', 'rauchwarnmelder', 'starkstrom', 'leerdose'];
+const QUICK: Outlet['kind'][] = ['steckdose', 'schalter', 'taster', 'lan', 'licht_decke', 'licht_wand', 'anschlussdose', 'festanschluss', 'herd', 'lautsprecher', 'tv_sat', 'rauchwarnmelder', 'starkstrom', 'leerdose'];
 
 function AuslassTab({ project, room, wallOpts, wallIndex, selected }: { project: Project; room: Room; wallOpts: { value: string; label: string }[]; wallIndex: number; selected?: Outlet }) {
   const circuitOpts = project.circuits.map((c) => ({ value: c.id, label: `${c.label} ${c.name}` }));
@@ -524,27 +527,62 @@ export function SummaryTab({ project, room, findings }: { project: Project; room
         </Section>
       )}
       <Section title={`Regelprüfung (${findings.length})`}>
-        <FindingsList findings={findings} />
+        <FindingsList findings={findings} fixProject={project} />
       </Section>
     </>
   );
 }
 
-export function FindingsList({ findings, project }: { findings: ReturnType<typeof runRules>['findings']; project?: Project }) {
+export function FindingsList({ findings, project, fixProject }: { findings: RuleFinding[]; project?: Project; fixProject?: Project }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const p = project ?? fixProject;
   if (!findings.length) return <p className="ok">✔ Keine Auffälligkeiten.</p>;
   return (
     <table className="findings">
-      <thead><tr><th>Status</th>{project && <th>Raum</th>}<th>Meldung</th><th>Quelle</th></tr></thead>
+      <thead><tr><th>Status</th>{project && <th>Raum</th>}<th>Meldung</th><th>Quelle</th>{p && <th />}</tr></thead>
       <tbody>
         {findings.map((f, i) => (
-          <tr key={i} className={`sev-${f.severity}`} onClick={() => f.roomId && store.setUi({ view: 'raum', roomId: f.roomId, outletId: f.outletId })}>
-            <td><span className={`pill sev-${f.severity}`}>{severityLabel[f.severity]}</span></td>
-            {project && <td>{project.rooms.find((r) => r.id === f.roomId)?.name ?? 'Projekt'}</td>}
-            <td>{f.message}</td>
-            <td className="small">{f.source}{f.confirm && <span className="confirm"> ⚠ vom Elektriker zu bestätigen</span>}</td>
-          </tr>
+          <FindingRow key={`${f.ruleId}:${f.roomId}:${f.outletId}:${f.ref}:${i}`} f={f} project={project} fixProject={p} open={open === i} onToggle={() => setOpen(open === i ? null : i)} />
         ))}
       </tbody>
     </table>
+  );
+}
+
+function FindingRow({ f, project, fixProject, open, onToggle }: { f: RuleFinding; project?: Project; fixProject?: Project; open: boolean; onToggle: () => void }) {
+  const cols = 3 + (project ? 1 : 0) + (fixProject ? 1 : 0);
+  return (
+    <>
+      <tr className={`sev-${f.severity}`} onClick={() => f.roomId && store.setUi({ view: 'raum', roomId: f.roomId, outletId: f.outletId, tab: f.outletId ? 'auslaesse' : undefined })}>
+        <td><span className={`pill sev-${f.severity}`}>{severityLabel[f.severity]}</span></td>
+        {project && <td>{project.rooms.find((r) => r.id === f.roomId)?.name ?? 'Projekt'}</td>}
+        <td>{f.message}</td>
+        <td className="small">{f.source}{f.confirm && <span className="confirm"> ⚠ vom Elektriker zu bestätigen</span>}</td>
+        {fixProject && <td style={{ whiteSpace: 'nowrap' }}>{hasFixes(f) && <button className={`small ${open ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggle(); }} aria-expanded={open}>💡 Lösung{open ? ' ▴' : ' vorschlagen'}</button>}</td>}
+      </tr>
+      {open && fixProject && <tr className="fixrow"><td colSpan={cols}><FixList project={fixProject} f={f} onDone={onToggle} /></td></tr>}
+    </>
+  );
+}
+
+/** Geprüfte Lösungsvorschläge zu einer Meldung (werden erst beim Aufklappen berechnet). */
+function FixList({ project, f, onDone }: { project: Project; f: RuleFinding; onDone: () => void }) {
+  const [list] = useState<FixProposal[]>(() => fixesFor(project, f));
+  const take = (x: FixProposal) => {
+    if (x.apply) store.update(`Lösungsvorschlag: ${x.label}`, (d) => x.apply!(d as Project));
+    if (x.goto) store.setUi({ view: x.goto.view, roomId: x.goto.roomId, outletId: x.goto.outletId, tab: x.goto.tab });
+    onDone();
+  };
+  if (!list.length) return <p className="muted small">Kein automatischer Vorschlag gefunden, der die Meldung löst, ohne neue Probleme zu schaffen – bitte von Hand anpassen.</p>;
+  return (
+    <div className="fixlist">
+      {list.map((x) => (
+        <div key={x.id} className="fix">
+          <div className="fix-text"><b>{x.label}</b>{x.detail && <div className="muted small">{x.detail}</div>}</div>
+          <button className={x.apply ? 'primary small' : 'small'} onClick={() => take(x)}>{x.apply ? 'Übernehmen' : 'Hingehen →'}</button>
+        </div>
+      ))}
+      {list.some((x) => x.apply) && <p className="muted small">Vorschläge sind vorab geprüft: Die Meldung verschwindet, ohne dass neue Fehler oder Warnungen entstehen. Rückgängig mit ↶.</p>}
+    </div>
   );
 }

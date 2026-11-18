@@ -104,6 +104,25 @@ const migrations: Record<number, (p: any) => any> = {
     });
     return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
   },
+  // v7 → v8: Wallbox wird fest angeschlossen (Leitungsauslass), nicht über eine Geräteanschlussdose.
+  7: (p) => {
+    const WB = /wallbox|ladestation/i;
+    const up = (core: any) => ({
+      ...core,
+      schemaVersion: 8,
+      rooms: (core.rooms ?? []).map((r: any) => {
+        const wbLoads = new Set((r.loads ?? []).filter((l: any) => WB.test(l.label ?? '')).map((l: any) => l.outletId).filter(Boolean));
+        return {
+          ...r,
+          loads: (r.loads ?? []).map((l: any) => (WB.test(l.label ?? '') && l.connection === 'anschlussdose' ? { ...l, connection: 'festanschluss' } : l)),
+          outlets: (r.outlets ?? []).map((o: any) => (o.kind === 'anschlussdose' && (WB.test(o.note ?? '') || wbLoads.has(o.id))
+            ? { ...o, kind: 'festanschluss', inserts: (o.inserts ?? []).filter((i: string) => i !== 'geraeteanschluss') }
+            : o)),
+        };
+      }),
+    });
+    return { ...up(p), versions: (p.versions ?? []).map((v: any) => ({ ...v, snapshot: up(v.snapshot) })) };
+  },
 };
 
 export function migrate(raw: any): any {

@@ -99,6 +99,27 @@ Die App startet mit der **Projektübersicht**. Dort legst du neue Projekte an, f
 - Jedes Gerät öffnet beim Start das Projekt, das dort zuletzt offen war.
 - Ohne Server liegen die Projekte im Browser (IndexedDB), mit Server zentral auf dem Server.
 
+## Lösungsvorschläge zu Prüfmeldungen
+
+Bei jeder Meldung (Prüfung, Raum-Zusammenfassung) gibt es den Knopf **„💡 Lösung vorschlagen“**. Die App berechnet mögliche Lösungen, zum Beispiel:
+- fehlende Steckdose an eine freie Stelle setzen oder eine vorhandene Dose erweitern
+- Schalter auf die Griffseite verschieben, Dose aus Türblatt, Ecke, Tabuzone oder Bad-Schutzbereich holen
+- Rauchwarnmelder oder Deckenauslass setzen
+- RCD zuordnen oder neu vorsehen, Querschnitt vergrößern, AFDD/SPD vorsehen, NYY statt NYM
+- Wallbox als Festanschluss planen, Türanschlag tauschen
+
+Jeder Vorschlag wird vorab **probeweise angewendet und neu geprüft**. Angeboten wird er nur, wenn die Meldung danach verschwindet und kein neuer Fehler und keine neue Warnung entstehen. Wo sich nichts sinnvoll berechnen lässt, führt der Vorschlag direkt zur passenden Eingabe. Code: `src/core/rules/fixes.ts`.
+
+## Aufmaß Schritt für Schritt (Handy)
+
+Im Assistenten unter „Räume je Geschoss anlegen“ legt **„📏 Raum aufmessen“** einen Raum an. Im Schritt „Maße“ eines Raums misst **„Schritt für Schritt aufmessen“** einen bestehenden Raum neu. Der Ablauf ist fürs Handy vor Ort gebaut: eine Frage pro Bildschirm, große Zahlenfelder, eine Skizze mit der gerade gemeinten Wand.
+
+1. Länge Wand 1 (die Wand, vor der man steht), Länge Wand 2 (rechts davon), Raumhöhe
+2. Öffnungen einzeln: Tür, Fenster, Garagentor/Tor, Durchgang ohne Tür oder sonstige Öffnung. Dazu jeweils die Wand, der Abstand von der linken oder rechten Ecke, Breite und Höhe; bei Fenstern die Brüstung, bei Türen Bänder, Aufschlag und wohin sie führt.
+3. Name, Zusammenfassung, Raum anlegen. Die Öffnungen sitzen danach an der richtigen Stelle.
+
+Öffnungen, die nicht auf die Wand passen oder sich überschneiden, meldet die App sofort. Ein angefangenes Aufmaß bleibt im Browser erhalten, auch wenn das Handy zwischendurch sperrt. Code: `src/core/wizard/measure.ts`, `src/app/wizard/MeasureFlow.tsx`.
+
 ## Bedienung in Kürze
 
 ### Assistent (Start bei Null)

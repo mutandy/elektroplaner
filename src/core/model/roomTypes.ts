@@ -21,7 +21,7 @@ export interface LoadTemplate {
   /** standardmäßig ausgewählt */
   default: boolean;
   /** Art des Anschlusses (für Vorschläge) */
-  connection: 'steckdose' | 'anschlussdose' | 'herd' | 'starkstrom';
+  connection: 'steckdose' | 'anschlussdose' | 'festanschluss' | 'herd' | 'starkstrom';
   /** Montagehöhe über FFB für den Vorschlag */
   height?: number;
 }
@@ -91,7 +91,7 @@ export const ROOM_TYPE_INFO: Record<RoomTypeId, RoomTypeInfo> = {
   werkstatt: { id: 'werkstatt', label: 'Werkstatt', hint: 'Werkbank, Elektrowerkzeuge', minSockets: () => 3, minLights: () => 2, lux: 500, installation: 'aufputz_rohr',
     loads: [L('Elektrowerkzeuge', 2000, { height: 105 }), L('Kompressor', 1500, { default: false, height: 105 }), L('Kreissäge / Maschinen (Drehstrom)', 4000, { phases: 3, dedicated: true, default: false, connection: 'starkstrom', height: 105 })] },
   garage: { id: 'garage', label: 'Garage / Carport', hint: 'Wallbox, Torantrieb', minSockets: () => 1, minLights: () => 1, lux: 100, installation: 'aufputz_rohr',
-    loads: [L('Wallbox 11 kW', 11000, { phases: 3, dedicated: true, connection: 'anschlussdose', height: 125 }), L('Torantrieb', 300, { connection: 'steckdose' }), L('CEE-Steckdose 16 A', 11000, { phases: 3, dedicated: true, default: false, connection: 'starkstrom', height: 105 }), L('Werkzeuge, Staubsauger', 2000, { height: 105 })] },
+    loads: [L('Wallbox 11 kW', 11000, { phases: 3, dedicated: true, connection: 'festanschluss', height: 125 }), L('Torantrieb', 300, { connection: 'steckdose' }), L('CEE-Steckdose 16 A', 11000, { phases: 3, dedicated: true, default: false, connection: 'starkstrom', height: 105 }), L('Werkzeuge, Staubsauger', 2000, { height: 105 })] },
   abstell: { id: 'abstell', label: 'Abstellraum', hint: 'Regale', minSockets: () => 1, minLights: () => 1, lux: 100, loads: [L('Staubsauger-Ladestation', 100, { default: false })] },
   aussen: { id: 'aussen', label: 'Außenbereich / Garten', hint: 'Terrasse, Garten, Pumpe', minSockets: () => 1, minLights: () => 1, lux: 20,
     loads: [L('Rasenmäher, Gartengeräte', 1500), L('Teich-/Brunnenpumpe', 500, { default: false }), L('Außenbeleuchtung', 100)] },

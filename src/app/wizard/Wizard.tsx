@@ -16,6 +16,7 @@ import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Select, TextInput, opts, type Col } from '../components/ui';
 import { RoomPlan } from '../components/PlanCanvas';
 import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer';
+import { MeasureFlow } from './MeasureFlow';
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
 import { runRules } from '../../core/rules/rules';
@@ -412,6 +413,7 @@ function PlanStep({ project }: { project: Project }) {
 
 function RoomsStep({ project }: { project: Project }) {
   const [tracing, setTracing] = useState<string | null>(null);
+  const [measuring, setMeasuring] = useState<string | null>(null);
   const addRoom = (floorId: string) => {
     const fb = project.settings.defaultFutureBuildup;
     const fl = project.floors.find((f) => f.id === floorId);
@@ -431,22 +433,24 @@ function RoomsStep({ project }: { project: Project }) {
         const tracingRoom = rooms.find((r) => r.id === tracing);
         return (
           <div key={floor.id} className="floorcard">
-            <div className="inline"><b>{floor.name}</b><span className="muted small">{rooms.length} Räume · Geschosshöhe {fmt(floor.height)} cm</span><span className="spacer" /><button className="small" onClick={() => addRoom(floor.id)}>＋ Raum im {floor.name}</button></div>
+            <div className="inline"><b>{floor.name}</b><span className="muted small">{rooms.length} Räume · Geschosshöhe {fmt(floor.height)} cm</span><span className="spacer" /><button className="small primary" onClick={() => setMeasuring(floor.id)} title="Schritt für Schritt: Innenmaße, Höhe, Türen, Fenster – ideal am Handy vor Ort">📏 Raum aufmessen</button><button className="small" onClick={() => addRoom(floor.id)}>＋ Raum (Maße später)</button></div>
+            {measuring === floor.id && <MeasureFlow project={project} floorId={floor.id} onClose={() => setMeasuring(null)} />}
             <EditTable rows={rooms} rowKey={(r) => r.id} selectedKey={tracing ?? undefined}
               cols={[
                 { key: 'formerName', label: 'Im Bestandsplan', type: 'text' },
                 { key: 'name', label: 'Künftiger Name', type: 'text' },
                 { key: 'roomType', label: 'Nutzung', type: 'readonly', render: (r: Room) => <Select value={r.roomType} allowEmpty="– wählen –" options={typeOpts} onChange={(v) => v && setRoomType(project, r, v as RoomTypeId)} /> },
                 { key: 'inScope', label: 'wird geplant', type: 'check' },
-                { key: 'id', label: 'Größe', type: 'readonly', render: (r: Room) => <span className="small">{isRectRoom(r) ? `${fmt(r.polygon[1].x)} × ${fmt(r.polygon[2].y)}` : `${fmt(roomArea(r), 1)} m²`}{r.provenance === 'annahme' ? ' (vorläufig)' : ''}</span> },
+                { key: 'id', label: 'Breite × Tiefe × Höhe (cm)', type: 'readonly', render: (r: Room) => <RoomSizeEditor room={r} /> },
                 { key: 'id', label: '', type: 'readonly', render: (r: Room) => floor.backgroundScale ? <button className="small" onClick={(e) => { e.stopPropagation(); setTracing(tracing === r.id ? null : r.id); }}>{tracing === r.id ? 'Abbrechen' : 'Im Plan aufziehen'}</button> : null },
               ] as Col<any>[]}
               onChange={(i, k, v) => up(`Raum ${k}`, (p) => { const id = rooms[i].id; (p.rooms.find((x) => x.id === id) as any)[k] = v; })}
               onRemove={(i) => up(`Raum ${rooms[i].name} entfernt`, (p) => { p.rooms = p.rooms.filter((x) => x.id !== rooms[i].id); })}
               empty={`Noch keine Räume im ${floor.name}.`} />
+            {rooms.length > 0 && <p className="muted small">Maße kannst du hier grob eintragen oder aus dem Plan übernehmen – sie lassen sich jederzeit ändern. Im nächsten Schritt fragt der Assistent je Raum die genauen, vor Ort gemessenen Maße ab und du kannst sie dort noch einmal anpassen, auch wenn du den Raum im Plan aufgezogen hast.</p>}
             {tracingRoom && floor.backgroundScale && (
               <>
-                <p className="small"><b>„{tracingRoom.name}“ aufziehen:</b> zwei gegenüberliegende Ecken anklicken.</p>
+                <p className="small"><b>„{tracingRoom.name}“ aufziehen:</b> zwei gegenüberliegende Ecken anklicken (zum genauen Treffen vorher hineinzoomen). Die Maße aus dem Plan sind ein Startwert – du kannst sie danach in der Tabelle und im Schritt „Maße“ anpassen.</p>
                 <PlanTracer floor={floor} rooms={rooms} mode="raum" highlightRoomId={tracingRoom.id}
                   onRect={(rc) => {
                     upRoom(tracingRoom.id, `${tracingRoom.name}: Lage aus Grundriss`, (r) => {
@@ -464,6 +468,27 @@ function RoomsStep({ project }: { project: Project }) {
       })}
       <Why>Für jeden Raum, der geplant wird, fragt der Assistent danach Nutzung, Maße, Wände, Türen, Fenster, Boden, Decke und Einrichtung ab – Geschoss für Geschoss.</Why>
     </>
+  );
+}
+
+/** Maße direkt in der Raumliste: Rechteckräume Breite × Tiefe, alle Räume Höhe. */
+function RoomSizeEditor({ room }: { room: Room }) {
+  const rect = isRectRoom(room);
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  return (
+    <div className="sizeedit" onClick={stop}>
+      {rect ? (
+        <>
+          <NumberInput width="5em" value={room.polygon[1].x} min={30} onChange={(v) => v && upRoom(room.id, `${room.name}: Breite ${v} cm`, (r) => { r.polygon[1].x = v; r.polygon[2].x = v; })} />
+          <span>×</span>
+          <NumberInput width="5em" value={room.polygon[2].y} min={30} onChange={(v) => v && upRoom(room.id, `${room.name}: Tiefe ${v} cm`, (r) => { r.polygon[2].y = v; r.polygon[3].y = v; })} />
+        </>
+      ) : <span className="small" title="Kein Rechteck – Ecken im Schritt „Maße“ bzw. in der Expertenansicht ändern">{fmt(roomArea(room), 1)} m²</span>}
+      <span>×</span>
+      <NumberInput width="4.5em" value={room.height} min={100} onChange={(v) => v && upRoom(room.id, `${room.name}: Höhe ${v} cm`, (r) => { r.height = v; })} />
+      {room.provenance === 'annahme' && <span className="muted small">vorläufig</span>}
+      {room.provenance === 'aus_plan' && <span className="muted small">aus Plan</span>}
+    </div>
   );
 }
 
@@ -563,6 +588,7 @@ function RoomStep({ project, room, step }: { project: Project; room: Room; step:
 
 function MassStep({ project, room }: { project: Project; room: Room }) {
   const rect = isRectRoom(room);
+  const [measuring, setMeasuring] = useState(false);
   const [corner, setCorner] = useState<RectCorner>(3);
   const [dx, setDx] = useState<number | null>(null);
   const [dy, setDy] = useState<number | null>(null);
@@ -571,6 +597,9 @@ function MassStep({ project, room }: { project: Project; room: Room }) {
   return (
     <>
       <p>Miss den Raum innen <b>von Wand zu Wand im Rohbau</b> (ohne Fliesen/Putz, die noch kommen).</p>
+      {room.provenance === 'aus_plan' && <p className="muted small">Die Werte stammen aus dem aufgezogenen Grundriss. Trag hier die gemessenen Maße ein – die Lage im Plan bleibt erhalten.</p>}
+      {rect && <p><button className="primary" onClick={() => setMeasuring(true)}>📏 Schritt für Schritt aufmessen (Maße, Höhe, Türen, Fenster)</button> <span className="muted small">– ideal am Handy vor Ort</span></p>}
+      {measuring && <MeasureFlow project={project} floorId={room.floorId} room={room} onClose={() => setMeasuring(false)} />}
       {rect ? (
         <div className="grid3">
           <Field label="Breite (waagerecht im Plan, cm)"><NumberInput value={room.polygon[1].x} onChange={(v) => v && upRoom(room.id, `${room.name}: Breite`, (r) => { r.polygon[1].x = v; r.polygon[2].x = v; r.provenance = 'gemessen'; })} /></Field>
