@@ -15,6 +15,7 @@ import { Check, EditTable, Field, NumberInput, Section, Select, TextInput, opts,
 import { RoomPlan, WallElevation } from '../components/PlanCanvas';
 import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType, TheaterPanel } from '../components/Planning';
 import { RoomTextAi, RoomPhotos } from '../ai/AiPanels';
+import { NotchEditor } from '../assistant/Assistant';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 
 type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
@@ -198,6 +199,7 @@ function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wal
             onChange={(i, k, v) => upRoom(id, `${room.name}: Ecke ${i + 1}`, (r) => { (r.polygon[i] as any)[k] = v; })}
             onRemove={(i) => removeCorner(id, i)} />
         )}
+        <NotchEditor room={room} />
         <div className="grid3">
           <Field label="Lage im Geschoss x"><NumberInput value={room.originOnFloor.x} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.x = v; })} /></Field>
           <Field label="Lage im Geschoss y"><NumberInput value={room.originOnFloor.y} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.y = v; })} /></Field>

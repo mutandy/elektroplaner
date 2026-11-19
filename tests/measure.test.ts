@@ -51,3 +51,43 @@ describe('Aufmaß Schritt für Schritt', () => {
     expect(back.openings.find((o) => o.kind === 'tor')).toMatchObject({ wall: 2, distance: 25, from: 'links' });
   });
 });
+
+describe('Aufmaß mit Kamin', () => {
+  it('Küche mit Kamin unten links: Tür ab Kaminkante gemessen sitzt richtig, Kaminwangen sind Tabuzone', async () => {
+    const { shapeWalls } = await import('../src/core/wizard/measure');
+    const d: MeasureDraft = {
+      ...emptyDraft('Küche'), length1: 400, length2: 300, height: 225,
+      notches: [{ id: 'k', kind: 'ecke', what: 'kamin', corner: 3, a: 54, b: 38 }],
+      openings: [],
+    };
+    const walls = shapeWalls(d);
+    expect(walls.map((w) => w.length)).toEqual([400, 300, 346, 38, 54, 262]);
+    expect(walls[3].label).toBe('Kaminwange');
+    // Tür in Wand 6 (läuft von der Kaminkante nach oben; Blick auf die Wand: Kaminkante links): 20 cm ab der oberen Ecke, also von rechts gemessen
+    d.openings.push({ id: 't', kind: 'tuer', wall: 5, distance: 20, from: 'rechts', width: 88.5, height: 201, hinge: 'links', swing: 'innen' });
+    expect(checkOpening(d, d.openings[0])).toEqual([]);
+    const base = createRectRoom({ id: 'r', floorId: 'eg', name: 'x', width: 100, depth: 100, height: 200 });
+    const r = produce(base, (x) => { applyMeasure(x as Room, d); });
+    expect(r.polygon).toHaveLength(6);
+    expect(r.doors[0]).toMatchObject({ wallIndex: 5, s: 262 - 20 - 88.5 });
+    expect(r.walls.filter((w) => w.zones.some((z) => z.kind === 'kaminwange'))).toHaveLength(2);
+  });
+
+  it('Vorsprung mitten an der Wand und unmögliche Maße', async () => {
+    const { shapeWalls, notchError } = await import('../src/core/wizard/measure');
+    const d: MeasureDraft = { ...emptyDraft(''), length1: 400, length2: 300, height: 250, notches: [{ id: 'p', kind: 'wand', what: 'vorsprung', wall: 0, from: 100, a: 40, b: 25 }], openings: [] };
+    expect(shapeWalls(d).length).toBe(8);
+    expect(notchError(d, { id: 'x', kind: 'ecke', what: 'schacht', corner: 1, a: 500, b: 20 })).toMatch(/kleiner/);
+  });
+
+  it('Raum mit eigener Form: nur Höhe und Öffnungen ändern, Form bleibt', () => {
+    const base = createRectRoom({ id: 'r', floorId: 'eg', name: 'x', width: 400, depth: 300, height: 200 });
+    const shaped = produce(base, (x) => { applyMeasure(x as Room, { ...emptyDraft(''), length1: 400, length2: 300, height: 225, notches: [{ id: 'k', kind: 'ecke', what: 'kamin', corner: 3, a: 54, b: 38 }], openings: [] }); });
+    const d = draftFromRoom(shaped as Room);
+    expect(d.fixedPolygon).toHaveLength(6);
+    d.openings.push({ id: 'f', kind: 'fenster', wall: 0, distance: 100, from: 'links', width: 80, height: 60, sill: 150 });
+    const after = produce(shaped, (x) => { applyMeasure(x as Room, d); });
+    expect(after.polygon).toEqual(shaped.polygon);
+    expect(after.windows).toHaveLength(1);
+  });
+});

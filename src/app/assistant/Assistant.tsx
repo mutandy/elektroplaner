@@ -30,6 +30,8 @@ import { PlanTracer, loadImage } from '../components/PlanTracer';
 import { FeasibilityPanel, TheaterPanel, acceptSuggestions } from '../components/Planning';
 import { FloorPlanAi, DistributionPhotoAi, AiKeySettings } from '../ai/AiPanels';
 import { MeasureFlow } from '../wizard/MeasureFlow';
+import { convexCorners, notchCorner, projectWall } from '../../core/geometry/edit';
+import { wallGeoms } from '../../core/geometry/room';
 import { BuildingStep, ReferenceStep, InstallationStep, DistributionStep, NetworkStep, WallsStep, CeilingStep, FloorStep, ExistingStep } from '../wizard/Wizard';
 import { Chip, Chips, More, Note, NumField, TextField, Tile, Tiles } from './kit';
 
@@ -534,21 +536,75 @@ function SizeQuestion({ project, room, next }: { project: Project; room: Room; n
       {rect && <NumField label="Wand 2, cm" unit="" value={room.polygon[2].y} onChange={(v) => setDim('d', v)} />}
       <NumField label="Höhe, cm" unit="" value={room.height} onChange={(v) => setDim('h', v)} />
     </div>
-    {!rect && <Note>Der Raum hat {room.polygon.length} Ecken ({fmt(roomArea(room), 1)} m²). Ecken änderst du in der Expertenansicht.</Note>}
+    {!rect && <Note>Der Raum hat {room.polygon.length} Ecken ({fmt(roomArea(room), 1)} m²).</Note>}
+    {!rect && <button className="a-big" onClick={() => setMeasuring(true)}><Ruler size={20} aria-hidden /> Neu aufmessen (Form wird neu erfasst)</button>}
+    <NotchEditor room={room} />
     {floor.backgroundScale && <button className="small" onClick={() => setTracing(!tracing)}>{tracing ? 'Plan schließen' : 'Im Grundriss einzeichnen'}</button>}
     {tracing && <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode="raum" highlightRoomId={room.id}
       onRect={(rc) => { upRoom(room.id, `${room.name}: Lage aus Grundriss`, (r) => { r.originOnFloor = { x: rc.x, y: rc.y }; if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }]; r.provenance = 'aus_plan'; }); setTracing(false); }} />}
     <div className="a-preview"><RoomPlan project={project} room={room} layers={['moebel', 'masse']} /></div>
-    {measuring && <MeasureFlow project={project} floorId={room.floorId} room={room} onClose={(id) => {
+    {measuring && <MeasureFlow project={project} floorId={room.floorId} room={room} fresh={!rect} onClose={(id) => {
       setMeasuring(false);
       if (id) { store.silent((p) => { for (const k of ['oeffnungen']) { const qid = `raum:${room.id}:${k}`; if (!p.wizard.done.includes(qid)) p.wizard.done.push(qid); } }); next(); }
     }} />}
   </Q>;
 }
 
+/** Kamin, Schacht, Pfeiler: in einer Ecke aussparen oder mitten an einer Wand. Wirkt sofort, Rückgängig mit ↶. */
+export function NotchEditor({ room }: { room: Room }) {
+  const [mode, setMode] = useState<'ecke' | 'wand' | null>(null);
+  const [what, setWhat] = useState<'kamin' | 'schacht' | 'vorsprung'>('kamin');
+  const corners = convexCorners(room);
+  const geoms = wallGeoms(room);
+  const [corner, setCorner] = useState<number | null>(null);
+  const [wallI, setWallI] = useState<number | null>(null);
+  const [a, setA] = useState<number | null>(50);
+  const [b, setB] = useState<number | null>(40);
+  const [from, setFrom] = useState<number | null>(null);
+  const [err, setErr] = useState('');
+  const zone = what === 'kamin' ? 'kaminwange' as const : 'tabu' as const;
+  const label = { kamin: 'Kamin', schacht: 'Schacht', vorsprung: 'Pfeiler' }[what];
+  const existing = room.walls.filter((w) => /kamin|vorsprung/i.test(w.label)).length;
+  const c = corners.find((x) => x.vertex === corner);
+  const apply = () => {
+    setErr('');
+    try {
+      const next = mode === 'ecke' && c ? notchCorner(room, c.vertex, a ?? 0, b ?? 0, zone) : mode === 'wand' && wallI != null ? projectWall(room, wallI, from ?? 0, a ?? 0, b ?? 0, zone) : null;
+      if (!next) { setErr(mode === 'ecke' ? 'Bitte eine Ecke wählen.' : 'Bitte eine Wand wählen.'); return; }
+      upRoom(room.id, `${room.name}: ${label} ${mode === 'ecke' ? 'in der Ecke' : 'an der Wand'} eingetragen`, (r) => { Object.assign(r, JSON.parse(JSON.stringify(next))); });
+      setMode(null); setCorner(null); setWallI(null);
+    } catch (e) { setErr((e as Error).message); }
+  };
+  return (
+    <div className="a-more is-open">
+      <p className="a-num-label">Kamin, Schacht oder Vorsprung?{existing ? ` ${existing} Wandfläche${existing === 1 ? '' : 'n'} am Vorsprung eingetragen.` : ''}</p>
+      {!mode && <Tiles cols={2}>
+        <Tile icon={Square} label="In einer Ecke" hint="z. B. Kamin in der Raumecke" onClick={() => setMode('ecke')} />
+        <Tile icon={Layers} label="Mitten an einer Wand" hint="Pfeiler, Schacht, Kamin" onClick={() => setMode('wand')} />
+      </Tiles>}
+      {mode && <>
+        <Chips>{(['kamin', 'schacht', 'vorsprung'] as const).map((w) => <Chip key={w} label={{ kamin: 'Kamin', schacht: 'Schacht', vorsprung: 'Pfeiler / Vorsprung' }[w]} selected={what === w} onClick={() => setWhat(w)} />)}</Chips>
+        {mode === 'ecke'
+          ? <Chips>{corners.map((x) => <Chip key={x.vertex} label={`Ecke Wand ${x.wallIn + 1} / ${x.wallOut + 1}`} selected={corner === x.vertex} onClick={() => setCorner(x.vertex)} />)}</Chips>
+          : <Chips>{geoms.map((g) => <Chip key={g.index} label={`Wand ${g.index + 1} (${fmt(g.length, 0)})`} selected={wallI === g.index} onClick={() => setWallI(g.index)} />)}</Chips>}
+        <div className="a-nums">
+          {mode === 'wand' && <NumField label="Ab linker Ecke, cm" unit="" value={from} onChange={setFrom} />}
+          <NumField label={mode === 'ecke' ? `Entlang Wand ${c ? c.wallIn + 1 : '…'}, cm` : 'Breite, cm'} unit="" value={a} onChange={setA} />
+          <NumField label={mode === 'ecke' ? `Entlang Wand ${c ? c.wallOut + 1 : '…'}, cm` : 'Tiefe in den Raum, cm'} unit="" value={b} onChange={setB} />
+        </div>
+        {err && <p className="mq-issues">{err}</p>}
+        <div className="a-chips">
+          <button className="primary" onClick={apply}><Check size={18} aria-hidden /> Eintragen</button>
+          <button onClick={() => { setMode(null); setErr(''); }}>Abbrechen</button>
+        </div>
+        <Note>Die Wände am Vorsprung werden Tabuzone: dort wird nicht geschlitzt. Rückgängig mit ↶.</Note>
+      </>}
+    </div>
+  );
+}
+
 function OpeningsQuestion({ project, room }: { project: Project; room: Room }) {
   const [open, setOpen] = useState(false);
-  const rect = isRectRoom(room);
   const items = [
     ...room.doors.map((d) => ({ id: d.id, label: d.hasFrame ? 'Tür' : d.width > 200 ? 'Tor' : 'Durchgang', where: `Wand ${d.wallIndex + 1}, ${fmt(d.s, 0)} cm ab links, ${fmt(d.width, 0)} cm breit` })),
     ...room.windows.map((w) => ({ id: w.id, label: 'Fenster', where: `Wand ${w.wallIndex + 1}, ${fmt(w.s, 0)} cm ab links, ${fmt(w.width, 0)} cm breit` })),
@@ -557,9 +613,7 @@ function OpeningsQuestion({ project, room }: { project: Project; room: Room }) {
     {items.length > 0
       ? <ul className="a-list">{items.map((x) => <li key={x.id}><DoorOpen size={20} aria-hidden /><span className="grow"><b>{x.label}</b><div className="a-list-sub">{x.where}</div></span></li>)}</ul>
       : <Note>Noch keine eingetragen.</Note>}
-    {rect
-      ? <button className="primary a-big" onClick={() => setOpen(true)}><Plus size={20} aria-hidden /> {items.length ? 'Ändern oder ergänzen' : 'Tür oder Fenster eintragen'}</button>
-      : <button className="a-big" onClick={() => store.setUi({ view: 'raum', roomId: room.id, tab: 'bau' })}>In der Expertenansicht eintragen</button>}
+    <button className="primary a-big" onClick={() => setOpen(true)}><Plus size={20} aria-hidden /> {items.length ? 'Ändern oder ergänzen' : 'Tür oder Fenster eintragen'}</button>
     <div className="a-preview"><RoomPlan project={project} room={room} layers={['moebel', 'masse']} /></div>
     {open && <MeasureFlow project={project} floorId={room.floorId} room={room} startAt="liste" onClose={() => setOpen(false)} />}
   </Q>;
