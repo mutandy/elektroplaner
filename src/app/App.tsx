@@ -137,12 +137,20 @@ function SaveStatus() {
   const server = useStore((s) => s.server);
   const sync = useStore((s) => s.sync);
   const savedAt = useStore((s) => s.savedAt);
+  const live = useStore((s) => s.live);
+  const remoteNote = useStore((s) => s.remoteNote);
   const where = server ? 'auf dem Server' : 'im Browser';
   const text = sync === 'konflikt' ? '⚠ Konflikt – siehe Hinweis oben'
     : sync === 'offline' ? `⚠ Nicht gespeichert – ${server ? 'Server nicht erreichbar' : 'Browser-Speicher nicht verfügbar'}`
     : sync === 'speichert' ? `Speichert ${where} …`
     : savedAt ? `Gespeichert ${where} ${savedAt}` : `Wird automatisch ${where} gespeichert`;
-  return <div className="saved muted small">{text}</div>;
+  return (
+    <div className="saved muted small">
+      <div>{text}</div>
+      {server && <div>{live ? 'Live mit anderen Geräten verbunden' : 'Live-Verbindung wird aufgebaut …'}</div>}
+      {remoteNote && <div>{remoteNote}</div>}
+    </div>
+  );
 }
 
 function Workspace({ project }: { project: Project }) {

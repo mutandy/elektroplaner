@@ -10,7 +10,8 @@ import { Project as ProjectSchema } from '../core/model/schema';
 import { createProject, loadProject, newId, nowIso } from '../core/model/factory';
 import exampleJson from '../../examples/kellerwohnung.json';
 import { setServerAi } from './ai/claude';
-import { browserRepo, detectServer, lastOpened, rememberOpened, serverRepo, takeLegacyBrowserProject, type ProjectMeta, type Repo } from './repo';
+import { browserRepo, detectServer, lastOpened, rememberOpened, serverRepo, subscribeLive, takeLegacyBrowserProject, type LiveEvent, type ProjectMeta, type Repo } from './repo';
+import { merge3 } from '../core/model/merge';
 
 const HISTORY_LIMIT = 200;
 
@@ -37,6 +38,10 @@ interface State {
   server?: { ai: boolean };
   /** Stand der Speicherung */
   sync?: 'ok' | 'speichert' | 'konflikt' | 'offline';
+  /** Live-Verbindung zum Server steht (Änderungen anderer Geräte kommen sofort) */
+  live?: boolean;
+  /** Kurzer Hinweis, wenn Änderungen von einem anderen Gerät eingearbeitet wurden */
+  remoteNote?: string;
   /** Alle Projekte (Kurzinfo) */
   projects: ProjectMeta[];
   ready: boolean;
@@ -60,12 +65,14 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 /** Revision des geöffneten Projekts in der Ablage, auf der der lokale Stand aufbaut. */
 let baseRev = 0;
 let dirty = false;
+/** Letzter Stand, der mit dem Server übereinstimmt (Grundlage für das Zusammenführen). */
+let synced: Project | null = null;
 let saving: Promise<void> = Promise.resolve();
 
 function scheduleSave() {
   dirty = true;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => void saveNow(), 600);
+  saveTimer = setTimeout(() => void saveNow(), 300);
 }
 
 function saveNow(force = false): Promise<void> {
@@ -84,11 +91,14 @@ async function doSave(force: boolean) {
   const r = await repo.save(project, json, baseRev, force);
   if (r.ok) {
     baseRev = r.rev;
+    synced = project;
     dirty = state.project !== project; // inzwischen weiter geändert?
     state = { ...state, sync: 'ok', loadError: undefined, savedAt: new Date().toLocaleTimeString('de-DE') };
     upsertMeta(project, r.rev);
     if (dirty) scheduleSave();
   } else if (r.conflict) {
+    // Ein anderes Gerät hat inzwischen gespeichert: zusammenführen und erneut speichern
+    if (await pullAndMerge()) { emit(); if (dirty) { saving = saving.then(() => doSave(false)); } return; }
     state = { ...state, sync: 'konflikt' };
   } else {
     state = { ...state, sync: 'offline', loadError: `Speichern fehlgeschlagen: ${r.error}` };
@@ -107,6 +117,7 @@ function viewFor(p: Project): UiState['view'] {
 
 function show(project: Project, rev: number) {
   baseRev = rev;
+  synced = project;
   dirty = false;
   rememberOpened(project.id);
   state = { ...state, project, past: [], future: [], sync: 'ok', savedAt: undefined, loadError: undefined, ui: { view: viewFor(project), wallIndex: 0 } };
@@ -334,8 +345,77 @@ export const store = {
   },
 };
 
-/** Beim Zurückkehren zur App: wurde auf einem anderen Gerät weitergearbeitet? */
+/**
+ * Neuen Stand vom Server holen und mit den eigenen, noch nicht gespeicherten
+ * Änderungen zusammenführen. Liefert false, wenn das nicht sicher ging (dann Konflikt-Hinweis).
+ */
+async function pullAndMerge(): Promise<boolean> {
+  const p = state.project;
+  if (!p) return true;
+  let r: Awaited<ReturnType<Repo['load']>>;
+  try { r = await repo.load(p.id); } catch { return false; }
+  if (!r) return false;
+  if (r.rev === baseRev) return true;
+  const now = state.project;
+  if (!now || now.id !== p.id) return true;
+  let next: Project = r.project;
+  let changedLocally = false;
+  if (dirty || now !== synced) {
+    const merged = merge3(synced ?? r.project, now, r.project);
+    const ok = ProjectSchema.safeParse(merged);
+    if (!ok.success) return false;
+    next = ok.data;
+    changedLocally = JSON.stringify(withStep(next, '')) !== JSON.stringify(withStep(r.project, ''));
+  }
+  // Jedes Gerät behält seine Position im Assistenten (sonst springt das andere Gerät mit)
+  next = withStep(next, now.wizard.step);
+  baseRev = r.rev;
+  synced = r.project;
+  dirty = changedLocally;
+  // Rückgängig reicht nur bis zur Änderung vom anderen Gerät (sonst würde sie überschrieben)
+  state = { ...state, project: next, past: [], future: [], sync: 'ok', remoteNote: `Änderungen von einem anderen Gerät übernommen (${new Date().toLocaleTimeString('de-DE')})` };
+  upsertMeta(next, r.rev);
+  if (changedLocally) scheduleSave();
+  return true;
+}
+
+function withStep(p: Project, step: string): Project {
+  return p.wizard.step === step ? p : { ...p, wizard: { ...p.wizard, step } };
+}
+
+let pullTimer: ReturnType<typeof setTimeout> | undefined;
+function schedulePull() {
+  clearTimeout(pullTimer);
+  pullTimer = setTimeout(() => { saving = saving.then(async () => { if (!(await pullAndMerge())) state = { ...state, sync: 'konflikt' }; emit(); }); }, 150);
+}
+
+function onLive(e: LiveEvent) {
+  if (e.type === 'geloescht') {
+    if (state.project?.id === e.id) {
+      clearTimeout(saveTimer); dirty = false; rememberOpened(null);
+      state = { ...state, project: null, past: [], future: [], ui: { view: 'projekte', wallIndex: 0 }, loadError: 'Das Projekt wurde auf einem anderen Gerät gelöscht (es liegt im Papierkorb-Ordner auf dem Server).' };
+    }
+    state = { ...state, projects: state.projects.filter((m) => m.id !== e.id) };
+    emit();
+    return;
+  }
+  if (state.project?.id === e.id && e.rev !== baseRev) schedulePull();
+  else void store.refreshList();
+}
+
+/** Live-Verbindung plus Abgleich beim Zurückkehren zur App. */
 function watchServer() {
+  subscribeLive(onLive, (live) => {
+    const wasOff = !state.live;
+    state = { ...state, live };
+    if (live && wasOff && state.project) schedulePull(); // nach Verbindungsabbruch nachholen
+    emit();
+  });
+  watchFallback();
+}
+
+/** Fallback ohne Live-Verbindung: beim Zurückkehren zur App und jede Minute nachsehen. */
+function watchFallback() {
   let busy = false;
   const check = async () => {
     if (busy || document.visibilityState !== 'visible' || state.sync === 'speichert') return;
@@ -347,11 +427,7 @@ function watchServer() {
       const rev = await repo.rev(p.id);
       if (rev == null) { if (!(await detectServer())) { state = { ...state, sync: 'offline' }; emit(); } return; }
       if (state.sync === 'offline') { state = { ...state, sync: 'ok' }; emit(); if (dirty) void saveNow(); }
-      if (rev !== baseRev && state.project === p) {
-        if (dirty) { state = { ...state, sync: 'konflikt' }; emit(); return; }
-        const r = await repo.load(p.id);
-        if (r && state.project === p) { baseRev = r.rev; state = { ...state, project: r.project, past: [], future: [], sync: 'ok' }; emit(); }
-      }
+      if (rev !== baseRev && state.project === p) schedulePull();
     } finally {
       busy = false;
     }

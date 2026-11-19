@@ -83,6 +83,21 @@ async function writeAtomic(file, data) {
   await fs.rename(tmp, file);
 }
 
+// Live-Verbindungen (Server-Sent Events): jede Speicherung wird sofort an alle Geräte gemeldet
+const listeners = new Set();
+function broadcast(event) {
+  const line = `data: ${JSON.stringify(event)}\n\n`;
+  for (const res of listeners) res.write(line);
+}
+setInterval(() => { for (const res of listeners) res.write(': ping\n\n'); }, 25_000).unref();
+
+function handleEvents(req, res) {
+  res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive', 'x-accel-buffering': 'no' });
+  res.write('retry: 3000\n: verbunden\n\n');
+  listeners.add(res);
+  req.on('close', () => listeners.delete(res));
+}
+
 // Schreibzugriffe nacheinander abarbeiten, damit sich zwei Geräte nicht überholen
 let queue = Promise.resolve();
 const serial = (fn) => (queue = queue.then(fn, fn));
@@ -177,7 +192,9 @@ async function handleProjects(req, res, rest) {
     return serial(async () => {
       const rev = (await readMeta(id))?.rev ?? 0;
       if (!force && baseRev !== rev) return send(res, 409, { error: 'Projekt wurde inzwischen auf einem anderen Gerät geändert', rev });
-      return send(res, 200, await writeProject(id, body, parsed, rev));
+      const meta = await writeProject(id, body, parsed, rev);
+      broadcast({ type: 'gespeichert', id, rev: meta.rev, savedAt: meta.savedAt, name: meta.name, by: String(req.headers['x-client-id'] ?? '') });
+      return send(res, 200, meta);
     });
   }
   if (req.method === 'DELETE') {
@@ -188,6 +205,7 @@ async function handleProjects(req, res, rest) {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
       await fs.rename(projectFile(id), path.join(TRASH_DIR, `${id}-${stamp}.json`));
       await fs.rm(metaFile(id), { force: true });
+      broadcast({ type: 'geloescht', id, by: String(req.headers['x-client-id'] ?? '') });
       return send(res, 200, { ok: true });
     });
   }
@@ -237,6 +255,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/status') {
       return send(res, 200, { server: true, ai: !!API_KEY }, { 'cache-control': 'no-store' });
     }
+    if (url.pathname === '/api/events') return handleEvents(req, res);
     if (url.pathname === '/api/projekte' || url.pathname.startsWith('/api/projekte/')) return await handleProjects(req, res, url.pathname.slice('/api/projekte/'.length));
     if (url.pathname.startsWith('/api/claude/')) return await handleClaude(req, res, url.pathname.slice('/api/claude'.length) + url.search);
     if (url.pathname.startsWith('/api/')) return send(res, 404, { error: 'Unbekannt' });

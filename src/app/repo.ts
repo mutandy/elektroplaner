@@ -40,6 +40,23 @@ async function errorText(r: Response): Promise<string> {
   return r.json().then((j) => String(j.error ?? `Status ${r.status}`)).catch(() => `Status ${r.status}`);
 }
 
+/** Kennung dieses Fensters: eigene Speicherungen kommen über die Live-Verbindung nicht als „fremd“ zurück. */
+export const CLIENT_ID = Math.random().toString(36).slice(2, 10);
+
+export interface LiveEvent { type: 'gespeichert' | 'geloescht'; id: string; rev?: number; savedAt?: string; name?: string; by?: string }
+
+/** Live-Verbindung zum Server: meldet Speicherungen und Löschungen von anderen Geräten sofort. */
+export function subscribeLive(onEvent: (e: LiveEvent) => void, onStatus: (live: boolean) => void): () => void {
+  if (typeof EventSource === 'undefined') return () => {};
+  const es = new EventSource('api/events');
+  es.onopen = () => onStatus(true);
+  es.onerror = () => onStatus(false); // verbindet sich selbst neu
+  es.onmessage = (m) => {
+    try { const e = JSON.parse(m.data) as LiveEvent; if (e.by !== CLIENT_ID) onEvent(e); } catch { /* Kommentarzeilen */ }
+  };
+  return () => es.close();
+}
+
 export const serverRepo: Repo = {
   kind: 'server',
   async list() {
@@ -55,7 +72,7 @@ export const serverRepo: Repo = {
   },
   async save(project, json, baseRev, force = false) {
     try {
-      const r = await fetch(`api/projekte/${encodeURIComponent(project.id)}`, { method: 'PUT', headers: { 'content-type': 'application/json', 'x-base-rev': String(baseRev), ...(force ? { 'x-force': '1' } : {}) }, body: json });
+      const r = await fetch(`api/projekte/${encodeURIComponent(project.id)}`, { method: 'PUT', headers: { 'content-type': 'application/json', 'x-base-rev': String(baseRev), 'x-client-id': CLIENT_ID, ...(force ? { 'x-force': '1' } : {}) }, body: json });
       if (r.status === 409) return { ok: false, conflict: true, error: await errorText(r) };
       if (!r.ok) return { ok: false, conflict: false, error: await errorText(r) };
       return { ok: true, rev: (await r.json()).rev };
@@ -64,7 +81,7 @@ export const serverRepo: Repo = {
     }
   },
   async remove(id) {
-    const r = await fetch(`api/projekte/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const r = await fetch(`api/projekte/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { 'x-client-id': CLIENT_ID } });
     if (!r.ok && r.status !== 404) throw new Error(await errorText(r));
   },
   async rev(id) {

@@ -38,7 +38,8 @@ Die fertigen Ausgaben des Beispielprojekts liegen in [`beispiel-ausgaben/`](beis
 Als Docker-Container läuft die App mit allen Funktionen: Drucken/PDF, Datei-Export, KI. Das Projekt liegt **zentral auf dem Server**, PC, Tablet und Handy sehen also denselben Stand.
 
 - **Mehrere Projekte:** Jedes Projekt liegt einzeln in `/data/projekte/<id>.json`. Alte Stände landen in `/data/sicherungen/<id>/`, höchstens alle 10 Minuten einer, die letzten 30 bleiben (`BACKUPS`). Gelöschte Projekte kommen nach `/data/papierkorb/` und lassen sich von dort zurückholen. Ein Projekt aus einer früheren Version (`/data/projekt.json`) übernimmt der Server beim Start automatisch.
-- **Gerätewechsel:** Kehrst du zur App zurück, holt sie den neuesten Stand. Haben zwei Geräte gleichzeitig geändert, meldet die App einen Konflikt. Du wählst dann „Stand vom Server laden“ oder „Meinen Stand behalten“.
+- **Live-Abgleich:** Jede Änderung wird nach etwa 0,3 Sekunden gespeichert. Der Server meldet sie über eine dauerhafte Verbindung (`/api/events`) sofort an alle anderen offenen Geräte, die den neuen Stand innerhalb eines Augenblicks übernehmen.
+- **Gleichzeitig arbeiten:** Ändern zwei Geräte zur selben Zeit, führt die App die Stände zusammen (`src/core/model/merge.ts`). Änderungen an verschiedenen Räumen, Auslässen usw. bleiben alle erhalten, beim selben Wert gilt die zuletzt gespeicherte Änderung. Jedes Gerät behält seine eigene Position im Assistenten. Rückgängig reicht nur bis zur letzten Änderung von einem anderen Gerät. Nur wenn das Zusammenführen nicht sicher gelingt, erscheint die Auswahl „Stand vom Server laden“ oder „Meinen Stand behalten“.
 - **Offline:** Ist der Server kurz weg, speichert der Browser weiter. Die App lädt nach, sobald der Server wieder da ist.
 - **KI:** Der Claude-API-Schlüssel steht als `ANTHROPIC_API_KEY` nur auf dem Server. Der Server leitet die Anfragen weiter, im Browser muss kein Schlüssel eingetragen werden.
 - **Passwort:** Mit `APP_PASSWORD` (Benutzer `APP_USER`, Standard `elektro`) fragt der Browser beim Öffnen nach Benutzer und Passwort.
@@ -74,7 +75,7 @@ Die Datei `docker-compose.yml` liegt im Repository. Darin Passwort und Schlüsse
 Den Port 8080 **nicht** einfach im Router freigeben, denn dann ginge der Verkehr unverschlüsselt durchs Internet. Besser ist einer dieser Wege:
 
 - **Tailscale (empfohlen, am einfachsten):** Auf Unraid das Plugin *Tailscale* installieren, dazu die Tailscale-App aufs Handy oder den Laptop. Die App ist dann von überall unter `http://<unraid-tailscale-name>:8080` erreichbar, ohne offenen Port. Ein WireGuard-VPN im Router (z. B. FRITZ!Box) funktioniert genauso.
-- **Reverse Proxy mit HTTPS:** Nginx Proxy Manager oder SWAG auf Unraid, dazu eine eigene Domain und ein Let's-Encrypt-Zertifikat. In diesem Fall **unbedingt** `APP_PASSWORD` setzen. Bei langen KI-Anfragen das Proxy-Timeout auf etwa 10 Minuten stellen, das Upload-Limit auf etwa 40 MB (Fotos).
+- **Reverse Proxy mit HTTPS:** Nginx Proxy Manager oder SWAG auf Unraid, dazu eine eigene Domain und ein Let's-Encrypt-Zertifikat. In diesem Fall **unbedingt** `APP_PASSWORD` setzen. Bei langen KI-Anfragen das Proxy-Timeout auf etwa 10 Minuten stellen, das Upload-Limit auf etwa 40 MB (Fotos). Für den Live-Abgleich darf der Proxy `/api/events` nicht puffern; bei Nginx Proxy Manager unter „Advanced“ `proxy_buffering off;` eintragen. Tailscale braucht nichts davon.
 
 Läuft die App ohne Passwort und ist trotzdem von außen erreichbar, kann jeder das Projekt lesen, ändern und mit deinem API-Schlüssel die KI nutzen.
 
