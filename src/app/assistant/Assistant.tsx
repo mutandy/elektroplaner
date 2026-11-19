@@ -30,6 +30,7 @@ import { PlanTracer, loadImage } from '../components/PlanTracer';
 import { FeasibilityPanel, TheaterPanel, acceptSuggestions } from '../components/Planning';
 import { FloorPlanAi, DistributionPhotoAi, AiKeySettings } from '../ai/AiPanels';
 import { MeasureFlow } from '../wizard/MeasureFlow';
+import { WallKey } from '../components/WallKey';
 import { convexCorners, notchCorner, projectWall } from '../../core/geometry/edit';
 import { wallGeoms } from '../../core/geometry/room';
 import { BuildingStep, ReferenceStep, InstallationStep, DistributionStep, NetworkStep, WallsStep, CeilingStep, FloorStep, ExistingStep } from '../wizard/Wizard';
@@ -583,6 +584,7 @@ export function NotchEditor({ room }: { room: Room }) {
         <Tile icon={Layers} label="Mitten an einer Wand" hint="Pfeiler, Schacht, Kamin" onClick={() => setMode('wand')} />
       </Tiles>}
       {mode && <>
+        <WallKey room={room} highlight={mode === 'wand' ? wallI ?? undefined : c?.wallIn} onPick={mode === 'wand' ? setWallI : undefined} />
         <Chips>{(['kamin', 'schacht', 'vorsprung'] as const).map((w) => <Chip key={w} label={{ kamin: 'Kamin', schacht: 'Schacht', vorsprung: 'Pfeiler / Vorsprung' }[w]} selected={what === w} onClick={() => setWhat(w)} />)}</Chips>
         {mode === 'ecke'
           ? <Chips>{corners.map((x) => <Chip key={x.vertex} label={`Ecke Wand ${x.wallIn + 1} / ${x.wallOut + 1}`} selected={corner === x.vertex} onClick={() => setCorner(x.vertex)} />)}</Chips>

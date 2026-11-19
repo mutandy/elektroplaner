@@ -16,6 +16,7 @@ import { store } from '../store';
 import { Check, EditTable, Field, NumberInput, Select, TextInput, opts, type Col } from '../components/ui';
 import { RoomPlan } from '../components/PlanCanvas';
 import { PlanTracer, loadImage, type TracerMode } from '../components/PlanTracer';
+import { WallKey } from '../components/WallKey';
 import { MeasureFlow } from './MeasureFlow';
 import { SMART_HOME_IMPACT } from '../views/ProjectView';
 import { EinrichtungTab, SummaryTab, upRoom } from '../views/RoomView';
@@ -638,13 +639,16 @@ export function MassStep({ project, room }: { project: Project; room: Room }) {
 
 export function WallsStep({ room }: { room: Room }) {
   const materials = [...new Set(room.walls.map((w) => w.material))];
+  const [pick, setPick] = useState<number | undefined>(undefined);
   return (
     <>
       <h3>Woraus sind die Wände überwiegend?</h3>
       <Cards value={materials.length === 1 ? materials[0] : undefined} onChange={(v) => upRoom(room.id, `${room.name}: Wandmaterial ${v}`, (r) => { r.walls.forEach((w) => { w.material = v; }); })}
         options={(['bims', 'kalksandstein', 'ziegel', 'porenbeton', 'beton', 'trockenbau', 'holz', 'unbekannt'] as const).map((k) => ({ value: k, label: wallMaterialLabel[k] }))} />
       <h3>Jede Wand einzeln</h3>
+      <WallKey room={room} highlight={pick} onPick={setPick} />
       <EditTable rows={room.walls.map((w) => ({ ...w, side: wallSideLabel(room, w.index), len: fmt(wallGeoms(room)[w.index].length) }))} rowKey={(r) => String(r.index)}
+        selectedKey={pick != null ? String(pick) : undefined} onSelect={(r) => setPick(r.index)}
         cols={[
           { key: 'index', label: 'Wand', type: 'readonly', render: (r: any) => <b>W{r.index + 1}</b> },
           { key: 'side', label: 'Lage', type: 'readonly' },

@@ -16,6 +16,7 @@ import { RoomPlan, WallElevation } from '../components/PlanCanvas';
 import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType, TheaterPanel } from '../components/Planning';
 import { RoomTextAi, RoomPhotos } from '../ai/AiPanels';
 import { NotchEditor } from '../assistant/Assistant';
+import { WallKey } from '../components/WallKey';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 
 type Tab = 'bau' | 'einrichtung' | 'auslaesse' | 'leitungen' | 'zusammenfassung';
@@ -160,6 +161,7 @@ export function RoomView({ project, room, outletId, wallIndex, tab: wantedTab }:
 
 function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wallOpts: { value: string; label: string }[] }) {
   const id = room.id;
+  const [wallPick, setWallPick] = useState<number | undefined>(undefined);
   const set = <K extends keyof Room>(k: K, v: Room[K], label: string) => upRoom(id, `${room.name}: ${label} geändert`, (r) => { (r as any)[k] = v; });
   const rect = isRect(room);
   const fb = futureBuildup(room);
@@ -207,7 +209,9 @@ function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wal
       </Section>
 
       <Section title={`Wände (${room.walls.length})`}>
+        <WallKey room={room} highlight={wallPick} onPick={setWallPick} />
         <EditTable rows={room.walls.map((w) => ({ ...w, len: fmt(wallGeoms(room)[w.index]?.length) }))} rowKey={(r) => String(r.index)}
+          selectedKey={wallPick != null ? String(wallPick) : undefined} onSelect={(r) => setWallPick(r.index)}
           cols={[
             { key: 'index', label: 'Wand', type: 'readonly', render: (r: any) => <b>W{r.index + 1}</b> },
             { key: 'len', label: 'Länge', type: 'readonly' },

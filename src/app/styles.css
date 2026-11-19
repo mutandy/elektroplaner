@@ -456,3 +456,6 @@ table.edit tr.done td, .tasklist li.done > label span { color: var(--muted); tex
   .a-tiles.cols-2 .a-tile-hint { display: none; }
   .a-tiles.cols-2.keep-hints .a-tile-hint { display: block; }
 }
+.wallkey { margin: 0 0 var(--space-sm); display: flex; flex-direction: column; gap: var(--space-2xs); }
+.wallkey svg { width: 100%; max-width: 360px; max-height: 260px; }
+.wallkey .pick { cursor: pointer; }
