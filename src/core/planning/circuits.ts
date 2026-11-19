@@ -3,7 +3,7 @@
  * Alles aus Modell + berechneten Leitungswegen abgeleitet.
  */
 import type { Circuit, Outlet, Project, Room } from '../model/schema';
-import { bbox, fmt, pointOnWall, zToFfb } from '../geometry/room';
+import { bbox, fmt, pointOnWall, zToFfb, toFloor } from '../geometry/room';
 import { normValue } from '../rules/normValues';
 import { cableById } from './cables';
 import { computeAllRoutes, outletCable, type RoomRoutes } from './routes';
@@ -26,7 +26,8 @@ export function floorElevation(project: Project, floorId: string): number {
 }
 
 function globalPoint(project: Project, room: Room, p: { x: number; y: number }) {
-  return { x: p.x + room.originOnFloor.x, y: p.y + room.originOnFloor.y, level: floorElevation(project, room.floorId) };
+  const q = toFloor(room, p);
+  return { x: q.x, y: q.y, level: floorElevation(project, room.floorId) };
 }
 
 function roomCenter(project: Project, room: Room) {

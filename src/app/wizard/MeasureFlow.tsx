@@ -12,8 +12,9 @@ import {
 } from '../../core/wizard/measure';
 import { fmt, roomArea } from '../../core/geometry/room';
 import { store } from '../store';
+import { applyLayout, pairDoors } from '../../core/geometry/layout';
 
-type Step = 'start' | 'l1' | 'l2' | 'hoehe' | 'vorsprung' | 'n-ort' | 'n-masse' | 'liste' | 'o-art' | 'o-wand' | 'o-abstand' | 'o-breite' | 'o-hoehe' | 'o-bruestung' | 'o-tuer' | 'name' | 'fertig';
+type Step = 'start' | 'l1' | 'l2' | 'hoehe' | 'vorsprung' | 'n-ort' | 'n-masse' | 'liste' | 'o-art' | 'o-wand' | 'o-abstand' | 'o-breite' | 'o-hoehe' | 'o-bruestung' | 'o-tuer' | 'o-ziel' | 'name' | 'fertig';
 
 const storageKey = (k: string) => `ep.aufmass.${k}`;
 function loadSaved(k: string): MeasureDraft | null {
@@ -78,7 +79,7 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
   const finish = () => {
     if (!draftComplete(draft)) return;
     if (room) {
-      store.update(`${room.name}: Aufmaß Schritt für Schritt übernommen`, (p) => { const r = p.rooms.find((x) => x.id === room.id); if (r) applyMeasure(r as Room, draft); });
+      store.update(`${room.name}: Aufmaß Schritt für Schritt übernommen`, (p) => { const r = p.rooms.find((x) => x.id === room.id); if (r) applyMeasure(r as Room, draft); connect(p as Project, room.floorId); });
       save(key, null);
       onClose(room.id);
       return;
@@ -93,6 +94,7 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
     store.update(`Raum „${base.name}“ aufgemessen`, (p) => {
       p.rooms.push(base as any);
       applyMeasure(p.rooms[p.rooms.length - 1] as Room, draft);
+      connect(p as Project, floorId);
     });
     save(key, null);
     onClose(id);
@@ -102,7 +104,7 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
   const order: Step[] = fixed
     ? ['liste', 'fertig']
     : ['start', 'l1', 'l2', 'hoehe', 'vorsprung', 'liste', ...(room ? [] : ['name' as Step]), 'fertig'];
-  const curOrder: Step[] = cur ? ['o-art', 'o-wand', 'o-abstand', 'o-breite', 'o-hoehe', ...(cur.kind === 'fenster' || cur.kind === 'sonstiges' ? ['o-bruestung' as Step] : []), ...(cur.kind === 'tuer' ? ['o-tuer' as Step] : [])] : [];
+  const curOrder: Step[] = cur ? ['o-art', 'o-wand', 'o-abstand', 'o-breite', 'o-hoehe', ...(cur.kind === 'fenster' || cur.kind === 'sonstiges' ? ['o-bruestung' as Step] : []), ...(cur.kind === 'tuer' ? ['o-tuer' as Step] : []), ...(cur.kind === 'durchgang' ? ['o-ziel' as Step] : [])] : [];
   const inOpening = step.startsWith('o-');
   const inNotch = step.startsWith('n-');
   const next = () => {
@@ -142,6 +144,7 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
     'o-hoehe': !!cur && cur.height > 0 && !curIssues.some((m) => /Höher/.test(m)),
     'o-bruestung': !!cur && (cur.sill ?? -1) >= 0 && !curIssues.length,
     'o-tuer': !!cur && !curIssues.length,
+    'o-ziel': !!cur && !curIssues.length,
     name: true,
     fertig: draftComplete(draft),
   };
@@ -310,8 +313,12 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
             <button className={cur.swing === 'innen' ? 'active' : ''} onClick={() => updCur({ swing: 'innen' })}>ja, nach innen</button>
             <button className={cur.swing === 'aussen' ? 'active' : ''} onClick={() => updCur({ swing: 'aussen' })}>nein, nach außen</button>
           </div>
-          <p className="mq-label">Führt zu (optional)</p>
-          <input className="mq-text" value={cur.leadsTo ?? ''} placeholder="z. B. Flur" onChange={(e) => updCur({ leadsTo: e.target.value })} />
+          <p className="mq-label">Wohin führt sie?</p>
+          <RoomPicker project={project} floorId={floorId} selfId={room?.id} value={cur} onChange={updCur} />
+          <Issues list={curIssues} />
+        </Q>}
+        {step === 'o-ziel' && cur && <Q title="Wohin führt der Durchgang?" hint="Aus den Verbindungen setzt das Programm den Grundriss zusammen.">
+          <RoomPicker project={project} floorId={floorId} selfId={room?.id} value={cur} onChange={updCur} />
           <Issues list={curIssues} />
         </Q>}
 
@@ -345,6 +352,29 @@ export function MeasureFlow({ project, floorId, room, onClose, startAt, fresh }:
               : step === 'o-art' || step === 'o-wand' ? <span /> : <button className="primary mq-next" disabled={!valid[step]} onClick={next}>{(inOpening && curOrder.indexOf(step) === curOrder.length - 1) || step === 'n-masse' ? 'Speichern ✓' : 'Weiter →'}</button>}
       </footer>
     </div>
+  );
+}
+
+/** Türen verknüpfen und, wo das Programm darf, den Grundriss aus den Verbindungen setzen. */
+function connect(p: Project, floorId: string) {
+  pairDoors(p);
+  if (p.rooms.some((r) => r.floorId === floorId && r.doors.some((d) => d.pairDoorId))) applyLayout(p, floorId);
+}
+
+/** Raum auswählen, in den eine Tür führt: schon angelegte Räume des Geschosses, außen, oder frei. */
+function RoomPicker({ project, floorId, selfId, value, onChange }: { project: Project; floorId: string; selfId?: string; value: MeasuredOpening; onChange: (p: Partial<MeasuredOpening>) => void }) {
+  const rooms = project.rooms.filter((r) => r.floorId === floorId && r.id !== selfId);
+  const fixedTargets = ['Außen', 'Treppenhaus'];
+  const free = !value.leadsToRoomId && value.leadsTo && !fixedTargets.includes(value.leadsTo);
+  return (
+    <>
+      <div className="mq-choices two">
+        {rooms.map((r) => <button key={r.id} className={`mq-choice ${value.leadsToRoomId === r.id ? 'active' : ''}`} onClick={() => onChange({ leadsToRoomId: r.id, leadsTo: r.name })}>{r.name}<span>{r.doors.some((d) => d.leadsToRoomId === selfId && selfId) ? 'hat schon eine Tür hierher' : 'angelegt'}</span></button>)}
+        {fixedTargets.map((t) => <button key={t} className={`mq-choice ${!value.leadsToRoomId && value.leadsTo === t ? 'active' : ''}`} onClick={() => onChange({ leadsToRoomId: undefined, leadsTo: t })}>{t}<span>{t === 'Außen' ? 'Haustür, Terrasse, Garten' : 'gemeinsamer Hausflur'}</span></button>)}
+      </div>
+      <input className="mq-text" value={free ? value.leadsTo : ''} placeholder="Anderer Raum (noch nicht angelegt)" onChange={(e) => onChange({ leadsToRoomId: undefined, leadsTo: e.target.value })} />
+      {!rooms.length && <p className="muted small">Noch keine anderen Räume angelegt. Trag den Namen ein; sobald der Raum angelegt ist, verknüpft das Programm die Tür.</p>}
+    </>
   );
 }
 

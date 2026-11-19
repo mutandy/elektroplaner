@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FloorLevel, Room } from '../../core/model/schema';
 import { NumberInput } from './ui';
+import { floorPolygon } from '../../core/geometry/room';
 
 export interface ImageData { dataUrl: string; w: number; h: number }
 
@@ -163,10 +164,12 @@ export function PlanTracer({ floor, rooms, mode, onCalibrate, onRect, highlightR
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onPointerLeave={() => setHover(null)}>
         <image href={floor.backgroundPlan} width={w} height={h} opacity={floor.backgroundOpacity} />
         {scale && rooms.map((r) => {
-          const pts = r.polygon.map((p) => `${(p.x + r.originOnFloor.x) / scale},${(p.y + r.originOnFloor.y) / scale}`).join(' ');
+          const fp = floorPolygon(r);
+          const pts = fp.map((p) => `${p.x / scale},${p.y / scale}`).join(' ');
           const xs = r.polygon.map((p) => p.x);
           const ys = r.polygon.map((p) => p.y);
-          const c = { x: (r.originOnFloor.x + (Math.min(...xs) + Math.max(...xs)) / 2) / scale, y: (r.originOnFloor.y + (Math.min(...ys) + Math.max(...ys)) / 2) / scale };
+          const fx = fp.map((p) => p.x), fy = fp.map((p) => p.y);
+          const c = { x: (Math.min(...fx) + Math.max(...fx)) / 2 / scale, y: (Math.min(...fy) + Math.max(...fy)) / 2 / scale };
           const hl = r.id === highlightRoomId;
           return (
             <g key={r.id}>

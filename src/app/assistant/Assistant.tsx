@@ -31,6 +31,8 @@ import { FeasibilityPanel, TheaterPanel, acceptSuggestions } from '../components
 import { FloorPlanAi, DistributionPhotoAi, AiKeySettings } from '../ai/AiPanels';
 import { MeasureFlow } from '../wizard/MeasureFlow';
 import { WallKey } from '../components/WallKey';
+import { applyLayout, layoutFloor } from '../../core/geometry/layout';
+import { renderFloorOverview } from '../../core/render/plan';
 import { convexCorners, notchCorner, projectWall } from '../../core/geometry/edit';
 import { wallGeoms } from '../../core/geometry/room';
 import { BuildingStep, ReferenceStep, InstallationStep, DistributionStep, NetworkStep, WallsStep, CeilingStep, FloorStep, ExistingStep } from '../wizard/Wizard';
@@ -165,6 +167,7 @@ function Overview({ project, list }: { project: Project; list: Question[] }) {
                   <span className="a-note">{f.name}</span>
                 </button>
               </div>
+              {rooms.length >= 2 && <FloorSketch project={project} floorId={f.id} />}
             </div>
           );
         })}
@@ -177,6 +180,23 @@ function Overview({ project, list }: { project: Project; list: Question[] }) {
           <Tile icon={Check} label="Abschluss" hint="Was noch offen ist, Pläne und Material" selected={sec('fertig').done === sec('fertig').total} onClick={() => go('fertig')} />
         </Tiles>
       </div>
+    </div>
+  );
+}
+
+/** Grundriss des Geschosses aus den angelegten Räumen und ihren Türverbindungen. */
+function FloorSketch({ project, floorId }: { project: Project; floorId: string }) {
+  const res = useMemo(() => layoutFloor(project, floorId), [project, floorId]);
+  const name = (id: string) => project.rooms.find((r) => r.id === id)?.name ?? id;
+  const linked = project.rooms.some((r) => r.floorId === floorId && r.doors.some((d) => d.pairDoorId));
+  const svg = useMemo(() => renderFloorOverview(project, floorId, { screen: true }), [project, floorId]);
+  return (
+    <div className="hub-section">
+      <div className="a-preview canvas overview" onClick={(e) => { const id = (e.target as Element).closest('[data-room]')?.getAttribute('data-room'); if (id) store.setUi({ view: 'raum', roomId: id }); }} dangerouslySetInnerHTML={{ __html: svg }} />
+      {!linked && <Note>Gibst du bei den Türen an, in welchen Raum sie führen, setzt das Programm daraus den Grundriss zusammen.</Note>}
+      {linked && res.unconnected.length > 0 && <Note>Noch ohne Türverbindung: {res.unconnected.map(name).join(', ')}.</Note>}
+      {res.problems.map((m) => <p key={m} className="mq-issues">{m}</p>)}
+      {linked && <button className="small" onClick={() => up('Grundriss aus Türen zusammengesetzt', (p) => { applyLayout(p as Project, floorId); })}>Grundriss aus Türen neu zusammensetzen</button>}
     </div>
   );
 }
@@ -542,7 +562,7 @@ function SizeQuestion({ project, room, next }: { project: Project; room: Room; n
     <NotchEditor room={room} />
     {floor.backgroundScale && <button className="small" onClick={() => setTracing(!tracing)}>{tracing ? 'Plan schließen' : 'Im Grundriss einzeichnen'}</button>}
     {tracing && <PlanTracer floor={floor} rooms={project.rooms.filter((r) => r.floorId === floor.id)} mode="raum" highlightRoomId={room.id}
-      onRect={(rc) => { upRoom(room.id, `${room.name}: Lage aus Grundriss`, (r) => { r.originOnFloor = { x: rc.x, y: rc.y }; if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }]; r.provenance = 'aus_plan'; }); setTracing(false); }} />}
+      onRect={(rc) => { upRoom(room.id, `${room.name}: Lage aus Grundriss`, (r) => { r.originOnFloor = { x: rc.x, y: rc.y }; r.rotation = 0; r.placedBy = 'plan'; if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }]; r.provenance = 'aus_plan'; }); setTracing(false); }} />}
     <div className="a-preview"><RoomPlan project={project} room={room} layers={['moebel', 'masse']} /></div>
     {measuring && <MeasureFlow project={project} floorId={room.floorId} room={room} fresh={!rect} onClose={(id) => {
       setMeasuring(false);
@@ -608,7 +628,7 @@ export function NotchEditor({ room }: { room: Room }) {
 function OpeningsQuestion({ project, room }: { project: Project; room: Room }) {
   const [open, setOpen] = useState(false);
   const items = [
-    ...room.doors.map((d) => ({ id: d.id, label: d.hasFrame ? 'Tür' : d.width > 200 ? 'Tor' : 'Durchgang', where: `Wand ${d.wallIndex + 1}, ${fmt(d.s, 0)} cm ab links, ${fmt(d.width, 0)} cm breit` })),
+    ...room.doors.map((d) => ({ id: d.id, label: `${d.hasFrame ? 'Tür' : d.width > 200 ? 'Tor' : 'Durchgang'}${d.leadsTo ? ` zu ${d.leadsTo}` : ''}${d.pairDoorId ? ' (verknüpft)' : ''}`, where: `Wand ${d.wallIndex + 1}, ${fmt(d.s, 0)} cm ab links, ${fmt(d.width, 0)} cm breit` })),
     ...room.windows.map((w) => ({ id: w.id, label: 'Fenster', where: `Wand ${w.wallIndex + 1}, ${fmt(w.s, 0)} cm ab links, ${fmt(w.width, 0)} cm breit` })),
   ];
   return <Q room={room} title="Welche Türen und Fenster hat der Raum?" hint="Wo die Tür ist, kommen die Schalter hin.">

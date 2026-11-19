@@ -69,7 +69,7 @@ export function applyFloorPlan(p: Draft<Project>, floorId: string, result: Floor
     const room = createRectRoom({
       id: newId('raum'), floorId, name: pick.name || r.label, formerName: r.label,
       width: Math.round(w), depth: Math.round(d), height: Math.max(200, floor.height - 25),
-      originOnFloor: origin, provenance: 'aus_plan',
+      originOnFloor: origin, placedBy: origin.x || origin.y ? 'plan' : undefined, provenance: 'aus_plan',
       roomType: r.kind === 'flur' ? 'flur' : undefined,
       installationType: p.settings.defaultInstallationType,
       note: r.notes ? `Aus Grundriss (KI): ${r.notes}` : '',

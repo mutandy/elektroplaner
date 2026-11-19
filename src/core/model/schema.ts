@@ -236,6 +236,8 @@ export const Wall = z.object({
   label: z.string().default(''),
   material: WallMaterial.default('unbekannt'),
   exterior: z.boolean().default(false),
+  /** Wandstärke im Rohbau (cm); für das Zusammensetzen der Räume. Leer = Vorgabe. */
+  thickness: cm.optional(),
   loadBearing: z.boolean().default(false),
   /** Waagerechte Schlitze in dieser Wand zulässig/gewollt? */
   horizontalSlotsAllowed: z.boolean().default(false),
@@ -258,6 +260,8 @@ export const Door = z.object({
   /** Brandschutz: z. B. T30 / FH-Tür → Wand ist Brandabschnitt. */
   fireRating: z.enum(['keine', 'T30', 'T60', 'T90', 'RS']).default('keine'),
   leadsToRoomId: z.string().optional(),
+  /** Gegenstück dieser Tür im Nachbarraum (gleiche Öffnung, andere Seite). */
+  pairDoorId: z.string().optional(),
   leadsTo: z.string().default(''),
   isMainEntrance: z.boolean().default(false),
   provenance: Provenance.default('gemessen'),
@@ -503,6 +507,10 @@ export const Room = z.object({
   loads: z.array(Load).default([]),
   /** Lage des Raum-Nullpunkts im Geschoss (für die Gesamtansicht). */
   originOnFloor: z.object({ x: cm, y: cm }).default({ x: 0, y: 0 }),
+  /** Drehung des Raums im Geschoss (im Uhrzeigersinn, Grad). Der Raum selbst bleibt in seinen eigenen Koordinaten. */
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]).default(0),
+  /** Woher die Lage im Geschoss stammt: aus dem Plan, von Hand oder aus den Türverbindungen (dann darf das Programm sie neu berechnen). */
+  placedBy: z.enum(['plan', 'hand', 'tueren']).optional(),
   /** Raumpolygon (Rohbaumaße), im Uhrzeigersinn, erste Ecke = Nullpunkt. */
   polygon: z.array(z.object({ x: cm, y: cm })).min(3),
   height: cm.positive(),

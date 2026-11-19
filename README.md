@@ -121,6 +121,12 @@ Im Assistenten unter „Räume je Geschoss anlegen“ legt **„📏 Raum aufmes
 
 Öffnungen, die nicht auf die Wand passen oder sich überschneiden, meldet die App sofort. Ein angefangenes Aufmaß bleibt im Browser erhalten, auch wenn das Handy zwischendurch sperrt. Code: `src/core/wizard/measure.ts`, `src/app/wizard/MeasureFlow.tsx`.
 
+## Grundriss aus Türverbindungen
+
+Bei jeder Tür und jedem Durchgang fragt das Aufmaß „Wohin führt sie?“. Zur Auswahl stehen die schon angelegten Räume des Geschosses, „Außen“, „Treppenhaus“ oder ein freier Name. Das Programm sucht dann im Nachbarraum das Gegenstück, also die Tür, die zurückführt, und verknüpft beide. Eine Tür mit freiem Namen („Flur“) wird verknüpft, sobald ein Raum dieses Namens angelegt ist.
+
+Aus den Verknüpfungen setzt das Programm den Grundriss zusammen (`src/core/geometry/layout.ts`). Nachbarräume werden um 0°, 90°, 180° oder 270° gedreht und so verschoben, dass die verknüpften Türen genau gegenüberliegen, mit der Wandstärke dazwischen (Vorgabe 12 cm, je Wand änderbar). Räume, die im Plan eingezeichnet oder von Hand verschoben bzw. gedreht wurden, bleiben fest. Passen Maße nicht zusammen oder überlappen Räume, zeigt die Übersicht im Assistenten einen Hinweis; dort gibt es auch „Grundriss aus Türen neu zusammensetzen“. In der Expertenansicht wählt man den Nachbarraum in der Türen-Tabelle unter „führt zu Raum“.
+
 ## Bedienung in Kürze
 
 ### Assistent (Start bei Null)

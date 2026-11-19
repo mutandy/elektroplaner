@@ -16,6 +16,7 @@ import { RoomPlan, WallElevation } from '../components/PlanCanvas';
 import { SuggestionsPanel, RoutingPanel, LoadsEditor, setRoomType, TheaterPanel } from '../components/Planning';
 import { RoomTextAi, RoomPhotos } from '../ai/AiPanels';
 import { NotchEditor } from '../assistant/Assistant';
+import { applyLayout, linkDoor } from '../../core/geometry/layout';
 import { WallKey } from '../components/WallKey';
 import { ROOM_TYPES, ROOM_TYPE_INFO, type RoomTypeId } from '../../core/model/roomTypes';
 
@@ -203,8 +204,9 @@ function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wal
         )}
         <NotchEditor room={room} />
         <div className="grid3">
-          <Field label="Lage im Geschoss x"><NumberInput value={room.originOnFloor.x} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.x = v; })} /></Field>
-          <Field label="Lage im Geschoss y"><NumberInput value={room.originOnFloor.y} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.y = v; })} /></Field>
+          <Field label="Lage im Geschoss x"><NumberInput value={room.originOnFloor.x} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.x = v; r.placedBy = 'hand'; })} /></Field>
+          <Field label="Lage im Geschoss y"><NumberInput value={room.originOnFloor.y} onChange={(v) => v != null && upRoom(id, `${room.name}: Lage`, (r) => { r.originOnFloor.y = v; r.placedBy = 'hand'; })} /></Field>
+          <Field label="Drehung im Geschoss"><Select value={String(room.rotation ?? 0)} options={[0, 90, 180, 270].map((d) => ({ value: String(d), label: `${d}°` }))} onChange={(v) => upRoom(id, `${room.name}: Drehung ${v}°`, (r) => { r.rotation = Number(v) as Room['rotation']; r.placedBy = 'hand'; })} /></Field>
         </div>
       </Section>
 
@@ -257,9 +259,17 @@ function BauTab({ project, room, wallOpts }: { project: Project; room: Room; wal
             { key: 'swing', label: 'öffnet', type: 'select', options: opts({ innen: 'nach innen', aussen: 'nach außen' }) },
             { key: 'hasFrame', label: 'Zarge', type: 'check' },
             { key: 'fireRating', label: 'Brandschutz', type: 'select', options: opts({ keine: '–', T30: 'T30', T60: 'T60', T90: 'T90', RS: 'RS' }) },
-            { key: 'leadsTo', label: 'führt zu', type: 'text' },
+            { key: 'leadsToRoomId', label: 'führt zu Raum', type: 'select', options: [{ value: '', label: '–' }, ...project.rooms.filter((x) => x.floorId === room.floorId && x.id !== room.id).map((x) => ({ value: x.id, label: x.name }))] },
+            { key: 'leadsTo', label: 'oder Text', type: 'text' },
           ] as Col<any>[]}
-          onChange={(i, k, v) => upRoom(id, `${room.name}: Tür ${k}`, (r) => { (r.doors[i] as any)[k] = k === 'wallIndex' ? Number(v) : v; })}
+          onChange={(i, k, v) => {
+            if (k === 'leadsToRoomId') {
+              // Verknüpfen + Gegenstück suchen + Grundriss aus den Türen neu setzen
+              store.update(`${room.name}: Tür führt zu ${project.rooms.find((x) => x.id === v)?.name ?? '–'}`, (p) => { linkDoor(p as Project, room.id, room.doors[i].id, v || null); applyLayout(p as Project, room.floorId); });
+              return;
+            }
+            upRoom(id, `${room.name}: Tür ${k}`, (r) => { (r.doors[i] as any)[k] = k === 'wallIndex' ? Number(v) : v; });
+          }}
           onRemove={(i) => upRoom(id, `${room.name}: Tür entfernt`, (r) => { r.doors.splice(i, 1); })}
           onAdd={() => upRoom(id, `${room.name}: Tür ergänzt`, (r) => { r.doors.push({ id: newId('t'), wallIndex: 0, s: 20, width: 86, height: 201, hinge: 'links', swing: 'innen', hasFrame: true, fireRating: 'keine', leadsTo: '', isMainEntrance: r.doors.length === 0, provenance: 'gemessen' }); })}
           addLabel="Tür" />

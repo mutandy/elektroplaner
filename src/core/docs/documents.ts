@@ -3,7 +3,7 @@
  * und in Node (Playwright → PDF) identisch verwendet.
  */
 import type { Project, Room } from '../model/schema';
-import { bbox, fmt, futureBuildup, roomArea, wallGeoms } from '../geometry/room';
+import { bbox, fmt, futureBuildup, roomArea, wallGeoms, floorPolygon } from '../geometry/room';
 import { ceilingLabel, installationTypeLabel, projectTypeLabel, smartHomeLabel, wallMaterialLabel } from '../model/labels';
 import { renderRoomPlan, renderFloorOverview, type Layer } from '../render/plan';
 import { renderElevation, elevationLegendText } from '../render/elevation';
@@ -195,7 +195,7 @@ ${project.keepAsIs.length ? `<dt>Bleibt unverändert</dt><dd>${project.keepAsIs.
   for (const f of project.floors) {
     const fr = project.rooms.filter((r) => r.floorId === f.id);
     if (!fr.length) continue;
-    const all = fr.flatMap((r) => r.polygon.map((p) => ({ x: p.x + r.originOnFloor.x, y: p.y + r.originOnFloor.y })));
+    const all = fr.flatMap((r) => floorPolygon(r));
     const bb = bbox(all);
     const scale = pickScale(bb.maxX - bb.minX + 40, bb.maxY - bb.minY + 40, BODY_W, BODY_H - 10, [50, 75, 100, 150, 200]);
     pages.push({

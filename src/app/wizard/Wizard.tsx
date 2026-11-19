@@ -455,7 +455,7 @@ function RoomsStep({ project }: { project: Project }) {
                 <PlanTracer floor={floor} rooms={rooms} mode="raum" highlightRoomId={tracingRoom.id}
                   onRect={(rc) => {
                     upRoom(tracingRoom.id, `${tracingRoom.name}: Lage aus Grundriss`, (r) => {
-                      r.originOnFloor = { x: rc.x, y: rc.y };
+                      r.originOnFloor = { x: rc.x, y: rc.y }; r.rotation = 0; r.placedBy = 'plan';
                       if (isRectRoom(r as Room)) r.polygon = [{ x: 0, y: 0 }, { x: rc.w, y: 0 }, { x: rc.w, y: rc.d }, { x: 0, y: rc.d }];
                       r.provenance = 'aus_plan';
                     });

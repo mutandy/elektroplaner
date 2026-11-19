@@ -45,6 +45,8 @@ export interface MeasuredOpening {
   /** Tür: geht in den Raum auf? */
   swing?: 'innen' | 'aussen';
   leadsTo?: string;
+  /** Tür/Durchgang führt in diesen (schon angelegten) Raum */
+  leadsToRoomId?: string;
 }
 
 export type NotchWhat = 'kamin' | 'schacht' | 'vorsprung';
@@ -176,7 +178,9 @@ export function openingsToRoom(d: MeasureDraft): { doors: Door[]; windows: Windo
     }
     const isDoor = o.kind === 'tuer';
     doors.push({
-      id: newId('t'), wallIndex: o.wall, s, width: o.width, height: o.height,
+      // Kennung behalten: verknüpfte Türen im Nachbarraum zeigen darauf
+      id: o.id || newId('t'), wallIndex: o.wall, s, width: o.width, height: o.height,
+      leadsToRoomId: o.leadsToRoomId,
       hinge: o.hinge ?? 'links',
       // Durchgang/Tor ohne Türblatt im Raum: kein Aufschlag nach innen
       swing: isDoor ? (o.swing ?? 'innen') : 'aussen',
@@ -233,7 +237,7 @@ export function draftFromRoom(r: Room): MeasureDraft {
     notches: [],
     fixedPolygon: rect ? undefined : r.polygon.map((p) => ({ ...p })),
     openings: [
-      ...r.doors.filter((x) => x.wallIndex < n).map((x) => ({ id: x.id, kind: (x.hasFrame ? 'tuer' : x.width > 200 ? 'tor' : 'durchgang') as OpeningKind, wall: x.wallIndex, distance: x.s, from: 'links' as const, width: x.width, height: x.height, hinge: x.hinge, swing: x.swing, leadsTo: x.leadsTo })),
+      ...r.doors.filter((x) => x.wallIndex < n).map((x) => ({ id: x.id, kind: (x.hasFrame ? 'tuer' : x.width > 200 ? 'tor' : 'durchgang') as OpeningKind, wall: x.wallIndex, distance: x.s, from: 'links' as const, width: x.width, height: x.height, hinge: x.hinge, swing: x.swing, leadsTo: x.leadsTo, leadsToRoomId: x.leadsToRoomId })),
       ...r.windows.filter((x) => x.wallIndex < n).map((x) => ({ id: x.id, kind: 'fenster' as OpeningKind, wall: x.wallIndex, distance: x.s, from: 'links' as const, width: x.width, height: x.height, sill: x.sill })),
     ],
   };

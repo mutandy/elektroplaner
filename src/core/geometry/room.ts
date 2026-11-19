@@ -189,3 +189,21 @@ export function wallName(room: Room, index: number): string {
   const base = `Wand ${index + 1}`;
   return w?.label ? `${base} (${w.label})` : base;
 }
+
+/** Punkt aus Raumkoordinaten in Geschosskoordinaten (Drehung im Uhrzeigersinn, dann Verschiebung). */
+export function rotatePt(p: Pt, deg: number): Pt {
+  switch (((deg % 360) + 360) % 360) {
+    case 90: return { x: -p.y, y: p.x };
+    case 180: return { x: -p.x, y: -p.y };
+    case 270: return { x: p.y, y: -p.x };
+    default: return { x: p.x, y: p.y };
+  }
+}
+export function toFloor(room: Pick<Room, 'originOnFloor' | 'rotation'>, p: Pt): Pt {
+  const r = rotatePt(p, room.rotation ?? 0);
+  return { x: r.x + room.originOnFloor.x, y: r.y + room.originOnFloor.y };
+}
+/** Umriss eines Raums in Geschosskoordinaten. */
+export function floorPolygon(room: Room): Pt[] {
+  return room.polygon.map((p) => toFloor(room, p));
+}
